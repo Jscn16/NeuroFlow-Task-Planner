@@ -31,6 +31,3 @@ export interface AppData {
   habits: Habit[];
   notes: Note[];
 }
-
-export const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
-export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

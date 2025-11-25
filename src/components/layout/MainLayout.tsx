@@ -13,7 +13,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ sidebar, header, childre
             <div className="flex-1 flex flex-col relative min-w-0 z-10">
                 {header}
                 {/* Increased Top Padding to 20 (5rem) to create gap below h-16 (4rem) header */}
-                <div className="flex-1 overflow-hidden relative pt-20">
+                <div className="flex-1 overflow-hidden relative pt-5">
                     {children}
                 </div>
             </div>

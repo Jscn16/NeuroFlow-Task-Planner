@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Task, TaskType, Habit, GridRow, TaskStatus, AppData, BrainDumpList } from './types';
-import { getWeekDays, formatDate, playSuccessSound, DAYS } from './constants';
+import { getWeekDays, formatDate, playSuccessSound, DAYS, getAdjustedDate } from './constants';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -93,7 +93,7 @@ const App = () => {
     });
 
     const [activeTab, setActiveTab] = useState<string>('planner');
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(getAdjustedDate());
     const [isStacked, setIsStacked] = useState(false);
 
     // Deep Work State

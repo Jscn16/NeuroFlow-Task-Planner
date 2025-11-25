@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Categories / Backlog List */}
             <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3 scrollbar-hide mask-image-b">
-                {SIDEBAR_CATEGORIES.map(cat => {
+                {SIDEBAR_CATEGORIES.filter(c => c.id !== 'chores').map(cat => {
                     const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled');
                     const isExpanded = expandedCategories[cat.id];
 
@@ -175,6 +175,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     );
                 })}
             </div>
+
+            {/* Fixed Chores Section */}
+            {(() => {
+                const choresCat = SIDEBAR_CATEGORIES.find(c => c.id === 'chores')!;
+                const choresTasks = tasks.filter(t => t.type === 'chores' && t.status === 'unscheduled');
+                const isExpanded = expandedCategories['chores'];
+
+                return (
+                    <div className="px-3 py-2 border-t border-white/[0.05] bg-[#1a1f35]/50 backdrop-blur-md">
+                        <div className="group">
+                            <button
+                                onClick={() => toggleCategory('chores')}
+                                className="w-full flex items-center justify-between py-1.5 px-2 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white transition-colors mb-1"
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    <ChevronRight size={10} className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
+                                    <span>{choresCat.label}</span>
+                                </div>
+                                <span className="bg-white/[0.05] text-slate-400 px-1.5 py-0.5 rounded text-[9px] min-w-[18px] text-center">
+                                    {choresTasks.length}
+                                </span>
+                            </button>
+
+                            <div className={`space-y-1.5 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                                <div className="max-h-[200px] overflow-y-auto pr-1 scrollbar-hide">
+                                    {choresTasks.map(task => (
+                                        <TaskCard
+                                            key={task.id}
+                                            task={task}
+                                            variant="sidebar"
+                                            onDragStart={onDragStart}
+                                            onUpdateTask={onUpdateTask}
+                                            onDeleteTask={onDeleteTask}
+                                            onToggleComplete={onToggleTaskComplete}
+                                        />
+                                    ))}
+                                    {choresTasks.length === 0 && (
+                                        <div className="text-[9px] text-slate-600 italic pl-5 py-1">No chores</div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* User / Settings Footer */}
             <div className="p-3 border-t border-white/[0.05] flex items-center justify-between bg-[#15192b]/50">

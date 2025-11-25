@@ -29,7 +29,7 @@ export const TASK_CARD_BORDER_COLORS: Record<TaskType, string> = {
   medium: 'border-l-orange-500',
   low: 'border-l-yellow-400',
   leisure: 'border-l-cyan-400',
-  chores: 'border-l-slate-500', // Changed from white to slate for a more neutral grey/blue feel
+  chores: 'border-l-slate-500',
 };
 
 export const getWeekDays = (startDate: Date = new Date()) => {
@@ -49,6 +49,22 @@ export const getWeekDays = (startDate: Date = new Date()) => {
 
 export const formatDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
+};
+
+// Circadian Logic: Day ends at 5 AM
+export const getAdjustedDate = (): Date => {
+  const now = new Date();
+  const hour = now.getHours();
+  // If it's before 5 AM, subtract 1 day to stay on "Yesterday"
+  if (hour < 5) {
+    now.setDate(now.getDate() - 1);
+  }
+  return now;
+};
+
+export const isLateNight = (): boolean => {
+  const hour = new Date().getHours();
+  return hour < 5;
 };
 
 export const TARGET_HOURS_PER_DAY = 6; // User-defined target for daily capacity

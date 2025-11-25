@@ -1,6 +1,6 @@
 import React from 'react';
-import { CalendarDays, Target, Flame, Timer, ListChecks, Notebook, BarChart3, Layers, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDate, getWeekDays } from '../../constants';
+import { CalendarDays, Target, Flame, Timer, ListChecks, Notebook, BarChart3, Layers, ChevronLeft, ChevronRight, Moon } from 'lucide-react';
+import { formatDate, getWeekDays, isLateNight } from '../../constants';
 
 interface HeaderProps {
     activeTab: string;
@@ -20,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
     setIsStacked
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
+    const isLateNightSession = isLateNight();
 
     const tabs = [
         { id: 'planner', label: 'Planner', icon: CalendarDays },
@@ -88,15 +89,25 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
             </div>
 
-            {/* RIGHT: Week Navigation */}
-            <div className="pointer-events-auto flex items-center gap-1 bg-[#1e2338]/70 rounded-xl p-1 border border-white/[0.1] shadow-inner backdrop-blur-md min-w-[120px] justify-center">
-                <button onClick={() => onWeekChange('prev')} className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white transition-colors flex items-center justify-center">
-                    <ChevronLeft size={14} />
-                </button>
-                <div className="px-2 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">Week</div>
-                <button onClick={() => onWeekChange('next')} className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white transition-colors flex items-center justify-center">
-                    <ChevronRight size={14} />
-                </button>
+            {/* RIGHT: Week Navigation & Late Night Badge */}
+            <div className="pointer-events-auto flex items-center gap-3">
+                <div className="flex items-center gap-1 bg-[#1e2338]/70 rounded-xl p-1 border border-white/[0.1] shadow-inner backdrop-blur-md min-w-[120px] justify-center">
+                    <button onClick={() => onWeekChange('prev')} className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white transition-colors flex items-center justify-center">
+                        <ChevronLeft size={14} />
+                    </button>
+                    <div className="px-2 py-1 text-[10px] font-bold text-slate-300 uppercase tracking-wider">Week</div>
+                    <button onClick={() => onWeekChange('next')} className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white transition-colors flex items-center justify-center">
+                        <ChevronRight size={14} />
+                    </button>
+                </div>
+
+                {/* Late Night Badge */}
+                {isLateNightSession && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                        <Moon size={12} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Late Night Session</span>
+                    </div>
+                )}
             </div>
         </div>
     );

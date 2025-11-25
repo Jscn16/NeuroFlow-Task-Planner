@@ -1,6 +1,6 @@
 import React from 'react';
 import { Task, GridRow } from '../../../types';
-import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, ROW_CONFIG, DAYS } from '../../../constants';
+import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, ROW_CONFIG, DAYS, getAdjustedDate } from '../../../constants';
 import { TaskCard } from '@/components/TaskCard';
 import { GridCell } from './GridCell';
 
@@ -28,13 +28,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
     onTaskDrop
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
-    const todayStr = formatDate(new Date());
+    // Use adjusted date for "Today" highlighting
+    const todayStr = formatDate(getAdjustedDate());
     const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
 
     const renderWeekStacked = () => (
         <div className="flex-grow flex relative mt-0 overflow-y-auto no-scrollbar gap-2">
             {currentWeekDays.map((day, i) => {
-                const dayTasks = tasks.filter(t => t.status !== 'unscheduled' && t.dueDate === formatDate(day));
+                const dayTasks = tasks.filter(t =>
+                    t.status !== 'unscheduled' &&
+                    t.dueDate === formatDate(day) &&
+                    t.status !== 'completed' // Hide finished tasks in Stack Mode
+                );
                 const isToday = formatDate(day) === todayStr;
 
                 return (

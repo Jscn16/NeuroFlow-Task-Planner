@@ -102,6 +102,8 @@ const App = () => {
     // Settings
     const [showSettings, setShowSettings] = useState(false);
 
+    const [showCompleted, setShowCompleted] = useState(true);
+
     // --- Effects ---
     // Auto-save to localStorage whenever tasks, habits, or brainDumpLists change
     useEffect(() => {
@@ -294,7 +296,17 @@ const App = () => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'neuroflow-data.json';
+
+        // Generate timestamp: YY_MM_DD(HH_MM)
+        const now = new Date();
+        const yy = now.getFullYear().toString().slice(-2);
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const dd = now.getDate().toString().padStart(2, '0');
+        const hh = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        const timestamp = `${yy}_${mm}_${dd}(${hh}_${min})`;
+
+        a.download = `${timestamp}-neuroflow-data.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -332,6 +344,103 @@ const App = () => {
     const handleWeekChange = (direction: 'prev' | 'next') => {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+
+        // Recurring Chores Logic
+        if (direction === 'next') {
+            const targetWeekDays = getWeekDays(newDate);
+            const targetWeekStart = formatDate(targetWeekDays[0]);
+            const targetWeekEnd = formatDate(targetWeekDays[6]);
+
+            // Find chores from the current week to clone
+            const currentWeekDays = getWeekDays(currentDate);
+            const currentWeekStart = formatDate(currentWeekDays[0]);
+            const currentWeekEnd = formatDate(currentWeekDays[6]);
+
+            const choresToClone = tasks.filter(t =>
+                t.assignedRow === 'CHORES' &&
+                t.dueDate &&
+                t.dueDate >= currentWeekStart &&
+                t.dueDate <= currentWeekEnd &&
+                t.status !== 'unscheduled'
+            );
+
+            if (choresToClone.length > 0) {
+                const tasksToDelete: string[] = [];
+                const tasksToUpdate: { id: string, updates: Partial<Task> }[] = [];
+                const newChores: Task[] = [];
+
+                choresToClone.forEach(chore => {
+                    // 1. Check if this chore is already scheduled in the TARGET week (bug residue)
+                    const targetWeekTask = tasks.find(t =>
+                        t.assignedRow === 'CHORES' &&
+                        t.dueDate &&
+                        t.dueDate >= targetWeekStart &&
+                        t.dueDate <= targetWeekEnd &&
+                        t.title === chore.title
+                    );
+
+                    // 2. Check if it exists in backlog
+                    const alreadyExistsInBacklog = tasks.some(t =>
+                        t.type === 'chores' &&
+                        t.status === 'unscheduled' &&
+                        t.title === chore.title
+                    );
+
+                    if (targetWeekTask) {
+                        // It exists in the target week (scheduled).
+                        if (alreadyExistsInBacklog) {
+                            // Duplicate! Delete the scheduled one.
+                            tasksToDelete.push(targetWeekTask.id);
+                        } else {
+                            // Move it to backlog.
+                            tasksToUpdate.push({
+                                id: targetWeekTask.id,
+                                updates: { status: 'unscheduled', dueDate: null, assignedRow: null, type: 'chores' }
+                            });
+                        }
+                    } else {
+                        // Not in target week.
+                        if (!alreadyExistsInBacklog) {
+                            // Check if we already added it to newChores in this loop
+                            const alreadyInNewChores = newChores.some(nc => nc.title === chore.title);
+                            if (!alreadyInNewChores) {
+                                newChores.push({
+                                    ...chore,
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    status: 'unscheduled',
+                                    dueDate: null,
+                                    assignedRow: null,
+                                    createdAt: Date.now()
+                                });
+                            }
+                        }
+                    }
+                });
+
+                if (tasksToDelete.length > 0 || tasksToUpdate.length > 0 || newChores.length > 0) {
+                    setTasks(prev => {
+                        let nextState = [...prev];
+                        // Delete
+                        if (tasksToDelete.length > 0) {
+                            nextState = nextState.filter(t => !tasksToDelete.includes(t.id));
+                        }
+                        // Update
+                        if (tasksToUpdate.length > 0) {
+                            nextState = nextState.map(t => {
+                                const update = tasksToUpdate.find(u => u.id === t.id);
+                                return update ? { ...t, ...update.updates } : t;
+                            });
+                        }
+                        // Add
+                        if (newChores.length > 0) {
+                            nextState = [...nextState, ...newChores];
+                        }
+                        return nextState;
+                    });
+                }
+            }
+        }
+
         setCurrentDate(newDate);
     };
 
@@ -358,6 +467,8 @@ const App = () => {
                         onWeekChange={handleWeekChange}
                         isStacked={isStacked}
                         setIsStacked={setIsStacked}
+                        showCompleted={showCompleted}
+                        setShowCompleted={setShowCompleted}
                     />
                 }
             >
@@ -372,6 +483,7 @@ const App = () => {
                         onDeleteTask={deleteTask}
                         onToggleTaskComplete={toggleTaskComplete}
                         onTaskDrop={handleReorderTasks}
+                        showCompleted={showCompleted}
                     />
                 )}
                 {activeTab === 'focus' && (
@@ -383,6 +495,7 @@ const App = () => {
                             setActiveTaskId(id);
                         }}
                         onUpdateTask={updateTask}
+                        showCompleted={showCompleted}
                     />
                 )}
                 {activeTab === 'habits' && (

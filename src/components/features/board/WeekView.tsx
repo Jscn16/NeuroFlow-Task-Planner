@@ -25,7 +25,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
     onToggleTaskComplete,
     onUpdateTask,
     onDeleteTask,
-    onTaskDrop
+    onTaskDrop,
+    showCompleted
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
     // Use adjusted date for "Today" highlighting
@@ -38,7 +39,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 const dayTasks = tasks.filter(t =>
                     t.status !== 'unscheduled' &&
                     t.dueDate === formatDate(day) &&
-                    t.status !== 'completed' // Hide finished tasks in Stack Mode
+                    (showCompleted || t.status !== 'completed')
                 );
                 const isToday = formatDate(day) === todayStr;
 
@@ -99,7 +100,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
                         {/* Columns */}
                         {currentWeekDays.map((day, i) => {
-                            const dayTasks = tasks.filter(t => t.dueDate === formatDate(day) && t.status !== 'unscheduled');
+                            const dayTasks = tasks.filter(t => {
+                                if (t.status === 'unscheduled') return false;
+                                if (t.dueDate !== formatDate(day)) return false;
+                                if (!showCompleted && t.status === 'completed') return false;
+                                return true;
+                            });
                             const isDayEmpty = dayTasks.length === 0; // Determine if the day has no scheduled tasks
                             return (
                                 <GridCell

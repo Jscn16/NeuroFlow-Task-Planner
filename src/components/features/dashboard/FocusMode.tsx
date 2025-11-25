@@ -10,9 +10,10 @@ interface FocusModeProps {
     onToggleTaskComplete: (taskId: string) => void;
     onStartFocus: (taskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
+    showCompleted: boolean;
 }
 
-export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onStartFocus, onUpdateTask }) => {
+export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onStartFocus, onUpdateTask, showCompleted }) => {
     // Use adjusted date so Focus Mode shows "Yesterday's" tasks until 5 AM
     const todayStr = formatDate(getAdjustedDate());
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
     const focusTasks = tasks.filter(t =>
         t.status === 'scheduled' &&
         t.dueDate === todayStr &&
-        t.status !== 'completed'
+        (showCompleted || t.status !== 'completed')
     ).sort((a, b) => {
         const pA = priorityOrder[a.type] || 99;
         const pB = priorityOrder[b.type] || 99;

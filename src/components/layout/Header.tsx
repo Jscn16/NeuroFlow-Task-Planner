@@ -9,6 +9,8 @@ interface HeaderProps {
     onWeekChange: (direction: 'prev' | 'next') => void;
     isStacked: boolean;
     setIsStacked: (stacked: boolean) => void;
+    showCompleted: boolean;
+    setShowCompleted: (show: boolean) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -17,7 +19,9 @@ export const Header: React.FC<HeaderProps> = ({
     currentDate,
     onWeekChange,
     isStacked,
-    setIsStacked
+    setIsStacked,
+    showCompleted,
+    setShowCompleted
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
     const isLateNightSession = isLateNight();
@@ -44,6 +48,26 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* CENTER: Navigation Tabs & Stack Toggle */}
             <div className="pointer-events-auto flex items-center gap-3">
+                {/* View Options Toggle - Only visible in Stack Mode */}
+                {isStacked && activeTab === 'planner' && (
+                    <button
+                        onClick={() => setShowCompleted(!showCompleted)}
+                        className={`
+                        flex items-center gap-1.5 px-3 py-2 rounded-xl border transition-all duration-300 shadow-lg backdrop-blur-md
+                        ${showCompleted
+                                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                                : 'bg-[#1e2338]/70 border-white/[0.1] text-slate-500 hover:text-slate-300'
+                            }
+                    `}
+                        title={showCompleted ? "Hide Completed Tasks" : "Show Completed Tasks"}
+                    >
+                        <div className={`w-2 h-2 rounded-full ${showCompleted ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                            {showCompleted ? 'Show Done' : 'Hide Done'}
+                        </span>
+                    </button>
+                )}
+
                 {/* Stack Toggle (Only visible on Planner tab) */}
                 {activeTab === 'planner' && (
                     <button
@@ -91,6 +115,9 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* RIGHT: Week Navigation & Late Night Badge */}
             <div className="pointer-events-auto flex items-center gap-3">
+                {/* View Options Toggle */}
+
+
                 <div className="flex items-center gap-1 bg-[#1e2338]/70 rounded-xl p-1 border border-white/[0.1] shadow-inner backdrop-blur-md min-w-[120px] justify-center">
                     <button onClick={() => onWeekChange('prev')} className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg text-slate-400 hover:text-white transition-colors flex items-center justify-center">
                         <ChevronLeft size={14} />

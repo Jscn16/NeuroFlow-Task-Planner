@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Task, GridRow } from '../../../types';
 import { formatDate, ROW_CONFIG } from '../../../constants';
@@ -18,66 +18,120 @@ interface GridCellProps {
     onTaskDrop?: (sourceId: string, targetId: string) => void;
 }
 
-export const GridCell: React.FC<GridCellProps> = ({ day, row, isToday, tasks, onDrop, onDragStart, onToggleComplete, onUpdateTask, onDeleteTask, isDayEmpty, onTaskDrop }) => {
+export const GridCell: React.FC<GridCellProps> = ({ 
+    day, 
+    row, 
+    isToday, 
+    tasks, 
+    onDrop, 
+    onDragStart, 
+    onToggleComplete, 
+    onUpdateTask, 
+    onDeleteTask, 
+    isDayEmpty, 
+    onTaskDrop 
+}) => {
+    const [isDragOver, setIsDragOver] = useState(false);
     const dayStr = formatDate(day);
     const cellTasks = tasks.filter(t => t.status !== 'unscheduled' && t.dueDate === dayStr && t.assignedRow === row);
 
-    // Define visual slots per category
     const slotCount = row === 'GOAL' ? 1 : 3;
-
-    // Render tasks up to the slotCount
     const visibleTasks = cellTasks.slice(0, slotCount);
     const emptySlotsToRender = slotCount - visibleTasks.length;
 
+    // Only set drag over on the actual cell element, not children
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        // Only respond if entering the cell itself
+        if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDragOver(true);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        // Ensure we stay in drag over state while over the cell
+        if (!isDragOver) {
+            setIsDragOver(true);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        // Only leave if actually leaving the cell (not entering a child)
+        const relatedTarget = e.relatedTarget as Node;
+        if (!e.currentTarget.contains(relatedTarget)) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+        onDrop(e, day, row);
+    };
+
     return (
         <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => onDrop(e, day, row)}
-            title={`${ROW_CONFIG[row].label}: ${ROW_CONFIG[row].description}`}
-            className="relative flex-1 w-0 transition-all duration-300 group/cell hover:bg-white/[0.015] flex flex-col p-1.5 gap-1.5"
+            onDragEnter={handleDragEnter}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className="relative flex-1 w-0 flex flex-col p-1.5 gap-1 transition-colors duration-150"
             style={{
-                borderLeft: isToday ? '1px solid' : 'none',
-                borderRight: '1px solid',
-                borderColor: isToday ? 'color-mix(in srgb, var(--accent) 20%, transparent)' : 'var(--border-light)',
-                backgroundColor: isToday ? 'var(--accent-muted)' : 'transparent'
+                borderRight: '1px solid var(--border-light)',
+                backgroundColor: isDragOver 
+                    ? 'var(--accent-muted)' 
+                    : isToday 
+                        ? 'color-mix(in srgb, var(--accent) 3%, transparent)' 
+                        : 'transparent'
             }}
         >
-            {/* Render actual tasks */}
-            {visibleTasks.map(task => (
-                <TaskCard
-                    key={task.id}
-                    task={task}
-                    variant="board"
-                    onDragStart={onDragStart}
-                    onUpdateTask={onUpdateTask}
-                    onDeleteTask={onDeleteTask}
-                    onToggleComplete={onToggleComplete}
-                    onTaskDrop={onTaskDrop}
-                />
-            ))}
-
-            {/* Render ghost slots - nearly invisible until cell hover */}
-            {emptySlotsToRender > 0 && Array.from({ length: emptySlotsToRender }).map((_, index) => (
-                <div
-                    key={`ghost-${index}`}
-                    className={`
-                        flex-1 relative w-full group/slot min-h-0
-                        ${row === 'GOAL' ? 'min-h-[4rem]' : 'min-h-[2.5rem]'}
-                    `}
+            {/* Drop indicator */}
+            {isDragOver && (
+                <div 
+                    className="absolute inset-1 border-2 border-dashed rounded-lg pointer-events-none z-20 flex items-center justify-center" 
+                    style={{ 
+                        borderColor: 'var(--accent)', 
+                        backgroundColor: 'color-mix(in srgb, var(--accent) 15%, transparent)' 
+                    }}
                 >
-                    {/* Ghost slot - only visible on cell hover */}
-                    <div 
-                        className="absolute inset-0 rounded-lg border border-dashed opacity-0 group-hover/cell:opacity-100 flex items-center justify-center transition-all duration-300"
-                        style={{
-                            borderColor: 'color-mix(in srgb, var(--text-muted) 15%, transparent)',
-                            backgroundColor: 'transparent'
+                    <span 
+                        className="px-2 py-1 rounded text-[10px] font-bold uppercase"
+                        style={{ 
+                            backgroundColor: 'var(--accent)', 
+                            color: 'var(--bg-primary)' 
                         }}
                     >
-                        <Plus 
-                            size={14} 
-                            className="opacity-0 group-hover/slot:opacity-60 transition-opacity duration-200" 
-                            style={{ color: 'var(--text-muted)' }} 
-                        />
+                        Drop
+                    </span>
+                </div>
+            )}
+
+            {/* Tasks */}
+            {visibleTasks.map((task) => (
+                <div key={task.id} className="flex-1 min-h-0">
+                    <TaskCard
+                        task={task}
+                        variant="board"
+                        onDragStart={onDragStart}
+                        onUpdateTask={onUpdateTask}
+                        onDeleteTask={onDeleteTask}
+                        onToggleComplete={onToggleComplete}
+                        onTaskDrop={onTaskDrop}
+                    />
+                </div>
+            ))}
+
+            {/* Empty slots - no drag events, just visual */}
+            {emptySlotsToRender > 0 && !isDragOver && Array.from({ length: emptySlotsToRender }).map((_, index) => (
+                <div key={`ghost-${index}`} className="flex-1 relative w-full min-h-0 pointer-events-none">
+                    <div 
+                        className="absolute inset-0 rounded-lg border border-dashed opacity-10 flex items-center justify-center"
+                        style={{ borderColor: 'var(--text-muted)' }}
+                    >
+                        <Plus size={14} className="opacity-30" style={{ color: 'var(--text-muted)' }} />
                     </div>
                 </div>
             ))}

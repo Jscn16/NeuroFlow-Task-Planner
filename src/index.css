@@ -54,12 +54,107 @@
   }
 }
 
-/* Theme transition helper */
+/* Smooth transitions for theme changes */
 *, *::before, *::after {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
 }
 
-/* Elegant Scrollbar */
+/* ═══════════════════════════════════════════════════════════════════
+   ANIMATIONS - Smooth & Satisfying
+═══════════════════════════════════════════════════════════════════ */
+
+/* Task completion celebration */
+@keyframes complete-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmark-draw {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-muted); }
+  50% { box-shadow: 0 0 20px 5px var(--accent-muted); }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Utility classes for animations */
+.animate-complete-pop {
+  animation: complete-pop 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.3s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Drag & Drop Feedback */
+.dragging {
+  opacity: 0.6;
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.drop-target {
+  background-color: var(--accent-muted) !important;
+  border-color: var(--accent) !important;
+  transform: scale(1.02);
+}
+
+.drop-target::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--accent);
+  border-radius: inherit;
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SCROLLBAR - Elegant & Minimal
+═══════════════════════════════════════════════════════════════════ */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -88,7 +183,19 @@
   scrollbar-width: none;
 }
 
-/* Theme-specific utility classes */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+═══════════════════════════════════════════════════════════════════ */
+
 .bg-theme-primary {
   background-color: var(--bg-primary);
 }
@@ -125,12 +232,31 @@
   border-color: var(--border-light);
 }
 
-/* Accent glow effect */
 .glow-accent {
   box-shadow: 0 0 20px var(--accent-glow);
 }
 
-/* Light theme adjustments */
+/* Glass effect */
+.glass {
+  background: color-mix(in srgb, var(--bg-secondary) 70%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-light);
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LIGHT THEME ADJUSTMENTS
+═══════════════════════════════════════════════════════════════════ */
+
 [data-theme="light"] {
   color-scheme: light;
 }
@@ -150,13 +276,16 @@
 }
 
 [data-theme="light"] .bg-white\/\[0\.03\],
+[data-theme="light"] .bg-white\/\[0\.04\],
 [data-theme="light"] .bg-white\/\[0\.05\],
 [data-theme="light"] .bg-white\/\[0\.06\],
+[data-theme="light"] .bg-white\/\[0\.07\],
 [data-theme="light"] .bg-white\/\[0\.08\] {
   background-color: rgba(0, 0, 0, 0.03);
 }
 
 [data-theme="light"] .border-white\/\[0\.05\],
+[data-theme="light"] .border-white\/\[0\.06\],
 [data-theme="light"] .border-white\/\[0\.08\],
 [data-theme="light"] .border-white\/\[0\.1\] {
   border-color: rgba(0, 0, 0, 0.08);
@@ -165,4 +294,12 @@
 [data-theme="light"] .hover\:bg-white\/\[0\.05\]:hover,
 [data-theme="light"] .hover\:bg-white\/\[0\.1\]:hover {
   background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SELECTION
+═══════════════════════════════════════════════════════════════════ */
+
+::selection {
+  background-color: color-mix(in srgb, var(--accent) 30%, transparent);
 }

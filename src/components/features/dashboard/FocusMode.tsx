@@ -14,11 +14,11 @@ interface FocusModeProps {
 }
 
 export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onStartFocus, onUpdateTask, showCompleted }) => {
-    // Use adjusted date so Focus Mode shows "Yesterday's" tasks until 5 AM
     const todayStr = formatDate(getAdjustedDate());
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
     const [isZenMode, setIsZenMode] = useState(false);
-    const [timer, setTimer] = useState(25 * 60);
+    const [timer, setTimer] = useState(0); // Will be set based on task duration
+    const [initialDuration, setInitialDuration] = useState(0); // Store initial duration for reset
     const [isTimerRunning, setIsTimerRunning] = useState(false);
 
     const priorityOrder: Record<string, number> = {
@@ -53,9 +53,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         let interval: number;
         if (isTimerRunning && timer > 0) {
             interval = window.setInterval(() => setTimer(t => t - 1), 1000);
-        } else if (timer === 0) {
+        } else if (timer === 0 && isTimerRunning) {
             setIsTimerRunning(false);
-            // Optional: Play sound
+            // Timer finished - could add notification here
         }
         return () => clearInterval(interval);
     }, [isTimerRunning, timer]);
@@ -66,11 +66,19 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    // Calculate progress percentage
+    const timerProgress = initialDuration > 0 ? ((initialDuration - timer) / initialDuration) * 100 : 0;
+
     const handleStartTask = (taskId: string) => {
-        setActiveTaskId(taskId);
-        setTimer(25 * 60);
-        setIsTimerRunning(true);
-        onStartFocus(taskId);
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            const durationSeconds = task.duration * 60; // Convert minutes to seconds
+            setActiveTaskId(taskId);
+            setTimer(durationSeconds);
+            setInitialDuration(durationSeconds);
+            setIsTimerRunning(true);
+            onStartFocus(taskId);
+        }
     };
 
     const handleCompleteActiveTask = () => {
@@ -79,6 +87,8 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
             setActiveTaskId(null);
             setIsTimerRunning(false);
             setIsZenMode(false);
+            setTimer(0);
+            setInitialDuration(0);
         }
     };
 
@@ -86,20 +96,24 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         setIsTimerRunning(false);
         setActiveTaskId(null);
         setIsZenMode(false);
+        setTimer(0);
+        setInitialDuration(0);
     };
 
     const toggleTimer = () => setIsTimerRunning(!isTimerRunning);
+    
     const resetTimer = () => {
         setIsTimerRunning(false);
-        setTimer(25 * 60);
+        setTimer(initialDuration);
     };
 
+    // Zen Mode (fullscreen focus)
     if (isZenMode && activeTask) {
         return (
             <div className="fixed inset-0 z-50 bg-[#0f1219] flex flex-col items-center justify-center p-8">
                 <button
                     onClick={() => setIsZenMode(false)}
-                    className="absolute top-8 right-8 p-2 text-slate-500 hover:text-white transition-colors"
+                    className="absolute top-8 right-8 p-3 text-slate-500 hover:text-white transition-colors rounded-xl hover:bg-white/[0.05]"
                 >
                     <Minimize2 size={24} />
                 </button>
@@ -119,14 +133,52 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                         <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight">
                             {activeTask.title}
                         </h1>
+                        <p className="text-slate-500 text-lg">
+                            Estimated: {activeTask.duration} minutes
+                        </p>
                     </div>
 
                     <div className="flex flex-col items-center gap-8">
-                        <div className="text-[12rem] font-mono font-bold text-slate-200 leading-none tracking-tighter tabular-nums">
-                            {formatTime(timer)}
+                        {/* Timer with circular progress */}
+                        <div className="relative">
+                            <svg className="w-80 h-80 -rotate-90">
+                                <circle
+                                    cx="160"
+                                    cy="160"
+                                    r="140"
+                                    fill="none"
+                                    stroke="rgba(255,255,255,0.05)"
+                                    strokeWidth="12"
+                                />
+                                <circle
+                                    cx="160"
+                                    cy="160"
+                                    r="140"
+                                    fill="none"
+                                    stroke="var(--accent)"
+                                    strokeWidth="12"
+                                    strokeLinecap="round"
+                                    strokeDasharray={2 * Math.PI * 140}
+                                    strokeDashoffset={2 * Math.PI * 140 * (1 - timerProgress / 100)}
+                                    className="transition-all duration-1000 ease-linear"
+                                    style={{ filter: 'drop-shadow(0 0 10px var(--accent-glow))' }}
+                                />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-[8rem] font-mono font-bold text-slate-200 leading-none tracking-tighter tabular-nums">
+                                    {formatTime(timer)}
+                                </div>
+                            </div>
                         </div>
 
                         <div className="flex items-center gap-6">
+                            <button
+                                onClick={resetTimer}
+                                className="p-5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-all border border-white/[0.1]"
+                                title="Reset Timer"
+                            >
+                                <RotateCcw size={28} />
+                            </button>
                             <button
                                 onClick={toggleTimer}
                                 className="p-6 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white transition-all border border-white/[0.1]"
@@ -142,10 +194,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                             </button>
                             <button
                                 onClick={handleStopTask}
-                                className="p-6 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+                                className="p-5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
                                 title="Stop Focus"
                             >
-                                <X size={32} />
+                                <X size={28} />
                             </button>
                         </div>
                     </div>
@@ -164,7 +216,6 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                             Today total: {totalTasks} tasks · {timeString} planned
                         </p>
                     </div>
-                    {/* Optional: Start First Task Button if idle */}
                     {!activeTask && focusTasks.length > 0 && (
                         <button
                             onClick={() => handleStartTask(focusTasks[0].id)}
@@ -187,6 +238,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                         <div>
                                             <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 block">Active Now</span>
                                             <h3 className="text-2xl font-bold text-white leading-tight">{activeTask.title}</h3>
+                                            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+                                                <Clock size={14} />
+                                                {activeTask.duration} min estimated
+                                            </p>
                                         </div>
                                         <button
                                             onClick={() => setIsZenMode(true)}
@@ -196,11 +251,32 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                         </button>
                                     </div>
 
+                                    {/* Progress bar */}
+                                    <div className="mb-4">
+                                        <div className="h-2 bg-slate-800/50 rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-1000 ease-linear"
+                                                style={{ width: `${timerProgress}%` }}
+                                            />
+                                        </div>
+                                        <div className="flex justify-between mt-1 text-[10px] text-slate-500">
+                                            <span>{Math.round(timerProgress)}% complete</span>
+                                            <span>{Math.ceil(timer / 60)} min remaining</span>
+                                        </div>
+                                    </div>
+
                                     <div className="flex items-center justify-between bg-[#0f1219]/50 rounded-xl p-4 border border-white/[0.05]">
                                         <div className="font-mono text-3xl font-bold text-emerald-400 tabular-nums">
                                             {formatTime(timer)}
                                         </div>
                                         <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={resetTimer}
+                                                className="p-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-colors"
+                                                title="Reset Timer"
+                                            >
+                                                <RotateCcw size={18} />
+                                            </button>
                                             <button
                                                 onClick={toggleTimer}
                                                 className="p-3 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-white transition-colors"
@@ -227,7 +303,6 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                             </div>
                         </div>
                     ) : (
-                        /* Idle State Placeholder */
                         <div className="w-full border-dashed border-2 border-emerald-400/30 bg-slate-900/40 rounded-2xl p-8 text-center">
                             <h3 className="text-xl font-bold text-slate-300 mb-2">No active deep work session</h3>
                             <p className="text-slate-500">Pick a task from your queue to start</p>
@@ -254,7 +329,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                     className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm font-bold flex items-center gap-2 shrink-0"
                                 >
                                     <Play size={16} fill="currentColor" />
-                                    Start
+                                    Start ({task.duration}m)
                                 </button>
                             </div>
                         ))}

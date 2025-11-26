@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { LayoutGrid, Plus, ChevronRight, Settings, LogOut } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { LayoutGrid, Plus, ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { Task, TaskType } from '../../types';
 import { TaskCard } from '@/components/TaskCard';
 
@@ -14,15 +14,18 @@ interface SidebarProps {
     onOpenSettings: () => void;
 }
 
-// Category config with accent colors for headers
-const SIDEBAR_CATEGORIES = [
-    { id: 'high', label: 'High Priority', accentColor: '#f43f5e' },      // rose-500
-    { id: 'medium', label: 'Medium Priority', accentColor: '#f97316' },  // orange-500
-    { id: 'low', label: 'Low Priority', accentColor: '#facc15' },        // yellow-400
-    { id: 'leisure', label: 'Leisure', accentColor: '#22d3ee' },         // cyan-400
-    { id: 'backlog', label: 'Backlog', accentColor: '#94a3b8' },         // slate-400
-    { id: 'chores', label: 'Chores', accentColor: '#a1a1aa' },           // zinc-400
+const CATEGORIES = [
+    { id: 'high', label: 'High', color: '#f43f5e', emoji: '🔥' },
+    { id: 'medium', label: 'Medium', color: '#f97316', emoji: '⚡' },
+    { id: 'low', label: 'Low', color: '#facc15', emoji: '📋' },
+    { id: 'leisure', label: 'Leisure', color: '#22d3ee', emoji: '🎮' },
+    { id: 'backlog', label: 'Backlog', color: '#94a3b8', emoji: '📥' },
 ];
+
+const CHORES_CAT = { id: 'chores', label: 'Chores', color: '#a1a1aa', emoji: '🧹' };
+
+// 6 buttons for even grid
+const QUICK_DURATIONS = [15, 30, 45, 60, 90, 120];
 
 export const Sidebar: React.FC<SidebarProps> = ({
     tasks,
@@ -37,14 +40,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDuration, setNewTaskDuration] = useState(30);
     const [newTaskType, setNewTaskType] = useState<TaskType>('backlog');
-
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-        'high': true, 'medium': true, 'low': false, 'leisure': false, 'backlog': true, 'chores': false
+        'high': true, 'medium': true, 'low': true, 'leisure': false, 'backlog': true, 'chores': false
     });
+    const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
+    const dragCounters = useRef<Record<string, number>>({});
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;
-        onAddTask(newTaskTitle, newTaskDuration, newTaskType);
+        onAddTask(newTaskTitle.trim(), newTaskDuration, newTaskType);
         setNewTaskTitle('');
         setExpandedCategories(prev => ({ ...prev, [newTaskType]: true }));
     };
@@ -53,167 +57,233 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
     };
 
+    const handleCategoryDragEnter = (e: React.DragEvent, categoryId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!dragCounters.current[categoryId]) {
+            dragCounters.current[categoryId] = 0;
+        }
+        dragCounters.current[categoryId]++;
+        setDragOverCategory(categoryId);
+    };
+
+    const handleCategoryDragLeave = (e: React.DragEvent, categoryId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounters.current[categoryId]--;
+        if (dragCounters.current[categoryId] === 0) {
+            setDragOverCategory(null);
+        }
+    };
+
+    const handleCategoryDrop = (e: React.DragEvent, categoryId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounters.current[categoryId] = 0;
+        setDragOverCategory(null);
+        
+        const taskId = e.dataTransfer.getData('taskId');
+        if (taskId && onUpdateTask) {
+            onUpdateTask(taskId, {
+                type: categoryId as TaskType,
+                status: 'unscheduled',
+                dueDate: null,
+                assignedRow: null
+            });
+            setExpandedCategories(prev => ({ ...prev, [categoryId]: true }));
+        }
+    };
+
+    const handleSidebarDrop = (e: React.DragEvent) => {
+        if (!dragOverCategory) {
+            onDrop(e);
+        }
+    };
+
+    const selectedCategory = [...CATEGORIES, CHORES_CAT].find(c => c.id === newTaskType);
+    const choresTasks = tasks.filter(t => t.type === 'chores' && t.status === 'unscheduled');
+    const choresExpanded = expandedCategories['chores'];
+    const choresDraggedOver = dragOverCategory === 'chores';
+
     return (
         <div
-            className="w-[325px] h-full flex flex-col border-r backdrop-blur-xl relative z-20 shadow-[5px_0_30px_rgba(0,0,0,0.3)]"
+            className="w-80 h-full flex flex-col border-r relative z-20"
             style={{
-                backgroundColor: 'color-mix(in srgb, var(--bg-secondary) 85%, transparent)',
+                backgroundColor: 'var(--bg-secondary)',
                 borderColor: 'var(--border-medium)'
             }}
             onDragOver={(e) => e.preventDefault()}
-            onDrop={onDrop}
+            onDrop={handleSidebarDrop}
         >
-            {/* Logo Area */}
-            <div className="p-4 pb-0">
-                <div className="flex items-center gap-2 mb-1">
+            {/* Logo */}
+            <div className="p-4 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
                     <div 
-                        className="w-7 h-7 rounded-xl flex items-center justify-center"
-                        style={{
-                            backgroundColor: 'var(--accent)',
-                            boxShadow: '0 0 15px var(--accent-glow)'
-                        }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: 'var(--accent)' }}
                     >
-                        <LayoutGrid size={16} className="text-white" />
+                        <LayoutGrid size={18} className="text-white" />
                     </div>
-                    <h1 className="text-xl font-display font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                        Neuro<span style={{ color: 'var(--accent)' }}>Flow</span>
-                    </h1>
-                </div>
-                <p className="text-[10px] font-medium ml-9" style={{ color: 'var(--text-muted)' }}>ADHD Productivity OS</p>
-            </div>
-
-            {/* Quick Add Task */}
-            <div className="p-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
-                <div className="flex gap-2 mb-2">
-                    <input
-                        type="text"
-                        value={newTaskTitle}
-                        onChange={(e) => setNewTaskTitle(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                        placeholder="New Task..."
-                        className="flex-1 bg-white/[0.03] border rounded-lg px-3 py-2.5 text-sm placeholder-slate-500 focus:outline-none transition-all"
-                        style={{ 
-                            borderColor: 'var(--border-medium)',
-                            color: 'var(--text-primary)'
-                        }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
-                        onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-medium)'}
-                    />
-                    <div className="relative w-20">
-                        <input
-                            type="number"
-                            value={newTaskDuration}
-                            onChange={(e) => setNewTaskDuration(Number(e.target.value))}
-                            className="w-full bg-white/[0.03] border rounded-lg pl-3 pr-6 py-2.5 text-sm font-mono focus:outline-none transition-all text-right"
-                            style={{ 
-                                borderColor: 'var(--border-medium)',
-                                color: 'var(--text-primary)'
-                            }}
-                            onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
-                            onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-medium)'}
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px]" style={{ color: 'var(--text-muted)' }}>min</span>
+                    <div>
+                        <h1 className="text-lg font-display font-bold" style={{ color: 'var(--text-primary)' }}>
+                            Neuro<span style={{ color: 'var(--accent)' }}>Flow</span>
+                        </h1>
+                        <p className="text-[10px] font-medium -mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            Task Planner
+                        </p>
                     </div>
                 </div>
-
-                {/* Type Grid */}
-                <div className="grid grid-cols-3 gap-1.5 mb-3">
-                    {[
-                        { id: 'high', label: 'HIGH', activeColor: 'text-rose-500 border-rose-500/30 bg-rose-500/10' },
-                        { id: 'medium', label: 'MEDIUM', activeColor: 'text-orange-500 border-orange-500/30 bg-orange-500/10' },
-                        { id: 'low', label: 'LOW', activeColor: 'text-yellow-400 border-yellow-400/30 bg-yellow-400/10' },
-                        { id: 'leisure', label: 'LEISURE', activeColor: 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' },
-                        { id: 'backlog', label: 'BACKLOG', activeColor: 'text-slate-400 border-slate-400/30 bg-slate-400/10' },
-                        { id: 'chores', label: 'CHORES', activeColor: 'text-zinc-200 border-zinc-200/30 bg-zinc-200/10' }
-                    ].map((type) => (
-                        <button
-                            key={type.id}
-                            onClick={() => setNewTaskType(type.id as TaskType)}
-                            className={`
-                                py-2 rounded-lg text-[9px] font-bold tracking-wider uppercase transition-all border
-                                ${newTaskType === type.id
-                                    ? `${type.activeColor}`
-                                    : 'bg-white/[0.02] border-transparent text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]'
-                                }
-                            `}
-                        >
-                            {type.label}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Add Button */}
-                <button
-                    onClick={handleAddTask}
-                    className="w-full py-3 rounded-lg bg-white/[0.05] border text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 group shadow-lg"
-                    style={{ 
-                        borderColor: 'var(--border-medium)',
-                        color: 'var(--text-secondary)'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = 'var(--accent-muted)';
-                        e.currentTarget.style.color = 'var(--accent)';
-                        e.currentTarget.style.borderColor = 'var(--accent)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                        e.currentTarget.style.borderColor = 'var(--border-medium)';
-                    }}
+                <button 
+                    onClick={onOpenSettings}
+                    className="p-2.5 rounded-xl transition-colors"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                    <Plus size={14} className="group-hover:scale-125 transition-transform duration-300" />
-                    Add Task
+                    <Settings size={18} />
                 </button>
             </div>
 
-            {/* Categories / Backlog List */}
-            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 scrollbar-hide">
-                {SIDEBAR_CATEGORIES.filter(c => c.id !== 'chores').map(cat => {
+            {/* Add Task Section */}
+            <div className="px-3 pb-4">
+                <div 
+                    className="rounded-xl p-4"
+                    style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                >
+                    {/* Input Row */}
+                    <div className="mb-4">
+                        <input
+                            type="text"
+                            value={newTaskTitle}
+                            onChange={(e) => setNewTaskTitle(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                            placeholder="Add new task..."
+                            className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-slate-500 focus:outline-none border"
+                            style={{ 
+                                color: 'var(--text-primary)',
+                                borderColor: newTaskTitle ? 'var(--accent)' : 'var(--border-light)'
+                            }}
+                        />
+                    </div>
+
+                    {/* Duration Label + Buttons */}
+                    <div className="mb-4">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                            Duration
+                        </div>
+                        <div className="grid grid-cols-6 gap-1.5">
+                            {QUICK_DURATIONS.map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setNewTaskDuration(d)}
+                                    className="py-2 rounded-lg text-[11px] font-semibold transition-all"
+                                    style={{
+                                        backgroundColor: newTaskDuration === d ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                                        color: newTaskDuration === d ? 'white' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {d < 60 ? `${d}m` : `${d/60}h`}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Type Label + Grid */}
+                    <div className="mb-4">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                            Priority
+                        </div>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            {[...CATEGORIES, CHORES_CAT].map(cat => (
+                                <button
+                                    key={cat.id}
+                                    onClick={() => setNewTaskType(cat.id as TaskType)}
+                                    className="py-2.5 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all"
+                                    style={{
+                                        backgroundColor: newTaskType === cat.id ? `${cat.color}20` : 'rgba(255,255,255,0.03)',
+                                        color: newTaskType === cat.id ? cat.color : 'var(--text-muted)',
+                                        border: newTaskType === cat.id ? `1px solid ${cat.color}40` : '1px solid transparent'
+                                    }}
+                                >
+                                    {cat.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Add Button */}
+                    <button
+                        onClick={handleAddTask}
+                        disabled={!newTaskTitle.trim()}
+                        className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-30"
+                        style={{ 
+                            backgroundColor: newTaskTitle.trim() ? selectedCategory?.color : 'rgba(255,255,255,0.05)',
+                            color: newTaskTitle.trim() ? 'white' : 'var(--text-muted)'
+                        }}
+                    >
+                        <Plus size={16} />
+                        Add Task
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Task Lists (scrollable) */}
+            <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2 scrollbar-hide">
+                {CATEGORIES.map(cat => {
                     const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled');
                     const isExpanded = expandedCategories[cat.id];
+                    const isDraggedOver = dragOverCategory === cat.id;
 
-                    if (catTasks.length === 0 && cat.id !== 'backlog') return null;
+                    if (catTasks.length === 0 && cat.id !== 'backlog' && !isDraggedOver) return null;
 
                     return (
-                        <div key={cat.id} className="group">
-                            {/* Category Header - Brighter & More Visible */}
+                        <div 
+                            key={cat.id}
+                            onDragEnter={(e) => handleCategoryDragEnter(e, cat.id)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDragLeave={(e) => handleCategoryDragLeave(e, cat.id)}
+                            onDrop={(e) => handleCategoryDrop(e, cat.id)}
+                        >
                             <button
                                 onClick={() => toggleCategory(cat.id)}
-                                className="w-full flex items-center justify-between py-2 px-2 rounded-lg transition-all mb-2 hover:bg-white/[0.03]"
+                                className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all"
+                                style={{
+                                    backgroundColor: isDraggedOver ? `${cat.color}15` : 'transparent',
+                                    border: isDraggedOver ? `2px dashed ${cat.color}` : '2px solid transparent'
+                                }}
                             >
                                 <div className="flex items-center gap-2">
-                                    {/* Colored dot indicator */}
-                                    <div 
-                                        className="w-2 h-2 rounded-full"
-                                        style={{ backgroundColor: cat.accentColor }}
-                                    />
-                                    <ChevronRight 
-                                        size={12} 
-                                        className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
-                                        style={{ color: 'var(--text-secondary)' }}
-                                    />
-                                    {/* Label - Brighter */}
-                                    <span 
-                                        className="text-[11px] font-bold uppercase tracking-widest"
-                                        style={{ color: cat.accentColor }}
-                                    >
+                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                                    <span className="text-xs font-bold uppercase tracking-wide" style={{ color: cat.color }}>
                                         {cat.label}
                                     </span>
                                 </div>
-                                {/* Count badge */}
-                                <span 
-                                    className="px-2 py-0.5 rounded-full text-[10px] font-bold min-w-[20px] text-center"
-                                    style={{ 
-                                        backgroundColor: `${cat.accentColor}20`,
-                                        color: cat.accentColor
-                                    }}
-                                >
-                                    {catTasks.length}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span 
+                                        className="text-[11px] font-bold px-2 py-0.5 rounded"
+                                        style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
+                                    >
+                                        {catTasks.length}
+                                    </span>
+                                    <ChevronDown 
+                                        size={14} 
+                                        className="transition-transform"
+                                        style={{ 
+                                            color: 'var(--text-muted)',
+                                            transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
+                                        }}
+                                    />
+                                </div>
                             </button>
 
-                            {/* Tasks with better separation */}
-                            <div className={`space-y-2 pl-1 transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div 
+                                className="space-y-1.5 overflow-hidden transition-all duration-200"
+                                style={{
+                                    maxHeight: isExpanded ? `${catTasks.length * 70 + 30}px` : '0px',
+                                    opacity: isExpanded ? 1 : 0,
+                                    paddingTop: isExpanded && catTasks.length > 0 ? '6px' : '0'
+                                }}
+                            >
                                 {catTasks.map(task => (
                                     <TaskCard
                                         key={task.id}
@@ -226,8 +296,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     />
                                 ))}
                                 {catTasks.length === 0 && (
-                                    <div className="text-[10px] italic pl-6 py-2" style={{ color: 'var(--text-muted)' }}>
-                                        No tasks yet
+                                    <div className="text-xs py-2 px-2" style={{ color: 'var(--text-muted)' }}>
+                                        {isDraggedOver ? 'Drop here to add' : 'No tasks — drag here'}
                                     </div>
                                 )}
                             </div>
@@ -236,116 +306,96 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 })}
             </div>
 
-            {/* Fixed Chores Section */}
-            {(() => {
-                const choresCat = SIDEBAR_CATEGORIES.find(c => c.id === 'chores')!;
-                const choresTasks = tasks.filter(t => t.type === 'chores' && t.status === 'unscheduled');
-                const isExpanded = expandedCategories['chores'];
-
-                return (
-                    <div 
-                        className="px-3 py-3 border-t backdrop-blur-md"
-                        style={{
-                            borderColor: 'var(--border-light)',
-                            backgroundColor: 'color-mix(in srgb, var(--bg-secondary) 60%, transparent)'
-                        }}
-                    >
-                        <button
-                            onClick={() => toggleCategory('chores')}
-                            className="w-full flex items-center justify-between py-2 px-2 rounded-lg transition-all mb-2 hover:bg-white/[0.03]"
-                        >
-                            <div className="flex items-center gap-2">
-                                <div 
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: choresCat.accentColor }}
-                                />
-                                <ChevronRight 
-                                    size={12} 
-                                    className={`transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
-                                    style={{ color: 'var(--text-secondary)' }}
-                                />
-                                <span 
-                                    className="text-[11px] font-bold uppercase tracking-widest"
-                                    style={{ color: choresCat.accentColor }}
-                                >
-                                    {choresCat.label}
-                                </span>
+            {/* CHORES - Fixed at bottom, expands upward */}
+            <div 
+                className="border-t"
+                style={{ borderColor: 'var(--border-light)' }}
+                onDragEnter={(e) => handleCategoryDragEnter(e, 'chores')}
+                onDragOver={(e) => e.preventDefault()}
+                onDragLeave={(e) => handleCategoryDragLeave(e, 'chores')}
+                onDrop={(e) => handleCategoryDrop(e, 'chores')}
+            >
+                {/* Expanded tasks (above the header) */}
+                <div 
+                    className="overflow-hidden transition-all duration-200 px-3"
+                    style={{
+                        maxHeight: choresExpanded ? `${choresTasks.length * 70 + 20}px` : '0px',
+                        opacity: choresExpanded ? 1 : 0,
+                        paddingBottom: choresExpanded && choresTasks.length > 0 ? '8px' : '0',
+                        paddingTop: choresExpanded && choresTasks.length > 0 ? '8px' : '0'
+                    }}
+                >
+                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto scrollbar-hide">
+                        {choresTasks.map(task => (
+                            <TaskCard
+                                key={task.id}
+                                task={task}
+                                variant="sidebar"
+                                onDragStart={onDragStart}
+                                onUpdateTask={onUpdateTask}
+                                onDeleteTask={onDeleteTask}
+                                onToggleComplete={onToggleTaskComplete}
+                            />
+                        ))}
+                        {choresTasks.length === 0 && (
+                            <div className="text-xs py-2 px-2" style={{ color: 'var(--text-muted)' }}>
+                                {choresDraggedOver ? 'Drop here to add' : 'No chores — drag here'}
                             </div>
-                            <span 
-                                className="px-2 py-0.5 rounded-full text-[10px] font-bold min-w-[20px] text-center"
-                                style={{ 
-                                    backgroundColor: `${choresCat.accentColor}20`,
-                                    color: choresCat.accentColor
-                                }}
-                            >
-                                {choresTasks.length}
-                            </span>
-                        </button>
-
-                        <div className={`space-y-2 pl-1 transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'}`}>
-                            <div className="max-h-[200px] overflow-y-auto pr-1 scrollbar-hide space-y-2">
-                                {choresTasks.map(task => (
-                                    <TaskCard
-                                        key={task.id}
-                                        task={task}
-                                        variant="sidebar"
-                                        onDragStart={onDragStart}
-                                        onUpdateTask={onUpdateTask}
-                                        onDeleteTask={onDeleteTask}
-                                        onToggleComplete={onToggleTaskComplete}
-                                    />
-                                ))}
-                                {choresTasks.length === 0 && (
-                                    <div className="text-[10px] italic pl-6 py-2" style={{ color: 'var(--text-muted)' }}>
-                                        No chores yet
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        )}
                     </div>
-                );
-            })()}
+                </div>
 
-            {/* User / Settings Footer */}
+                {/* Chores Header */}
+                <button
+                    onClick={() => toggleCategory('chores')}
+                    className="w-full flex items-center justify-between px-5 py-3 transition-all"
+                    style={{
+                        backgroundColor: choresDraggedOver ? `${CHORES_CAT.color}15` : 'var(--bg-tertiary)',
+                        border: choresDraggedOver ? `2px dashed ${CHORES_CAT.color}` : '2px solid transparent'
+                    }}
+                >
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHORES_CAT.color }} />
+                        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: CHORES_CAT.color }}>
+                            {CHORES_CAT.label}
+                        </span>
+                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>(recurring)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span 
+                            className="text-[11px] font-bold px-2 py-0.5 rounded"
+                            style={{ backgroundColor: `${CHORES_CAT.color}15`, color: CHORES_CAT.color }}
+                        >
+                            {choresTasks.length}
+                        </span>
+                        <ChevronUp 
+                            size={14} 
+                            className="transition-transform"
+                            style={{ 
+                                color: 'var(--text-muted)',
+                                transform: choresExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
+                            }}
+                        />
+                    </div>
+                </button>
+            </div>
+
+            {/* Footer */}
             <div 
                 className="p-3 border-t flex items-center justify-between"
-                style={{
-                    borderColor: 'var(--border-light)',
-                    backgroundColor: 'color-mix(in srgb, var(--bg-primary) 50%, transparent)'
-                }}
+                style={{ borderColor: 'var(--border-light)', backgroundColor: 'var(--bg-secondary)' }}
             >
                 <div className="flex items-center gap-2">
                     <div 
-                        className="w-7 h-7 rounded-full border-2 shadow-lg"
-                        style={{
-                            background: 'linear-gradient(to top right, var(--accent), var(--warning))',
-                            borderColor: 'var(--border-medium)'
-                        }}
-                    ></div>
-                    <div className="flex flex-col">
-                        <span className="text-[11px] font-bold" style={{ color: 'var(--text-primary)' }}>User</span>
-                        <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>Pro Plan</span>
+                        className="w-8 h-8 rounded-full"
+                        style={{ background: 'linear-gradient(135deg, var(--accent), var(--warning))' }}
+                    />
+                    <div>
+                        <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>User</div>
+                        <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Pro</div>
                     </div>
                 </div>
-                <div className="flex gap-1">
-                    <button 
-                        onClick={onOpenSettings} 
-                        className="p-2 rounded-lg hover:bg-white/[0.05] transition-colors"
-                        style={{ color: 'var(--text-muted)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    >
-                        <Settings size={16} />
-                    </button>
-                    <button 
-                        className="p-2 rounded-lg hover:bg-white/[0.05] transition-colors"
-                        style={{ color: 'var(--text-muted)' }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-                    >
-                        <LogOut size={16} />
-                    </button>
-                </div>
+                <div className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>v1.2</div>
             </div>
         </div>
     );

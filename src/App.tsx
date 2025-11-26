@@ -561,6 +561,11 @@ const App = () => {
                     onClose={() => setShowSettings(false)}
                     onExport={exportData}
                     onImport={importData}
+                    onDeleteAllTasks={() => {
+                        if (window.confirm('Are you sure you want to delete ALL tasks? This cannot be undone.')) {
+                            setTasks([]);
+                        }
+                    }}
                     currentThemeId={currentThemeId}
                     onThemeChange={setCurrentThemeId}
                 />

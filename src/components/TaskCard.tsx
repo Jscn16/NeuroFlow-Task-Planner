@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, CheckCircle2, Clock, Check, X } from 'lucide-react';
+import { Clock, Check, X } from 'lucide-react';
 import { Task } from '../types';
 import { TYPE_COLORS, TASK_CARD_BORDER_COLORS, TYPE_INDICATOR_COLORS } from '../constants';
 
@@ -29,12 +29,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title);
     const [editedDuration, setEditedDuration] = useState(task.duration.toString());
+    const [isDragging, setIsDragging] = useState(false);
 
     const isCompleted = task.status === 'completed';
 
     const handleDoubleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (variant === 'deepwork') return; // Disable editing in deepwork mode
+        if (variant === 'deepwork') return;
         setIsEditing(true);
         setEditedTitle(task.title);
         setEditedDuration(task.duration.toString());
@@ -66,59 +67,52 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         }
     };
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const sourceTaskId = e.dataTransfer.getData('taskId');
-        if (sourceTaskId && sourceTaskId !== task.id && onTaskDrop) {
-            onTaskDrop(sourceTaskId, task.id);
-        }
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('taskId', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setIsDragging(true);
+        onDragStart(e, task.id);
+        requestAnimationFrame(() => {
+            (e.target as HTMLElement).style.opacity = '0.4';
+        });
     };
 
-    // Base styles
-    const baseStyles = "relative group flex flex-col gap-0.5 p-2 rounded-lg border backdrop-blur-md transition-all duration-300";
+    const handleDragEnd = (e: React.DragEvent) => {
+        setIsDragging(false);
+        (e.target as HTMLElement).style.opacity = '1';
+    };
 
-    // Dragging styles - disable when editing
-    const dragStyles = isEditing ? "cursor-default" : "cursor-grab active:cursor-grabbing hover:scale-[1.02] hover:shadow-lg hover:z-10";
-
-    // Variant styles
-    let variantStyles = "";
-    if (variant === 'board') {
-        // If completed, we override the background/border in completionStyles
-        variantStyles = isCompleted
-            ? `hover:scale-[1.02] hover:shadow-lg hover:z-10`
-            : `bg-white/[0.06] border-white/5 hover:bg-white/[0.08] hover:scale-[1.02] hover:shadow-lg hover:z-10`;
-    } else if (variant === 'sidebar') {
-        variantStyles = isCompleted
-            ? `mb-2 gap-1.5 p-2.5`
-            : `bg-white/[0.06] border-white/5 hover:bg-white/[0.08] mb-2 gap-1.5 p-2.5`;
-    } else if (variant === 'deepwork') {
-        // Matching planner mode background as requested, but with emerald tint for completed
-        const baseBg = isCompleted
-            ? 'bg-emerald-500/10 border-emerald-500/20'
-            : 'bg-white/[0.06] border-white/5';
-
-        variantStyles = `${baseBg} rounded-2xl px-5 py-3 flex-row items-center justify-between hover:border-emerald-400/40 hover:bg-emerald-500/20 transition-colors gap-4`;
-    }
-
-    // Completion styles - The "Satisfyingly Done" State
-    const completionStyles = isCompleted
-        ? 'bg-emerald-500/10 border-emerald-500/30 transition-all duration-300 ease-in-out'
-        : '';
+    // Format duration nicely
+    const formatDuration = (mins: number) => {
+        if (mins < 60) return `${mins} min`;
+        const hours = Math.floor(mins / 60);
+        const remaining = mins % 60;
+        if (remaining === 0) return `${hours}h`;
+        return `${hours}h ${remaining}m`;
+    };
 
     // Edit mode rendering
     if (isEditing) {
         return (
-            <div className={`${baseStyles} ${variantStyles} cursor-default`}>
+            <div 
+                className="relative flex flex-col gap-2 p-3 rounded-xl border backdrop-blur-md animate-in zoom-in-95 duration-200"
+                style={{
+                    backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 90%, transparent)',
+                    borderColor: 'var(--accent)'
+                }}
+            >
                 <div className="flex items-start justify-between gap-2">
-                    {/* Edit Form Left */}
-                    <div className="flex flex-col min-w-0 flex-1 gap-1">
+                    <div className="flex flex-col min-w-0 flex-1 gap-2">
                         <input
                             type="text"
                             value={editedTitle}
                             onChange={(e) => setEditedTitle(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="bg-black/20 text-white text-xs font-medium rounded px-1.5 py-0.5 w-full focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                            className="bg-black/20 text-sm font-medium rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-1 transition-all"
+                            style={{ 
+                                color: 'var(--text-primary)', 
+                                '--tw-ring-color': 'var(--accent)' 
+                            } as React.CSSProperties}
                             autoFocus
                         />
                         <div className="flex items-center gap-2">
@@ -127,25 +121,27 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                                 value={editedDuration}
                                 onChange={(e) => setEditedDuration(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                className="bg-black/20 text-slate-400 text-[10px] rounded px-1.5 py-0.5 w-12 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+                                className="bg-black/20 text-xs rounded-lg px-3 py-1.5 w-16 focus:outline-none focus:ring-1 transition-all"
+                                style={{ 
+                                    color: 'var(--text-muted)', 
+                                    '--tw-ring-color': 'var(--accent)' 
+                                } as React.CSSProperties}
                             />
-                            <span className="text-[10px] text-slate-500">min</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
                         </div>
                     </div>
-
-                    {/* Edit Actions Right */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex gap-1.5">
                         <button
                             onClick={handleAcceptChanges}
-                            className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-colors"
+                            className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
                         >
-                            <Check size={12} />
+                            <Check size={14} />
                         </button>
                         <button
                             onClick={handleDeleteTask}
-                            className="p-1 rounded bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
+                            className="p-2 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all"
                         >
-                            <X size={12} />
+                            <X size={14} />
                         </button>
                     </div>
                 </div>
@@ -153,115 +149,168 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         );
     }
 
+    // Deep work variant
     if (variant === 'deepwork') {
+        const baseBg = isCompleted
+            ? 'bg-emerald-500/10 border-emerald-500/20'
+            : 'bg-white/[0.06] border-white/5';
+
         return (
             <div
-                className={`${variantStyles} ${completionStyles}`}
+                className={`${baseBg} rounded-2xl px-5 py-4 flex items-center justify-between hover:border-emerald-400/40 hover:bg-emerald-500/20 transition-all duration-300 gap-4 border cursor-pointer`}
                 onDoubleClick={handleDoubleClick}
             >
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                    {/* Index Pill */}
                     {typeof index === 'number' && (
-                        <div className="w-6 h-6 rounded-full bg-slate-800/80 text-slate-300 text-[11px] flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-slate-800/80 text-slate-300 text-sm flex items-center justify-center flex-shrink-0 font-bold">
                             {index + 1}
                         </div>
                     )}
-
-                    {/* Left Color Stripe */}
-                    <div className={`w-1 h-8 rounded-full ${TYPE_INDICATOR_COLORS[task.type]} flex-shrink-0`} />
-
-                    <div className="flex flex-col min-w-0">
-                        <h3 className={`font-medium text-sm truncate transition-colors ${isCompleted ? 'text-emerald-400 line-through decoration-emerald-500/50' : 'text-slate-200'}`}>
+                    <div className={`w-1.5 h-12 rounded-full ${TYPE_INDICATOR_COLORS[task.type]} flex-shrink-0`} />
+                    <div className="flex flex-col min-w-0 gap-1">
+                        <h3 className={`font-semibold text-base truncate transition-colors ${isCompleted ? 'text-emerald-400 line-through decoration-emerald-500/50' : 'text-slate-200'}`}>
                             {task.title}
                         </h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                            <span className={`uppercase tracking-wider font-bold text-[10px] ${TYPE_COLORS[task.type]}`}>
+                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                            <span className={`uppercase tracking-wider font-bold text-[11px] ${TYPE_COLORS[task.type]}`}>
                                 {task.type}
                             </span>
                             <span>•</span>
                             <span className="flex items-center gap-1">
-                                <Clock size={10} />
+                                <Clock size={12} />
                                 {task.duration}m
                             </span>
                         </div>
                     </div>
                 </div>
-
-                {/* Completed Checkmark (Optional, for visual feedback) */}
                 {isCompleted && (
-                    <div className="text-emerald-300">
-                        <Check size={20} />
+                    <div className="text-emerald-300 animate-in zoom-in duration-300">
+                        <Check size={24} />
                     </div>
                 )}
             </div>
         );
     }
 
-    return (
-        <div
-            draggable={!isEditing}
-            onDragStart={(e) => {
-                e.dataTransfer.setData('taskId', task.id);
-                onDragStart(e, task.id);
-            }}
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            onDoubleClick={handleDoubleClick}
-            // If completed, we override the border color entirely
-            className={`${baseStyles} ${dragStyles} ${variantStyles} ${completionStyles} ${!isCompleted ? TASK_CARD_BORDER_COLORS[task.type] : ''}`}
-        >
-            <div className="flex items-start justify-between gap-2">
-                <div className="flex flex-col gap-0.5 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                        {/* Priority Tag / Indicator */}
-                        {isCompleted ? (
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-medium uppercase tracking-wider">
-                                {task.type}
-                            </span>
-                        ) : (
-                            <>
-                                <div className={`w-1.5 h-1.5 rounded-full ${TYPE_INDICATOR_COLORS[task.type]}`} />
-                                <span className={`text-[9px] font-bold uppercase tracking-wider ${TYPE_COLORS[task.type]}`}>
-                                    {task.type}
-                                </span>
-                            </>
-                        )}
-                    </div>
-                    <h3 className={`font-medium text-xs leading-snug line-clamp-2 transition-colors ${isCompleted ? 'text-emerald-400 line-through decoration-emerald-500/50' : 'text-slate-200'}`}>
-                        {task.title}
-                    </h3>
-                </div>
-
-                {variant === 'board' && (
+    // Board variant - Optimized layout
+    if (variant === 'board') {
+        return (
+            <div
+                draggable={!isEditing}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDoubleClick={handleDoubleClick}
+                className={`
+                    relative h-full flex flex-col p-2.5 rounded-lg border
+                    cursor-grab active:cursor-grabbing
+                    transition-all duration-150
+                    ${isDragging ? 'opacity-40 scale-95' : 'hover:shadow-md'}
+                    ${isCompleted 
+                        ? 'bg-emerald-500/15 border-emerald-500/30' 
+                        : `bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.08] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
+                    }
+                `}
+            >
+                {/* Main content - centered vertically */}
+                <div className="flex-1 flex items-center gap-2">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggleComplete(task.id);
                         }}
                         className={`
-                            flex-shrink-0 p-1 rounded-md transition-all duration-200 border
+                            flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
+                            transition-all duration-200
                             ${isCompleted
-                                ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
-                                : 'bg-white/5 text-slate-400 border-transparent hover:bg-emerald-500/10 hover:text-emerald-400'}
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-white/[0.1] text-slate-500 hover:bg-emerald-500/20 hover:text-emerald-400'}
                         `}
                     >
-                        {/* Replaced CheckCircle2 with Check for "no round circle" */}
-                        <Check size={14} />
+                        <Check size={12} strokeWidth={3} />
                     </button>
-                )}
-            </div>
-
-            <div className="flex items-center justify-between mt-0.5">
-                <div className={`flex items-center gap-1 text-[10px] font-medium ${isCompleted ? 'text-emerald-500/70' : 'text-slate-500'}`}>
-                    <Clock size={10} />
-                    <span>{task.duration}m</span>
+                    
+                    <h3 
+                        className={`flex-1 font-medium text-[13px] leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}
+                        style={{ color: isCompleted ? undefined : 'var(--text-primary)' }}
+                    >
+                        {task.title}
+                    </h3>
+                </div>
+                
+                {/* Bottom: Duration badge */}
+                <div className="flex justify-end mt-1">
+                    <span 
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
+                        style={{ 
+                            backgroundColor: isCompleted ? undefined : 'rgba(255,255,255,0.06)',
+                            color: isCompleted ? undefined : 'var(--text-secondary)' 
+                        }}
+                    >
+                        <Clock size={10} />
+                        {formatDuration(task.duration)}
+                    </span>
                 </div>
             </div>
+        );
+    }
 
-            {/* Progress/Indicator Bar for Sidebar variant */}
-            {variant === 'sidebar' && !isCompleted && (
-                <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-r-full ${TYPE_INDICATOR_COLORS[task.type]}`}></div>
-            )}
+    // Sidebar variant
+    return (
+        <div
+            draggable={!isEditing}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDoubleClick={handleDoubleClick}
+            className={`
+                relative flex flex-col gap-2 p-3 rounded-xl border
+                cursor-grab active:cursor-grabbing
+                transition-all duration-150
+                ${isDragging ? 'opacity-40 scale-95' : 'hover:shadow-sm'}
+                ${isCompleted 
+                    ? 'bg-emerald-500/15 border-emerald-500/30' 
+                    : `bg-white/[0.03] hover:bg-white/[0.05] border-white/[0.06] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
+                }
+            `}
+        >
+            {/* Checkbox + Title - centered vertically */}
+            <div className="flex items-center gap-2.5">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleComplete(task.id);
+                    }}
+                    className={`
+                        flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
+                        transition-all duration-200
+                        ${isCompleted
+                            ? 'bg-emerald-500 text-white'
+                            : 'bg-white/[0.1] text-slate-500 hover:bg-emerald-500/20 hover:text-emerald-400'}
+                    `}
+                >
+                    <Check size={12} strokeWidth={3} />
+                </button>
+                
+                <h3 
+                    className={`flex-1 font-medium text-sm leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}
+                    style={{ color: isCompleted ? undefined : 'var(--text-primary)' }}
+                >
+                    {task.title}
+                </h3>
+            </div>
+            
+            {/* Bottom: Duration badge */}
+            <div className="flex justify-end">
+                <span 
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
+                    style={{ 
+                        backgroundColor: isCompleted ? undefined : 'rgba(255,255,255,0.05)',
+                        color: isCompleted ? undefined : 'var(--text-secondary)' 
+                    }}
+                >
+                    <Clock size={11} />
+                    {formatDuration(task.duration)}
+                </span>
+            </div>
         </div>
     );
 };

@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:standalone": "vite build --config vite.standalone.config.ts",
-    "preview": "vite preview"
+    "build:standalone": "node scripts/build-standalone.cjs",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.17",
@@ -18,10 +21,16 @@
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/ui": "^4.0.14",
+    "jsdom": "^27.2.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
-    "vite-plugin-singlefile": "^2.3.0"
+    "vite-plugin-singlefile": "^2.3.0",
+    "vitest": "^4.0.14"
   }
 }

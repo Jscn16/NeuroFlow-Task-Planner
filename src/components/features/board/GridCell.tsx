@@ -18,18 +18,18 @@ interface GridCellProps {
     onTaskDrop?: (sourceId: string, targetId: string) => void;
 }
 
-export const GridCell: React.FC<GridCellProps> = ({ 
-    day, 
-    row, 
-    isToday, 
-    tasks, 
-    onDrop, 
-    onDragStart, 
-    onToggleComplete, 
-    onUpdateTask, 
-    onDeleteTask, 
-    isDayEmpty, 
-    onTaskDrop 
+export const GridCell: React.FC<GridCellProps> = ({
+    day,
+    row,
+    isToday,
+    tasks,
+    onDrop,
+    onDragStart,
+    onToggleComplete,
+    onUpdateTask,
+    onDeleteTask,
+    isDayEmpty,
+    onTaskDrop
 }) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const dayStr = formatDate(day);
@@ -81,34 +81,13 @@ export const GridCell: React.FC<GridCellProps> = ({
             className="relative flex-1 w-0 flex flex-col p-1.5 gap-1 transition-colors duration-150"
             style={{
                 borderRight: '1px solid var(--border-light)',
-                backgroundColor: isDragOver 
-                    ? 'var(--accent-muted)' 
-                    : isToday 
-                        ? 'color-mix(in srgb, var(--accent) 3%, transparent)' 
+                backgroundColor: isDragOver
+                    ? 'var(--accent-muted)'
+                    : isToday
+                        ? 'color-mix(in srgb, var(--accent) 3%, transparent)'
                         : 'transparent'
             }}
         >
-            {/* Drop indicator */}
-            {isDragOver && (
-                <div 
-                    className="absolute inset-1 border-2 border-dashed rounded-lg pointer-events-none z-20 flex items-center justify-center" 
-                    style={{ 
-                        borderColor: 'var(--accent)', 
-                        backgroundColor: 'color-mix(in srgb, var(--accent) 15%, transparent)' 
-                    }}
-                >
-                    <span 
-                        className="px-2 py-1 rounded text-[10px] font-bold uppercase"
-                        style={{ 
-                            backgroundColor: 'var(--accent)', 
-                            color: 'var(--bg-primary)' 
-                        }}
-                    >
-                        Drop
-                    </span>
-                </div>
-            )}
-
             {/* Tasks */}
             {visibleTasks.map((task) => (
                 <div key={task.id} className="flex-1 min-h-0">
@@ -124,10 +103,33 @@ export const GridCell: React.FC<GridCellProps> = ({
                 </div>
             ))}
 
-            {/* Empty slots - no drag events, just visual */}
+            {/* Drop Indicator - Fills remaining space */}
+            {isDragOver && emptySlotsToRender > 0 && (
+                <div
+                    className="relative w-full min-h-0 border-2 border-dashed rounded-lg pointer-events-none z-20 flex items-center justify-center animate-in fade-in duration-200"
+                    style={{
+                        flex: emptySlotsToRender,
+                        borderColor: 'var(--accent)',
+                        backgroundColor: 'color-mix(in srgb, var(--accent) 15%, transparent)'
+                    }}
+                >
+                    <span
+                        className="px-2 py-1 rounded text-[10px] font-bold uppercase"
+                        style={{
+                            backgroundColor: 'var(--accent)',
+                            color: 'var(--bg-primary)'
+                        }}
+                    >
+                        Drop
+                    </span>
+                </div>
+            )}
+
+            {/* Empty slots - only show if NOT dragging over (or if we want them to show underneath? No, usually hide them or replace them) */}
+            {/* Logic: If dragging over, we show the big drop zone instead of individual ghost slots. */}
             {emptySlotsToRender > 0 && !isDragOver && Array.from({ length: emptySlotsToRender }).map((_, index) => (
                 <div key={`ghost-${index}`} className="flex-1 relative w-full min-h-0 pointer-events-none">
-                    <div 
+                    <div
                         className="absolute inset-0 rounded-lg border border-dashed opacity-10 flex items-center justify-center"
                         style={{ borderColor: 'var(--text-muted)' }}
                     >

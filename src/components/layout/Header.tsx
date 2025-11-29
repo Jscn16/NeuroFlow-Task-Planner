@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { CalendarDays, Target, Flame, Timer, ListChecks, Notebook, BarChart3, Layers, ChevronLeft, ChevronRight, Moon, ChevronDown, Eye, EyeOff, LayoutGrid, PanelLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { CalendarDays, Target, ListChecks, Notebook, BarChart3, ChevronLeft, ChevronRight, Moon, PanelLeft } from 'lucide-react';
 import { formatDate, getWeekDays, isLateNight } from '../../constants';
 interface HeaderProps {
     activeTab: string;
@@ -8,8 +8,6 @@ interface HeaderProps {
     onWeekChange: (direction: 'prev' | 'next') => void;
     isStacked: boolean;
     setIsStacked: (stacked: boolean) => void;
-    showCompleted: boolean;
-    setShowCompleted: (show: boolean) => void;
     isSidebarOpen: boolean;
     onToggleSidebar: () => void;
 }
@@ -21,31 +19,11 @@ export const Header: React.FC<HeaderProps> = ({
     onWeekChange,
     isStacked,
     setIsStacked,
-    showCompleted,
-    setShowCompleted,
     isSidebarOpen,
     onToggleSidebar
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
     const isLateNightSession = isLateNight();
-    const [isPlannerMenuOpen, setIsPlannerMenuOpen] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    // Close menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsPlannerMenuOpen(false);
-            }
-        };
-
-        if (isPlannerMenuOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isPlannerMenuOpen]);
 
     const tabs = [
         { id: 'planner', label: 'Planner', icon: CalendarDays },
@@ -88,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* CENTER: Navigation Tabs */}
-            <div className="pointer-events-auto flex items-center gap-3 relative" ref={menuRef}>
+            <div className="pointer-events-auto flex items-center gap-3 relative">
                 {/* Main Menu */}
                 <div
                     className="flex items-center gap-1 p-1 rounded-2xl backdrop-blur-xl border shadow-2xl"
@@ -100,20 +78,11 @@ export const Header: React.FC<HeaderProps> = ({
                     {tabs.map(tab => {
                         const isActive = activeTab === tab.id;
                         const Icon = tab.icon;
-                        const isPlanner = tab.id === 'planner';
 
                         return (
                             <button
                                 key={tab.id}
-                                onClick={() => {
-                                    if (isPlanner && isActive) {
-                                        setIsPlannerMenuOpen(!isPlannerMenuOpen);
-                                    } else {
-                                        setActiveTab(tab.id);
-                                        if (isPlanner) setIsPlannerMenuOpen(true);
-                                        else setIsPlannerMenuOpen(false);
-                                    }
-                                }}
+                                onClick={() => setActiveTab(tab.id)}
                                 className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all duration-300"
                                 style={{
                                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
@@ -135,13 +104,6 @@ export const Header: React.FC<HeaderProps> = ({
                             >
                                 <Icon size={14} style={{ color: isActive ? 'var(--accent)' : 'inherit' }} />
                                 <span>{tab.label}</span>
-                                {isPlanner && (
-                                    <ChevronDown
-                                        size={12}
-                                        className={`transition-transform duration-300 ${isPlannerMenuOpen && isActive ? 'rotate-180' : ''}`}
-                                        style={{ opacity: 0.5 }}
-                                    />
-                                )}
                                 {isActive && (
                                     <div
                                         className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none border"
@@ -152,36 +114,6 @@ export const Header: React.FC<HeaderProps> = ({
                         )
                     })}
                 </div>
-
-                {/* Planner Dropdown Menu */}
-                {isPlannerMenuOpen && activeTab === 'planner' && (
-                    <div
-                        className="absolute top-full left-0 mt-2 w-48 p-1.5 rounded-2xl border backdrop-blur-xl shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200 z-50"
-                        style={{
-                            backgroundColor: 'var(--bg-secondary)',
-                            borderColor: 'var(--border-medium)'
-                        }}
-                    >
-                        <div className="flex flex-col gap-1">
-                            {/* Visibility Toggle */}
-                            <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider opacity-50">View Options</div>
-                            <button
-                                onClick={() => setShowCompleted(!showCompleted)}
-                                className="flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 group"
-                                style={{
-                                    backgroundColor: !showCompleted ? 'rgba(16, 185, 129, 0.1)' : 'transparent',
-                                    color: !showCompleted ? '#34d399' : 'var(--text-secondary)'
-                                }}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {showCompleted ? <EyeOff size={14} /> : <Eye size={14} />}
-                                    <span className="text-[11px] font-medium">{showCompleted ? 'Fade Done' : 'Show Done'}</span>
-                                </div>
-                                {!showCompleted && <div className="w-1.5 h-1.5 rounded-full bg-current" />}
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* RIGHT: Week Navigation & Late Night Badge */}

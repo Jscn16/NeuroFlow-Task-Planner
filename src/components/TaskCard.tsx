@@ -16,6 +16,7 @@ interface TaskCardProps {
     onDeleteTask?: (taskId: string) => void;
     onTaskDrop?: (sourceId: string, targetId: string) => void;
     isOverdue?: boolean;
+    viewMode?: 'show' | 'fade' | 'hide';
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({
@@ -29,7 +30,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     onDeleteTask,
 
     onTaskDrop,
-    isOverdue
+    isOverdue,
+    viewMode = 'show'
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title);
@@ -225,22 +227,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
     // Board variant - Optimized layout
     if (variant === 'board') {
+        const baseOpacity = isCompleted ? (viewMode === 'fade' ? 0.6 : 1) : 1;
+        const hoverOpacity = isCompleted ? (viewMode === 'fade' ? 0.8 : 1) : 1;
+
         return (
             <motion.div
                 draggable={!isEditing}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDoubleClick={handleDoubleClick}
-                whileHover={{
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                initial={false}
+                animate={{
+                    scale: isCompleted ? 1 : 1,
+                    opacity: baseOpacity
                 }}
-                transition={{ duration: 0.15 }}
+                whileHover={{
+                    scale: 1.02,
+                    opacity: hoverOpacity,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    transition: { duration: 0.15, ease: 'easeOut' }
+                }}
+                whileTap={{ scale: 0.98 }}
                 className={`
                     relative h-full flex flex-col p-2.5 rounded-lg border
                     cursor-grab active:cursor-grabbing
                     ${isDragging ? 'opacity-40' : ''}
                     ${isCompleted
-                        ? 'bg-emerald-500/15 border-emerald-500/30'
+                        ? 'bg-emerald-900/20 border-emerald-500/20'
                         : `bg-white/[0.04] border-white/[0.08] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
                     }
                 `}
@@ -256,16 +269,26 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                             flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
                             transition-all duration-200
                             ${isCompleted
-                                ? 'bg-emerald-500 text-white'
+                                ? 'bg-emerald-500/20 text-emerald-400'
                                 : 'bg-white/[0.1] text-slate-500 hover:bg-emerald-500/20 hover:text-emerald-400'}
                         `}
                     >
-                        <Check size={12} strokeWidth={3} />
+                        {isCompleted ? (
+                            <motion.div
+                                initial={{ rotate: -180, scale: 0 }}
+                                animate={{ rotate: 0, scale: 1 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Check size={12} strokeWidth={3} />
+                            </motion.div>
+                        ) : (
+                            <Check size={12} strokeWidth={3} className="opacity-0 group-hover:opacity-100" />
+                        )}
                     </button>
 
                     <h3
-                        className={`flex-1 font-medium text-[13px] leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70' : ''}`}
-                        style={{ color: isCompleted ? undefined : 'var(--text-primary)' }}
+                        className={`flex-1 font-medium text-[13px] leading-snug line-clamp-2`}
+                        style={{ color: isCompleted ? '#f1f5f9' : 'var(--text-primary)' }}
                     >
                         {task.title}
                     </h3>
@@ -274,7 +297,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 {/* Bottom: Duration badge */}
                 <div className="flex justify-end mt-1">
                     <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${isCompleted ? 'bg-emerald-500/10 text-emerald-400/80' : ''}`}
                         style={{
                             backgroundColor: isCompleted ? undefined : 'rgba(255,255,255,0.06)',
                             color: isCompleted ? undefined : 'var(--text-secondary)'

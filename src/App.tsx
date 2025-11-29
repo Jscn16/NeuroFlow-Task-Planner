@@ -54,7 +54,7 @@ const App = () => {
     const [isStacked, setIsStacked] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
-    const [showCompleted, setShowCompleted] = useState(true);
+    const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
     // --- Theme ---
@@ -66,7 +66,6 @@ const App = () => {
         persistence.saveTheme(currentThemeId);
     }, [currentThemeId]);
 
-    // --- Global Hotkeys ---
     // --- Global Hotkeys ---
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -128,8 +127,6 @@ const App = () => {
                         onWeekChange={handleWeekChange}
                         isStacked={isStacked}
                         setIsStacked={setIsStacked}
-                        showCompleted={showCompleted}
-                        setShowCompleted={setShowCompleted}
                         isSidebarOpen={isSidebarOpen}
                         onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                     />
@@ -146,7 +143,7 @@ const App = () => {
                         onDeleteTask={taskManager.deleteTask}
                         onToggleTaskComplete={taskManager.toggleTaskComplete}
                         onTaskDrop={taskManager.handleReorderTasks}
-                        showCompleted={showCompleted}
+                        viewMode={viewMode}
                     />
                 )}
                 {activeTab === 'focus' && (
@@ -156,7 +153,7 @@ const App = () => {
                         onToggleTaskComplete={taskManager.toggleTaskComplete}
                         onStartFocus={setActiveTaskId}
                         onUpdateTask={taskManager.updateTask}
-                        showCompleted={showCompleted}
+                        showCompleted={viewMode === 'show'}
                     />
                 )}
                 {activeTab === 'habits' && (
@@ -196,6 +193,8 @@ const App = () => {
                     onClearRescheduled={taskManager.clearRescheduledTasks}
                     currentThemeId={currentThemeId}
                     onThemeChange={setCurrentThemeId}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
                 />
             )}
         </>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Task, GridRow } from '../../../types';
 import { formatDate, ROW_CONFIG } from '../../../constants';
 import { TaskCard } from '@/components/TaskCard';
@@ -16,8 +17,7 @@ interface GridCellProps {
     onDeleteTask?: (taskId: string) => void;
     isDayEmpty: boolean;
     onTaskDrop?: (sourceId: string, targetId: string) => void;
-    onTaskDrop?: (sourceId: string, targetId: string) => void;
-    showCompleted: boolean;
+    viewMode: 'show' | 'fade' | 'hide';
     isPastDay?: boolean;
 }
 
@@ -34,7 +34,7 @@ export const GridCell: React.FC<GridCellProps> = ({
     isDayEmpty,
     onTaskDrop,
 
-    showCompleted,
+    viewMode,
     isPastDay
 }) => {
     const [isDragOver, setIsDragOver] = useState(false);
@@ -42,7 +42,11 @@ export const GridCell: React.FC<GridCellProps> = ({
     const allCellTasks = tasks.filter(t => t.dueDate === dayStr && t.assignedRow === row);
 
     // Separate active tasks from rescheduled ones
-    const activeTasks = allCellTasks.filter(t => t.status !== 'unscheduled' && t.status !== 'rescheduled');
+    const activeTasks = allCellTasks.filter(t => {
+        if (t.status === 'unscheduled' || t.status === 'rescheduled') return false;
+        if (t.status === 'completed' && viewMode === 'hide') return false;
+        return true;
+    });
     const rescheduledTasks = allCellTasks.filter(t => t.status === 'rescheduled');
 
     const slotCount = row === 'GOAL' ? 1 : 3;
@@ -95,35 +99,35 @@ export const GridCell: React.FC<GridCellProps> = ({
                     ? 'var(--accent-muted)'
                     : isToday
                         ? 'color-mix(in srgb, var(--accent) 3%, transparent)'
-                        : 'transparent'
+                        : (isPastDay ? 'rgba(2, 6, 23, 0.4)' : 'transparent')
             }}
         >
             {/* Tasks */}
-            {visibleTasks.map((task) => (
-                <div
-                    key={task.id}
-                    className="flex-1 min-h-0"
-                    style={{
-                        opacity: (!showCompleted && task.status === 'completed')
-                            ? 0.15
-                            : (isPastDay && task.status === 'completed')
-                                ? 0.85
-                                : 1,
-                        transition: 'opacity 0.3s ease'
-                    }}
-                >
-                    <TaskCard
-                        task={task}
-                        variant="board"
-                        onDragStart={onDragStart}
-                        onUpdateTask={onUpdateTask}
-                        onDeleteTask={onDeleteTask}
-                        onToggleComplete={onToggleComplete}
-                        onTaskDrop={onTaskDrop}
-                        isOverdue={isPastDay}
-                    />
-                </div>
-            ))}
+            <AnimatePresence mode="popLayout">
+                {visibleTasks.map((task) => (
+                    <motion.div
+                        key={task.id}
+                        className="flex-1 min-h-0"
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
+                        transition={{ duration: 0.2 }}
+                    >
+                        <TaskCard
+                            task={task}
+                            variant="board"
+                            onDragStart={onDragStart}
+                            onUpdateTask={onUpdateTask}
+                            onDeleteTask={onDeleteTask}
+                            onToggleComplete={onToggleComplete}
+                            onTaskDrop={onTaskDrop}
+                            isOverdue={isPastDay}
+                            viewMode={viewMode}
+                        />
+                    </motion.div>
+                ))}
+            </AnimatePresence>
 
             {/* Rescheduled Tasks (Ghost Trails) */}
             {

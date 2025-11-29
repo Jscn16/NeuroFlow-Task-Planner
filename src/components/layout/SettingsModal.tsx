@@ -10,6 +10,8 @@ interface SettingsModalProps {
     onClearRescheduled?: () => void;
     currentThemeId: string;
     onThemeChange: (themeId: string) => void;
+    viewMode?: 'show' | 'fade' | 'hide';
+    onViewModeChange?: (mode: 'show' | 'fade' | 'hide') => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -19,7 +21,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onDeleteAllTasks,
     onClearRescheduled,
     currentThemeId,
-    onThemeChange
+    onThemeChange,
+    viewMode = 'fade',
+    onViewModeChange
 }) => {
     return (
         <div
@@ -128,6 +132,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             })}
                         </div>
                     </div>
+
+                    {/* View Mode Selection */}
+                    {onViewModeChange && (
+                        <div>
+                            <h3
+                                className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                                style={{ color: 'var(--text-muted)' }}
+                            >
+                                <Check size={12} />
+                                Completed Tasks
+                            </h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                {(['show', 'fade', 'hide'] as const).map((mode) => {
+                                    const isSelected = viewMode === mode;
+                                    return (
+                                        <button
+                                            key={mode}
+                                            onClick={() => onViewModeChange(mode)}
+                                            className="relative flex flex-col items-center justify-center gap-2 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                                            style={{
+                                                backgroundColor: isSelected
+                                                    ? 'var(--accent-muted)'
+                                                    : 'rgba(255,255,255,0.02)',
+                                                borderColor: isSelected
+                                                    ? 'var(--accent)'
+                                                    : 'var(--border-light)'
+                                            }}
+                                        >
+                                            <span
+                                                className="text-xs font-bold capitalize"
+                                                style={{ color: isSelected ? 'var(--accent)' : 'var(--text-primary)' }}
+                                            >
+                                                {mode}
+                                            </span>
+                                            <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                {mode === 'show' ? 'Visible' : mode === 'fade' ? 'Dimmed' : 'Hidden'}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Data Management */}
                     <div>

@@ -44,7 +44,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                             const isGoalMet = streak >= goal;
 
                             return (
-                                <tr key={habit.id} className="border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors group">
+                                <tr key={habit.id} className="border-t border-white/[0.04] hover:bg-slate-800/40 transition-colors group">
                                     <td className="py-4 px-4 font-bold text-slate-200 flex items-center gap-2">
                                         {habit.name}
                                         {onDeleteHabit && (
@@ -56,7 +56,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                                 <X size={12} />
                                             </button>
                                         )}
-                                        <span className="text-[10px] text-slate-500 font-normal ml-2">Goal: {goal}/wk</span>
+                                        <span className="text-[10px] text-slate-500 font-normal ml-2">{streak} / {goal} this week</span>
                                     </td>
                                     {habit.checks.map((checked, i) => (
                                         <td key={i} className="py-4 px-2 text-center">
@@ -79,10 +79,10 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${isGoalMet ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.05] text-slate-300'}`}>
                                                 {progress}%
                                             </span>
-                                            <div className="w-16 h-1 bg-white/[0.1] rounded-full overflow-hidden">
+                                            <div className="w-16 h-1 bg-white/[0.15] rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full rounded-full"
-                                                    style={{ 
+                                                    style={{
                                                         width: `${Math.min(100, progress)}%`,
                                                         backgroundColor: isGoalMet ? 'var(--success)' : 'var(--accent)'
                                                     }}
@@ -134,7 +134,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                         onClick={handleAddHabit}
                         disabled={!newHabitName.trim()}
                         className="px-6 py-2.5 rounded-xl text-white font-bold text-sm uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg"
-                        style={{ 
+                        style={{
                             backgroundColor: 'var(--accent)',
                             boxShadow: '0 10px 15px -3px var(--accent-muted)'
                         }}

@@ -20,7 +20,7 @@ interface WeekViewProps {
 // Progress color: 0% = Red (nothing done), 100% = Green (all done)
 const getGradientColor = (percent: number): string => {
     const p = Math.max(0, Math.min(100, percent));
-    
+
     // Red (0%) -> Yellow (50%) -> Green (100%)
     if (p <= 50) {
         // Red to Yellow: (239, 68, 68) to (250, 204, 21)
@@ -52,7 +52,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
     const currentWeekDays = getWeekDays(currentDate);
     const todayStr = formatDate(getAdjustedDate());
     const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
-    
+
     // Track which icon is hovered (not row)
     const [hoveredIcon, setHoveredIcon] = useState<GridRow | null>(null);
 
@@ -73,9 +73,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         onDrop={(e) => onDropOnGrid(e, day, null)}
                         className="flex-1 w-0 flex flex-col p-2 rounded-2xl gap-2 transition-all duration-300"
                         style={{
-                            backgroundColor: isToday ? 'color-mix(in srgb, var(--accent) 3%, transparent)' : 'transparent',
+                            backgroundColor: isToday ? 'color-mix(in srgb, var(--accent) 2%, transparent)' : 'transparent',
                             border: isToday ? '1px solid' : '1px solid transparent',
-                            borderColor: isToday ? 'color-mix(in srgb, var(--accent) 15%, transparent)' : 'transparent'
+                            borderColor: isToday ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent'
                         }}
                     >
                         {dayTasks
@@ -116,41 +116,41 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 const rowConfig = ROW_CONFIG[row];
                 const style = rowConfig;
                 const isIconHovered = hoveredIcon === row;
-                
+
                 return (
-                    <div 
-                        key={row} 
-                        className={`${style.flexClass} shrink-0 flex border-b last:border-b-0 group/row transition-all duration-200`} 
-                        style={{ 
+                    <div
+                        key={row}
+                        className={`${style.flexClass} shrink-0 flex border-b last:border-b-0 group/row transition-all duration-200`}
+                        style={{
                             borderColor: 'var(--border-light)',
                             backgroundColor: 'transparent'
                         }}
                     >
                         {/* Row Label - Tooltip only on icon hover */}
-                        <div 
+                        <div
                             className="w-20 shrink-0 flex flex-col items-center justify-center relative py-3 border-r cursor-default"
                             style={{ borderColor: 'var(--border-light)' }}
                         >
-                            <div 
+                            <div
                                 className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${style.barColor} transition-all duration-300`}
                                 style={{ opacity: 0.6 }}
                             />
-                            
+
                             {/* Icon with hover for tooltip */}
                             <div
                                 className="relative"
                                 onMouseEnter={() => setHoveredIcon(row)}
                                 onMouseLeave={() => setHoveredIcon(null)}
                             >
-                                <rowConfig.icon 
-                                    size={20} 
+                                <rowConfig.icon
+                                    size={20}
                                     className={`mb-1.5 ${style.color} transition-all duration-200 cursor-help`}
                                     style={{ transform: isIconHovered ? 'scale(1.2)' : 'scale(1)' }}
                                 />
-                                
+
                                 {/* Tooltip - only shows when icon is hovered */}
                                 {isIconHovered && (
-                                    <div 
+                                    <div
                                         className="absolute left-full ml-3 top-1/2 -translate-y-1/2 z-50 px-3 py-2 rounded-xl text-[10px] whitespace-nowrap shadow-2xl border animate-in fade-in slide-in-from-left-2 duration-150"
                                         style={{
                                             backgroundColor: 'var(--bg-secondary)',
@@ -163,14 +163,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                     </div>
                                 )}
                             </div>
-                            
+
                             <div className={`text-[10px] font-black tracking-widest uppercase ${style.color}`}>
                                 {rowConfig.label}
                             </div>
-                            
-                            <div 
+
+                            <div
                                 className="text-[8px] font-medium mt-0.5"
-                                style={{ 
+                                style={{
                                     color: 'var(--text-muted)',
                                     opacity: 0.5
                                 }}
@@ -226,28 +226,28 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         const targetMinutesPerDay = TARGET_HOURS_PER_DAY * 60;
                         const plannedPercent = Math.min(100, (totalMinutes / targetMinutesPerDay) * 100);
                         const completionPercent = totalMinutes > 0 ? Math.round((completedMinutes / totalMinutes) * 100) : 0;
-                        
+
                         const plannedHours = (totalMinutes / 60).toFixed(1).replace(/\.0$/, '');
                         const completionColor = getGradientColor(completionPercent);
-                        
+
                         const isOverCapacity = plannedPercent > 100;
                         const isNearCapacity = plannedPercent > 80;
 
                         return (
                             <div key={i} className="flex-1 w-0 text-center relative group px-1">
-                                <div 
+                                <div
                                     className="flex flex-col items-center py-3 px-2 rounded-2xl transition-all duration-300 relative"
                                     style={{
-                                        background: isToday 
-                                            ? `linear-gradient(to bottom, color-mix(in srgb, var(--accent) 5%, transparent), transparent)` 
+                                        background: isToday
+                                            ? `linear-gradient(to bottom, color-mix(in srgb, var(--accent) 3%, transparent), transparent)`
                                             : 'transparent',
                                         borderTop: isToday ? '2px solid' : 'none',
-                                        borderColor: isToday ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'transparent',
+                                        borderColor: isToday ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'transparent',
                                         zIndex: isToday ? 10 : 'auto'
                                     }}
                                 >
                                     {/* Day Name */}
-                                    <span 
+                                    <span
                                         className="text-[11px] font-black uppercase tracking-widest mb-0.5"
                                         style={{ color: isToday ? 'var(--accent)' : 'var(--text-muted)', opacity: isToday ? 1 : 0.6 }}
                                     >
@@ -255,9 +255,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                     </span>
 
                                     {/* Date Number */}
-                                    <span 
+                                    <span
                                         className="text-4xl font-display font-black leading-none transition-all duration-300"
-                                        style={{ 
+                                        style={{
                                             color: isToday ? 'var(--text-primary)' : 'var(--text-muted)',
                                             textShadow: isToday ? '0 0 20px rgba(255,255,255,0.2)' : 'none',
                                             opacity: isToday ? 1 : 0.5
@@ -268,13 +268,13 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
                                     {/* Workload Indicator */}
                                     <div className="w-full mt-3 flex flex-col items-center gap-1.5">
-                                        <div 
+                                        <div
                                             className="text-[10px] font-bold transition-colors"
-                                            style={{ 
-                                                color: isOverCapacity 
-                                                    ? 'var(--error)' 
-                                                    : isNearCapacity 
-                                                        ? 'var(--warning)' 
+                                            style={{
+                                                color: isOverCapacity
+                                                    ? 'var(--error)'
+                                                    : isNearCapacity
+                                                        ? 'var(--warning)'
                                                         : 'var(--text-muted)',
                                                 opacity: totalMinutes > 0 ? 1 : 0.4
                                             }}
@@ -284,25 +284,25 @@ export const WeekView: React.FC<WeekViewProps> = ({
 
                                         {totalMinutes > 0 && (
                                             <div className="w-full flex flex-col items-center gap-1">
-                                                <div 
+                                                <div
                                                     className="w-full h-2 rounded-full overflow-hidden relative"
                                                     style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
                                                 >
                                                     <div
                                                         className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-700 ease-out"
-                                                        style={{ 
+                                                        style={{
                                                             width: `${completionPercent}%`,
                                                             backgroundColor: completionColor,
                                                             boxShadow: completionPercent > 0 ? `0 0 10px ${completionColor}50` : 'none'
                                                         }}
                                                     />
                                                 </div>
-                                                
+
                                                 <div className="flex items-center gap-1">
                                                     {completionPercent >= 100 && (
                                                         <CheckCircle2 size={10} style={{ color: completionColor }} />
                                                     )}
-                                                    <span 
+                                                    <span
                                                         className="text-[9px] font-bold"
                                                         style={{ color: completionColor }}
                                                     >

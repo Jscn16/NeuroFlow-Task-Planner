@@ -6,6 +6,7 @@ export type TaskStatus = 'unscheduled' | 'scheduled' | 'completed';
 export interface Task {
   id: string;
   title: string;
+  description?: string; // Optional multi-line details
   duration: number; // minutes
   type: TaskType;
   status: TaskStatus;
@@ -26,6 +27,7 @@ export interface BrainDumpList {
   id: string;
   title: string;
   content: string;
+  lastEdited?: number; // Timestamp of last edit
 }
 
 export interface Note {

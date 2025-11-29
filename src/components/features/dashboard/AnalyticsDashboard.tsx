@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { Flame, CheckCircle2, Target, Zap, Trophy, Clock, TrendingUp, Calendar, Award, Sparkles, Brain, Coffee, Rocket } from 'lucide-react';
+import { Flame, CheckCircle2, Target, Zap, Trophy, Clock, TrendingUp, Calendar, Award, Sparkles, Brain, Coffee, Rocket, HelpCircle } from 'lucide-react';
 import { Task } from '../../../types';
 import { formatDate, TARGET_HOURS_PER_DAY, getWeekDays } from '../../../constants';
 
@@ -9,6 +9,7 @@ interface AnalyticsDashboardProps {
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
+    const [showFlowScoreTooltip, setShowFlowScoreTooltip] = useState(false);
     const todayStr = formatDate(new Date());
     const todayTasks = tasks.filter(t => t.dueDate === todayStr && t.status !== 'unscheduled');
     const completedToday = todayTasks.filter(t => t.status === 'completed');
@@ -110,7 +111,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                         <div className="ml-4 w-32">
                             <div className="text-[10px] text-amber-400/60 mb-1">{xp} / {xpForNextLevel} XP</div>
                             <div className="h-2 bg-amber-900/30 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                     className="h-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
                                     style={{ width: `${xpProgress}%` }}
                                 />
@@ -123,7 +124,23 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     {/* Flow Score */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 flex flex-col items-center justify-center relative overflow-hidden group hover:bg-white/[0.04] transition-colors">
-                        <div className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Flow Score</div>
+                        <div className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
+                            Flow Score
+                            <div
+                                className="relative"
+                                onMouseEnter={() => setShowFlowScoreTooltip(true)}
+                                onMouseLeave={() => setShowFlowScoreTooltip(false)}
+                            >
+                                <HelpCircle size={10} className="cursor-help text-slate-600 hover:text-slate-400 transition-colors" />
+                                {showFlowScoreTooltip && (
+                                    <div className="absolute left-0 top-full mt-1 z-50 px-3 py-2 rounded-xl text-[9px] whitespace-nowrap shadow-2xl border bg-slate-900 border-white/[0.1] text-slate-300 w-48">
+                                        <div className="font-bold mb-1 text-white">Flow Score</div>
+                                        Share of high-value tasks (high/medium priority) vs all completed tasks.
+                                        <div className="mt-1 text-emerald-400">{highValueCompleted} high / {allCompleted.length} total</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                         <div className="w-28 h-28 relative">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -181,7 +198,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
 
                     {/* Completion Rate */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 flex flex-col items-center justify-center text-center group hover:bg-white/[0.04] transition-colors">
-                        <div 
+                        <div
                             className="w-14 h-14 rounded-full border-4 flex items-center justify-center mb-3 relative"
                             style={{
                                 borderColor: 'color-mix(in srgb, var(--accent) 20%, transparent)',
@@ -213,9 +230,9 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                                 <BarChart data={weeklyData}>
                                     <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
                                     <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            backgroundColor: '#1e2338', 
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: '#1e2338',
                                             border: '1px solid rgba(255,255,255,0.1)',
                                             borderRadius: '12px',
                                             fontSize: '12px'
@@ -306,10 +323,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                         <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Completed by Category</div>
                         <div className="flex flex-wrap gap-3">
                             {typeBreakdown.map(item => (
-                                <div 
-                                    key={item.type} 
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl"
+                                <div
+                                    key={item.type}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl transition-all hover:scale-105 cursor-pointer"
                                     style={{ backgroundColor: `${item.color}15`, border: `1px solid ${item.color}30` }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = `${item.color}25`}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = `${item.color}15`}
                                 >
                                     <span className="text-sm">{item.type}</span>
                                     <span className="text-lg font-bold" style={{ color: item.color }}>{item.count}</span>

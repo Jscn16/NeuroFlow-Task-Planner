@@ -101,7 +101,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
     };
 
     const toggleTimer = () => setIsTimerRunning(!isTimerRunning);
-    
+
     const resetTimer = () => {
         setIsTimerRunning(false);
         setTimer(initialDuration);
@@ -120,7 +120,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
 
                 <div className="max-w-4xl w-full text-center space-y-8">
                     <div className="space-y-2">
-                        <span 
+                        <span
                             className="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest border"
                             style={{
                                 backgroundColor: 'var(--accent-muted)',
@@ -208,7 +208,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
 
     return (
         <div className="h-full p-8 overflow-y-auto">
-            <div className="max-w-4xl mx-auto mt-10 px-8">
+            <div className="max-w-3xl mx-auto mt-10 px-8">
                 <div className="mb-8 text-center md:text-left flex items-end justify-between">
                     <div>
                         <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus Mode</h2>
@@ -236,7 +236,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 <div className="relative bg-[#1e2338] border border-emerald-500/50 rounded-2xl p-6 shadow-2xl">
                                     <div className="flex items-start justify-between mb-6">
                                         <div>
-                                            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 block">Active Now</span>
+                                            <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-2 block">Active Now · Task 1 of {focusTasks.length}</span>
                                             <h3 className="text-2xl font-bold text-white leading-tight">{activeTask.title}</h3>
                                             <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
                                                 <Clock size={14} />
@@ -254,7 +254,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                     {/* Progress bar */}
                                     <div className="mb-4">
                                         <div className="h-2 bg-slate-800/50 rounded-full overflow-hidden">
-                                            <div 
+                                            <div
                                                 className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-1000 ease-linear"
                                                 style={{ width: `${timerProgress}%` }}
                                             />

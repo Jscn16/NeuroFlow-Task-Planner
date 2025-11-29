@@ -46,10 +46,10 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
                 </div>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4">
-                <div className="flex gap-6 h-full min-w-max px-1">
+            <div className="flex-1 overflow-y-auto pb-4">
+                <div className="grid grid-cols-3 gap-6 auto-rows-fr px-1">
                     {lists.map(list => (
-                        <div key={list.id} className="w-[30vw] min-w-[350px] h-full flex flex-col group relative">
+                        <div key={list.id} className="min-h-[400px] flex flex-col group relative">
                             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.03] to-transparent rounded-3xl pointer-events-none border border-white/[0.05]"></div>
 
                             {/* List Header */}
@@ -99,7 +99,7 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
                     {/* Add List Placeholder */}
                     <button
                         onClick={onAddList}
-                        className="w-[100px] h-full rounded-3xl border-2 border-dashed border-white/[0.05] hover:border-white/[0.1] hover:bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-300 transition-all group"
+                        className="min-h-[400px] rounded-3xl border-2 border-dashed border-white/[0.05] hover:border-white/[0.1] hover:bg-white/[0.02] flex flex-col items-center justify-center gap-2 text-slate-500 hover:text-slate-300 transition-all group"
                     >
                         <div className="p-3 rounded-full bg-white/[0.05] group-hover:bg-white/[0.1] transition-colors">
                             <Plus size={24} />

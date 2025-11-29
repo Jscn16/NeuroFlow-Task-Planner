@@ -19,10 +19,9 @@ const CATEGORIES = [
     { id: 'medium', label: 'Medium', color: '#f97316', emoji: '⚡' },
     { id: 'low', label: 'Low', color: '#facc15', emoji: '📋' },
     { id: 'leisure', label: 'Leisure', color: '#22d3ee', emoji: '🎮' },
-    { id: 'backlog', label: 'Backlog', color: '#94a3b8', emoji: '📥' },
+    { id: 'chores', label: 'Chores', color: '#a8b3c1', emoji: '🧹' },
+    { id: 'backlog', label: 'Backlog', color: '#5a6472', emoji: '📥' },
 ];
-
-const CHORES_CAT = { id: 'chores', label: 'Chores', color: '#a1a1aa', emoji: '🧹' };
 
 // 6 buttons for even grid
 const QUICK_DURATIONS = [15, 30, 45, 60, 90, 120];
@@ -81,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         e.stopPropagation();
         dragCounters.current[categoryId] = 0;
         setDragOverCategory(null);
-        
+
         const taskId = e.dataTransfer.getData('taskId');
         if (taskId && onUpdateTask) {
             onUpdateTask(taskId, {
@@ -100,10 +99,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }
     };
 
-    const selectedCategory = [...CATEGORIES, CHORES_CAT].find(c => c.id === newTaskType);
-    const choresTasks = tasks.filter(t => t.type === 'chores' && t.status === 'unscheduled');
-    const choresExpanded = expandedCategories['chores'];
-    const choresDraggedOver = dragOverCategory === 'chores';
+    const selectedCategory = CATEGORIES.find(c => c.id === newTaskType);
 
     return (
         <div
@@ -118,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Logo */}
             <div className="p-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div 
+                    <div
                         className="w-9 h-9 rounded-xl flex items-center justify-center"
                         style={{ backgroundColor: 'var(--accent)' }}
                     >
@@ -133,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </p>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={onOpenSettings}
                     className="p-2.5 rounded-xl transition-colors"
                     style={{ color: 'var(--text-muted)' }}
@@ -146,7 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Add Task Section */}
             <div className="px-3 pb-4">
-                <div 
+                <div
                     className="rounded-xl p-4"
                     style={{ backgroundColor: 'var(--bg-tertiary)' }}
                 >
@@ -159,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                             placeholder="Add new task..."
                             className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-slate-500 focus:outline-none border"
-                            style={{ 
+                            style={{
                                 color: 'var(--text-primary)',
                                 borderColor: newTaskTitle ? 'var(--accent)' : 'var(--border-light)'
                             }}
@@ -182,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                         color: newTaskDuration === d ? 'white' : 'var(--text-secondary)'
                                     }}
                                 >
-                                    {d < 60 ? `${d}m` : `${d/60}h`}
+                                    {d < 60 ? `${d}m` : `${d / 60}h`}
                                 </button>
                             ))}
                         </div>
@@ -194,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             Priority
                         </div>
                         <div className="grid grid-cols-3 gap-1.5">
-                            {[...CATEGORIES, CHORES_CAT].map(cat => (
+                            {CATEGORIES.map(cat => (
                                 <button
                                     key={cat.id}
                                     onClick={() => setNewTaskType(cat.id as TaskType)}
@@ -216,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onClick={handleAddTask}
                         disabled={!newTaskTitle.trim()}
                         className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-30"
-                        style={{ 
+                        style={{
                             backgroundColor: newTaskTitle.trim() ? selectedCategory?.color : 'rgba(255,255,255,0.05)',
                             color: newTaskTitle.trim() ? 'white' : 'var(--text-muted)'
                         }}
@@ -237,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     if (catTasks.length === 0 && cat.id !== 'backlog' && !isDraggedOver) return null;
 
                     return (
-                        <div 
+                        <div
                             key={cat.id}
                             onDragEnter={(e) => handleCategoryDragEnter(e, cat.id)}
                             onDragOver={(e) => e.preventDefault()}
@@ -259,16 +255,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span 
+                                    <span
                                         className="text-[11px] font-bold px-2 py-0.5 rounded"
                                         style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
                                     >
                                         {catTasks.length}
                                     </span>
-                                    <ChevronDown 
-                                        size={14} 
+                                    <ChevronDown
+                                        size={14}
                                         className="transition-transform"
-                                        style={{ 
+                                        style={{
                                             color: 'var(--text-muted)',
                                             transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
                                         }}
@@ -276,10 +272,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 </div>
                             </button>
 
-                            <div 
+                            <div
                                 className="space-y-1.5 overflow-hidden transition-all duration-200"
                                 style={{
-                                    maxHeight: isExpanded ? `${catTasks.length * 70 + 30}px` : '0px',
+                                    maxHeight: isExpanded ? 'none' : '0px',
                                     opacity: isExpanded ? 1 : 0,
                                     paddingTop: isExpanded && catTasks.length > 0 ? '6px' : '0'
                                 }}
@@ -306,87 +302,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 })}
             </div>
 
-            {/* CHORES - Fixed at bottom, expands upward */}
-            <div 
-                className="border-t"
-                style={{ borderColor: 'var(--border-light)' }}
-                onDragEnter={(e) => handleCategoryDragEnter(e, 'chores')}
-                onDragOver={(e) => e.preventDefault()}
-                onDragLeave={(e) => handleCategoryDragLeave(e, 'chores')}
-                onDrop={(e) => handleCategoryDrop(e, 'chores')}
-            >
-                {/* Expanded tasks (above the header) */}
-                <div 
-                    className="overflow-hidden transition-all duration-200 px-3"
-                    style={{
-                        maxHeight: choresExpanded ? `${choresTasks.length * 70 + 20}px` : '0px',
-                        opacity: choresExpanded ? 1 : 0,
-                        paddingBottom: choresExpanded && choresTasks.length > 0 ? '8px' : '0',
-                        paddingTop: choresExpanded && choresTasks.length > 0 ? '8px' : '0'
-                    }}
-                >
-                    <div className="space-y-1.5 max-h-[200px] overflow-y-auto scrollbar-hide">
-                        {choresTasks.map(task => (
-                            <TaskCard
-                                key={task.id}
-                                task={task}
-                                variant="sidebar"
-                                onDragStart={onDragStart}
-                                onUpdateTask={onUpdateTask}
-                                onDeleteTask={onDeleteTask}
-                                onToggleComplete={onToggleTaskComplete}
-                            />
-                        ))}
-                        {choresTasks.length === 0 && (
-                            <div className="text-xs py-2 px-2" style={{ color: 'var(--text-muted)' }}>
-                                {choresDraggedOver ? 'Drop here to add' : 'No chores — drag here'}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Chores Header */}
-                <button
-                    onClick={() => toggleCategory('chores')}
-                    className="w-full flex items-center justify-between px-5 py-3 transition-all"
-                    style={{
-                        backgroundColor: choresDraggedOver ? `${CHORES_CAT.color}15` : 'var(--bg-tertiary)',
-                        border: choresDraggedOver ? `2px dashed ${CHORES_CAT.color}` : '2px solid transparent'
-                    }}
-                >
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CHORES_CAT.color }} />
-                        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: CHORES_CAT.color }}>
-                            {CHORES_CAT.label}
-                        </span>
-                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>(recurring)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span 
-                            className="text-[11px] font-bold px-2 py-0.5 rounded"
-                            style={{ backgroundColor: `${CHORES_CAT.color}15`, color: CHORES_CAT.color }}
-                        >
-                            {choresTasks.length}
-                        </span>
-                        <ChevronUp 
-                            size={14} 
-                            className="transition-transform"
-                            style={{ 
-                                color: 'var(--text-muted)',
-                                transform: choresExpanded ? 'rotate(0deg)' : 'rotate(180deg)'
-                            }}
-                        />
-                    </div>
-                </button>
-            </div>
-
             {/* Footer */}
-            <div 
+            <div
                 className="p-3 border-t flex items-center justify-between"
                 style={{ borderColor: 'var(--border-light)', backgroundColor: 'var(--bg-secondary)' }}
             >
                 <div className="flex items-center gap-2">
-                    <div 
+                    <div
                         className="w-8 h-8 rounded-full"
                         style={{ background: 'linear-gradient(135deg, var(--accent), var(--warning))' }}
                     />

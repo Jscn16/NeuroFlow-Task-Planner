@@ -131,18 +131,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
                         </div>
                     </div>
-                    <div className="flex gap-1.5">
-                        <button
-                            onClick={handleAcceptChanges}
-                            className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
-                        >
-                            <Check size={14} />
-                        </button>
+                    <div className="flex flex-col gap-1.5">
+                        <div className="flex gap-1.5">
+                            <button
+                                onClick={handleAcceptChanges}
+                                className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
+                                title="Save changes"
+                            >
+                                <Check size={14} />
+                            </button>
+                            <button
+                                onClick={() => setIsEditing(false)}
+                                className="p-2 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-all"
+                                title="Cancel editing"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
                         <button
                             onClick={handleDeleteTask}
-                            className="p-2 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all"
+                            className="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all text-[10px] font-bold uppercase"
+                            title="Delete task"
                         >
-                            <X size={14} />
+                            Delete
                         </button>
                     </div>
                 </div>

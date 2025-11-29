@@ -1,15 +1,17 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { Task, TaskType, Habit, GridRow, TaskStatus, AppData, BrainDumpList } from './types';
 import { getWeekDays, formatDate, playSuccessSound, DAYS, getAdjustedDate } from './constants';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { SettingsModal } from './components/layout/SettingsModal';
-import { WeekView } from './components/features/board/WeekView';
-import { FocusMode } from './components/features/dashboard/FocusMode';
-import { AnalyticsDashboard } from './components/features/dashboard/AnalyticsDashboard';
-import { HabitTracker } from './components/features/tools/HabitTracker';
-import { BrainDump } from './components/features/tools/BrainDump';
+// Lazy load heavy components for code splitting
+const WeekView = lazy(() => import('./components/features/board/WeekView').then(module => ({ default: module.WeekView })));
+const FocusMode = lazy(() => import('./components/features/dashboard/FocusMode').then(module => ({ default: module.FocusMode })));
+const AnalyticsDashboard = lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
+const HabitTracker = lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
+const BrainDump = lazy(() => import('./components/features/tools/BrainDump').then(module => ({ default: module.BrainDump })));
 
 // --- Local Storage ---
 const STORAGE_KEY = 'neuroflow-app-data';
@@ -104,6 +106,31 @@ const App = () => {
 
     const [showCompleted, setShowCompleted] = useState(true);
 
+    // --- Handlers ---
+    const exportData = useCallback(() => {
+        const data: AppData = { tasks, habits, brainDumpLists };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        // Generate timestamp: YY_MM_DD(HH_MM)
+        const now = new Date();
+        const yy = now.getFullYear().toString().slice(-2);
+        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
+        const dd = now.getDate().toString().padStart(2, '0');
+        const hh = now.getHours().toString().padStart(2, '0');
+        const min = now.getMinutes().toString().padStart(2, '0');
+        const timestamp = `${yy}_${mm}_${dd}(${hh}_${min})`;
+
+        a.download = `${timestamp}-neuroflow-data.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [tasks, habits, brainDumpLists]);
+
     // --- Effects ---
     // Auto-save to localStorage whenever tasks, habits, or brainDumpLists change
     useEffect(() => {
@@ -122,7 +149,7 @@ const App = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [tasks, habits, brainDumpLists]);
+    }, [exportData]);
 
     // --- Handlers ---
     const addTask = (title: string, duration: number, type: TaskType) => {
@@ -289,30 +316,6 @@ const App = () => {
         }));
     };
 
-    const exportData = () => {
-        const data: AppData = { tasks, habits, brainDumpLists };
-        const json = JSON.stringify(data, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-
-        // Generate timestamp: YY_MM_DD(HH_MM)
-        const now = new Date();
-        const yy = now.getFullYear().toString().slice(-2);
-        const mm = (now.getMonth() + 1).toString().padStart(2, '0');
-        const dd = now.getDate().toString().padStart(2, '0');
-        const hh = now.getHours().toString().padStart(2, '0');
-        const min = now.getMinutes().toString().padStart(2, '0');
-        const timestamp = `${yy}_${mm}_${dd}(${hh}_${min})`;
-
-        a.download = `${timestamp}-neuroflow-data.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    };
-
     const importData = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -445,7 +448,7 @@ const App = () => {
     };
 
     return (
-        <>
+        <ThemeProvider>
             <MainLayout
                 sidebar={
                     <Sidebar
@@ -472,65 +475,74 @@ const App = () => {
                     />
                 }
             >
-                {activeTab === 'planner' && (
-                    <WeekView
-                        tasks={tasks}
-                        currentDate={currentDate}
-                        isStacked={isStacked}
-                        onDropOnGrid={handleDropOnGrid}
-                        onDragStart={handleDragStart}
-                        onUpdateTask={updateTask}
-                        onDeleteTask={deleteTask}
-                        onToggleTaskComplete={toggleTaskComplete}
-                        onTaskDrop={handleReorderTasks}
-                        showCompleted={showCompleted}
-                    />
-                )}
-                {activeTab === 'focus' && (
-                    <FocusMode
-                        tasks={tasks}
-                        onDragStart={handleDragStart}
-                        onToggleTaskComplete={toggleTaskComplete}
-                        onStartFocus={(id) => {
-                            setActiveTaskId(id);
-                        }}
-                        onUpdateTask={updateTask}
-                        showCompleted={showCompleted}
-                    />
-                )}
-                {activeTab === 'habits' && (
-                    <HabitTracker
-                        habits={habits}
-                        toggleHabit={toggleHabit}
-                        onDeleteHabit={deleteHabit}
-                        onAddHabit={addHabit}
-                    />
-                )}
-                {activeTab === 'braindump' && (
-                    <BrainDump
-                        lists={brainDumpLists}
-                        onUpdateList={(id, content) => {
-                            setBrainDumpLists(prev => prev.map(l => l.id === id ? { ...l, content } : l));
-                        }}
-                        onAddList={() => {
-                            const newList: BrainDumpList = {
-                                id: Math.random().toString(36).substr(2, 9),
-                                title: `List ${brainDumpLists.length + 1}`,
-                                content: ''
-                            };
-                            setBrainDumpLists(prev => [...prev, newList]);
-                        }}
-                        onDeleteList={(id) => {
-                            setBrainDumpLists(prev => prev.filter(l => l.id !== id));
-                        }}
-                        onUpdateTitle={(id, title) => {
-                            setBrainDumpLists(prev => prev.map(l => l.id === id ? { ...l, title } : l));
-                        }}
-                    />
-                )}
-                {activeTab === 'analytics' && (
-                    <AnalyticsDashboard tasks={tasks} />
-                )}
+                <Suspense fallback={
+                    <div className="flex items-center justify-center h-full">
+                        <div className="flex flex-col items-center space-y-4">
+                            <div className="w-8 h-8 border-2 border-[var(--accent-primary)] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-[var(--text-secondary)] text-sm">Loading...</p>
+                        </div>
+                    </div>
+                }>
+                    {activeTab === 'planner' && (
+                        <WeekView
+                            tasks={tasks}
+                            currentDate={currentDate}
+                            isStacked={isStacked}
+                            onDropOnGrid={handleDropOnGrid}
+                            onDragStart={handleDragStart}
+                            onUpdateTask={updateTask}
+                            onDeleteTask={deleteTask}
+                            onToggleTaskComplete={toggleTaskComplete}
+                            onTaskDrop={handleReorderTasks}
+                            showCompleted={showCompleted}
+                        />
+                    )}
+                    {activeTab === 'focus' && (
+                        <FocusMode
+                            tasks={tasks}
+                            onDragStart={handleDragStart}
+                            onToggleTaskComplete={toggleTaskComplete}
+                            onStartFocus={(id) => {
+                                setActiveTaskId(id);
+                            }}
+                            onUpdateTask={updateTask}
+                            showCompleted={showCompleted}
+                        />
+                    )}
+                    {activeTab === 'habits' && (
+                        <HabitTracker
+                            habits={habits}
+                            toggleHabit={toggleHabit}
+                            onDeleteHabit={deleteHabit}
+                            onAddHabit={addHabit}
+                        />
+                    )}
+                    {activeTab === 'braindump' && (
+                        <BrainDump
+                            lists={brainDumpLists}
+                            onUpdateList={(id, content) => {
+                                setBrainDumpLists(prev => prev.map(l => l.id === id ? { ...l, content } : l));
+                            }}
+                            onAddList={() => {
+                                const newList: BrainDumpList = {
+                                    id: Math.random().toString(36).substr(2, 9),
+                                    title: `List ${brainDumpLists.length + 1}`,
+                                    content: ''
+                                };
+                                setBrainDumpLists(prev => [...prev, newList]);
+                            }}
+                            onDeleteList={(id) => {
+                                setBrainDumpLists(prev => prev.filter(l => l.id !== id));
+                            }}
+                            onUpdateTitle={(id, title) => {
+                                setBrainDumpLists(prev => prev.map(l => l.id === id ? { ...l, title } : l));
+                            }}
+                        />
+                    )}
+                    {activeTab === 'analytics' && (
+                        <AnalyticsDashboard tasks={tasks} />
+                    )}
+                </Suspense>
             </MainLayout>
 
             {showSettings && (
@@ -540,7 +552,7 @@ const App = () => {
                     onImport={importData}
                 />
             )}
-        </>
+        </ThemeProvider>
     );
 };
 

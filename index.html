@@ -6,12 +6,226 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NeuroFlow OS</title>
   <link rel="icon" type="image/png" href="/favicon.png" />
+
+  <!-- Critical CSS for loading screen (inline to avoid flash) -->
+  <style>
+    #app-loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #312e81);
+      z-index: 50;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .loader-particles {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(96, 165, 250, 0.2);
+      border-radius: 50%;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .particle:nth-child(2) { animation-delay: 0.2s; left: 20%; top: 40%; }
+    .particle:nth-child(3) { animation-delay: 0.4s; left: 30%; top: 60%; }
+    .particle:nth-child(4) { animation-delay: 0.6s; left: 40%; top: 80%; }
+    .particle:nth-child(5) { animation-delay: 0.8s; left: 50%; top: 30%; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); opacity: 0.2; }
+      50% { transform: translateY(-20px); opacity: 0.8; }
+    }
+
+    .loader-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+
+    .loader-logo {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      animation: spin 2s linear infinite;
+    }
+
+    .loader-logo-inner {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .loader-title {
+      font-size: 30px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      letter-spacing: -0.025em;
+    }
+
+    .loader-subtitle {
+      font-size: 18px;
+      color: #bfdbfe;
+      margin-bottom: 32px;
+    }
+
+    .loader-bar {
+      width: 256px;
+      margin: 0 auto;
+      height: 4px;
+      background: #374151;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .loader-bar-fill {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      border-radius: 2px;
+      animation: progress 2s ease-in-out infinite;
+    }
+
+    .loader-bar-shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 1.5s linear infinite;
+    }
+
+    @keyframes progress {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .loader-dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .loader-dot {
+      width: 8px;
+      height: 8px;
+      background: #60a5fa;
+      border-radius: 50%;
+      animation: bounce 1.5s ease-in-out infinite;
+    }
+
+    .loader-dot:nth-child(2) { animation-delay: 0.1s; }
+    .loader-dot:nth-child(3) { animation-delay: 0.2s; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .loader-footer {
+      position: absolute;
+      bottom: 32px;
+      font-size: 14px;
+      color: rgba(147, 197, 253, 0.7);
+    }
+
+    /* Fade out animation */
+    .loader-fade-out {
+      transition: opacity 0.5s ease-out;
+      opacity: 0;
+    }
+  </style>
+
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&family=Manrope:wght@300;400;600;800&display=swap"
     rel="stylesheet">
+
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/src/index.tsx" as="script" crossorigin>
+  <link rel="preload" href="/src/index.css" as="style">
 </head>
 
 <body class="h-screen w-screen overflow-hidden antialiased selection:bg-cyan-500/30 selection:text-cyan-100">
+  <!-- Loading Screen -->
+  <div id="app-loader">
+    <!-- Animated background particles -->
+    <div class="loader-particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+
+    <!-- Main loading content -->
+    <div class="loader-content">
+      <!-- Logo/Icon -->
+      <div class="loader-logo">
+        <div class="loader-logo-inner"></div>
+      </div>
+
+      <!-- Title -->
+      <h1 class="loader-title">
+        Loading NeuroFlow
+      </h1>
+
+      <p class="loader-subtitle">
+        Dashboard
+      </p>
+
+      <!-- Loading bar -->
+      <div class="loader-bar">
+        <div class="loader-bar-fill"></div>
+        <div class="loader-bar-shimmer"></div>
+      </div>
+
+      <!-- Loading dots -->
+      <div class="loader-dots">
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+        <div class="loader-dot"></div>
+      </div>
+    </div>
+
+    <!-- Subtle bottom text -->
+    <p class="loader-footer">
+      Optimizing your productivity...
+    </p>
+  </div>
+
   <div id="root"></div>
   <script type="module" src="/src/index.tsx"></script>
 </body>

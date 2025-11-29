@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { Task, GridRow } from '../../../types';
 import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, ROW_CONFIG, DAYS, getAdjustedDate } from '../../../constants';
 import { TaskCard } from '@/components/TaskCard';
 import { GridCell } from './GridCell';
+import { staggerContainer } from '../../../utils/animations';
 
 interface WeekViewProps {
     tasks: Task[];
@@ -14,6 +16,7 @@ interface WeekViewProps {
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask?: (taskId: string) => void;
     onTaskDrop?: (sourceId: string, targetId: string) => void;
+    showCompleted?: boolean;
 }
 
 export const WeekView: React.FC<WeekViewProps> = ({
@@ -28,31 +31,42 @@ export const WeekView: React.FC<WeekViewProps> = ({
     onTaskDrop,
     showCompleted
 }) => {
-    const currentWeekDays = getWeekDays(currentDate);
-    // Use adjusted date for "Today" highlighting
-    const todayStr = formatDate(getAdjustedDate());
+    // Memoize expensive computations
+    const currentWeekDays = useMemo(() => getWeekDays(currentDate), [currentDate]);
+    const todayStr = useMemo(() => formatDate(getAdjustedDate()), []);
     const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
 
+    // Memoize task filtering functions
+    const getTasksForDay = useMemo(() => (day: Date) => {
+        const dayStr = formatDate(day);
+        return tasks.filter(t =>
+            t.status !== 'unscheduled' &&
+            t.dueDate === dayStr
+        );
+    }, [tasks]);
+
     const renderWeekStacked = () => (
-        <div className="flex-grow flex relative mt-0 overflow-y-auto no-scrollbar gap-2">
+        <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            animate="animate"
+            className="flex-grow flex relative mt-0 overflow-y-auto no-scrollbar gap-2"
+        >
             {currentWeekDays.map((day, i) => {
-                const dayTasks = tasks.filter(t =>
-                    t.status !== 'unscheduled' &&
-                    t.dueDate === formatDate(day) &&
-                    (showCompleted || t.status !== 'completed')
-                );
+                const dayTasks = getTasksForDay(day);
                 const isToday = formatDate(day) === todayStr;
 
                 return (
-                    <div
+                    <motion.div
                         key={i}
+                        variants={staggerContainer}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => onDropOnGrid(e, day, null)}
                         className={`
-                            flex-1 w-0 flex flex-col p-1.5 border-r last:border-none rounded-xl gap-2
+                            flex-1 w-0 flex flex-col p-2 border-r last:border-none rounded-lg gap-2 transition-colors
                             ${isToday
-                                ? 'bg-cyan-500/[0.04] border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.05)]'
-                                : 'border-white/[0.08]'
+                                ? 'bg-[var(--accent-primary)]/5 border-[var(--accent-primary)]/20'
+                                : 'border-[var(--border-primary)]'
                             }
                         `}
                     >
@@ -65,37 +79,47 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                 const indexB = tasks.findIndex(t => t.id === b.id);
                                 return (aVal - bVal) || (indexA - indexB);
                             })
-                            .map(task => (
-                                <TaskCard
+                            .map((task, taskIndex) => (
+                                <motion.div
                                     key={task.id}
-                                    task={task}
-                                    variant="board" // Always board variant for grid
-                                    onDragStart={onDragStart}
-                                    onUpdateTask={onUpdateTask}
-                                    onDeleteTask={onDeleteTask}
-                                    onToggleComplete={onToggleTaskComplete}
-                                    onTaskDrop={onTaskDrop}
-                                />
+                                    initial={{ opacity: 0, y: 4 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: taskIndex * 0.05, duration: 0.2 }}
+                                >
+                                    <TaskCard
+                                        task={task}
+                                        variant="board"
+                                        onDragStart={onDragStart}
+                                        onUpdateTask={onUpdateTask}
+                                        onDeleteTask={onDeleteTask}
+                                        onToggleComplete={onToggleTaskComplete}
+                                        onTaskDrop={onTaskDrop}
+                                        showCompleted={showCompleted}
+                                    />
+                                </motion.div>
                             ))}
-                    </div>
+                    </motion.div>
                 );
             })}
-        </div>
+        </motion.div>
     );
 
     const renderWeekMatrix = () => (
         <div className="flex-grow flex flex-col relative mt-0 overflow-y-auto no-scrollbar pr-1">
-            <div className="absolute top-0 left-2 text-[8px] font-bold text-slate-600 tracking-widest uppercase transform -translate-y-full mb-1">Mode</div>
             {ROW_LABELS.map(row => {
                 const rowConfig = ROW_CONFIG[row];
-                const style = rowConfig;
                 return (
-                    <div key={row} className={`${style.flexClass} shrink-0 flex border-b border-white/[0.08] last:border-b-0 group/row hover:bg-white/[0.02] transition-colors`}>
-                        {/* Enhanced Label Column - Reduced width */}
-                        <div className="w-16 shrink-0 flex flex-col items-center justify-center relative py-2 border-r border-white/[0.08]">
-                            <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full ${style.barColor} opacity-60 group-hover/row:opacity-100 transition-opacity`}></div>
-                            <rowConfig.icon size={14} className={`mb-1 ${style.color}`} />
-                            <div className={`text-[8px] font-bold tracking-widest uppercase ${style.color} mb-0.5 scale-90`}>{rowConfig.label}</div>
+                    <div
+                        key={row}
+                        className={`${rowConfig.flexClass} shrink-0 flex border-b border-[var(--border-primary)] last:border-b-0 group/row hover:bg-[var(--bg-hover)] transition-colors`}
+                    >
+                        {/* Label Column */}
+                        <div className="w-16 shrink-0 flex flex-col items-center justify-center relative py-2 border-r border-[var(--border-primary)]">
+                            <div className={`absolute left-0 top-2 bottom-2 w-0.5 rounded-r-full ${rowConfig.barColor} opacity-50 group-hover/row:opacity-100 transition-opacity`}></div>
+                            <rowConfig.icon size={14} className={`mb-1 ${rowConfig.color}`} />
+                            <div className={`text-[9px] font-medium tracking-wider uppercase ${rowConfig.color}`}>
+                                {rowConfig.label}
+                            </div>
                         </div>
 
                         {/* Columns */}
@@ -103,10 +127,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                             const dayTasks = tasks.filter(t => {
                                 if (t.status === 'unscheduled') return false;
                                 if (t.dueDate !== formatDate(day)) return false;
-                                if (!showCompleted && t.status === 'completed') return false;
                                 return true;
                             });
-                            const isDayEmpty = dayTasks.length === 0; // Determine if the day has no scheduled tasks
+                            const isDayEmpty = dayTasks.length === 0;
                             return (
                                 <GridCell
                                     key={`${i}-${row}`}
@@ -121,6 +144,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                     onToggleComplete={onToggleTaskComplete}
                                     isDayEmpty={isDayEmpty}
                                     onTaskDrop={onTaskDrop}
+                                    showCompleted={showCompleted}
                                 />
                             );
                         })}
@@ -131,14 +155,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
     );
 
     return (
-        <div className="flex flex-col h-full font-sans text-slate-300 overflow-hidden">
+        <div className="flex flex-col h-full font-sans text-[var(--text-primary)] overflow-hidden">
             {/* Grid Body */}
             <div className="flex-grow flex flex-col px-4 pb-4 overflow-hidden relative">
-                {/* Days Header - Significantly Scaled Up */}
-                <div className={`flex ${isStacked ? 'pl-0' : 'pl-16'} pb-0 shrink-0 transition-all duration-300 pt-1 gap-0`}>
+                {/* Days Header */}
+                <div className={`flex ${isStacked ? 'pl-0' : 'pl-16'} pb-2 shrink-0 transition-all duration-300 pt-2 gap-1`}>
                     {currentWeekDays.map((day, i) => {
                         const isToday = formatDate(day) === todayStr;
-                        const dayTasks = tasks.filter(t => t.dueDate === formatDate(day) && t.status !== 'unscheduled');
+                        const dayTasks = getTasksForDay(day);
                         const totalMinutes = dayTasks.reduce((acc, t) => acc + t.duration, 0);
 
                         // Capacity Logic
@@ -149,56 +173,60 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         const plannedHours = totalMinutes / 60;
                         let plannedDurationText: string;
                         if (totalMinutes === 0) {
-                            plannedDurationText = '0h planned';
+                            plannedDurationText = '0h';
                         } else if (plannedHours < 1) {
                             plannedDurationText = `${totalMinutes}m`;
                         } else {
                             plannedDurationText = `${plannedHours.toFixed(1).replace(/\.0$/, '')}h`;
                         }
 
-                        // Color Logic for text and bar fill - Simplified per spec for "Quiet Grid"
-                        const statTextColor = 'text-slate-500/80';
-                        const barFillColor = 'bg-cyan-500/80'; // Always category-neutral color
-                        const dayHeaderCaption = totalMinutes === 0 ? 'Free day' : '';
-
                         return (
-                            <div key={i} className="flex-1 w-0 text-center relative group px-1">
+                            <motion.div
+                                key={i}
+                                initial={{ opacity: 0, y: -8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: i * 0.05, duration: 0.2 }}
+                                className="flex-1 w-0 text-center relative group px-1"
+                            >
                                 <div className={`
-                        flex flex-col items-center py-2 px-1 rounded-xl transition-all relative 
-                        ${isToday
-                                        ? 'bg-gradient-to-b from-[#1e293b] to-transparent border-t border-cyan-500/30 text-cyan-50 shadow-[0_-5px_20px_rgba(6,182,212,0.1)] z-10'
-                                        : 'border-transparent'
+                                    flex flex-col items-center py-2 px-1 rounded-lg transition-all relative
+                                    ${isToday
+                                        ? 'bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30'
+                                        : 'border border-transparent hover:border-[var(--border-primary)]'
                                     }
-                    `}>
-                                    {/* Enlarged Day Name - Adjusted contrast */}
-                                    <span className={`text-xs font-black uppercase tracking-widest opacity-80 mb-0 ${isToday ? 'text-cyan-400' : 'text-slate-400'}`}>{DAYS[i]}</span>
+                                `}>
+                                    {/* Day Name */}
+                                    <span className={`text-xs font-medium uppercase tracking-wide mb-1 ${
+                                        isToday ? 'text-[var(--accent-primary)]' : 'text-[var(--text-tertiary)]'
+                                    }`}>
+                                        {DAYS[i]}
+                                    </span>
 
-                                    {/* Massive Date Number - Scaled to 4xl */}
-                                    <span className={`text-4xl font-display font-black leading-none ${isToday ? 'text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'text-slate-400'}`}>{day.getDate()}</span>
+                                    {/* Date Number */}
+                                    <span className={`text-2xl font-medium leading-none mb-1 ${
+                                        isToday ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
+                                    }`}>
+                                        {day.getDate()}
+                                    </span>
 
-                                    {/* Optional "Free day" caption */}
-                                    {dayHeaderCaption && (
-                                        <span className="text-[10px] text-slate-600/70">{dayHeaderCaption}</span>
-                                    )}
-
-                                    {/* Ultra-thin Capacity Bar + Capacity Text */}
+                                    {/* Capacity Bar */}
                                     <div className="w-full mt-2 flex flex-col items-center">
-                                        {/* Bar Track */}
-                                        <div className="w-full h-1 relative rounded-full bg-slate-800/30 overflow-hidden">
-                                            {/* Bar Fill */}
-                                            <div
-                                                className={`absolute left-0 top-0 bottom-0 transition-all duration-500 ease-out ${barFillColor} rounded-full`}
-                                                style={{ width: `${percentage}%` }}
-                                            ></div>
+                                        <div className="w-full h-0.5 relative rounded-full bg-[var(--bg-tertiary)] overflow-hidden">
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${percentage}%` }}
+                                                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                                className={`absolute left-0 top-0 bottom-0 ${isToday ? 'bg-[var(--accent-primary)]' : 'bg-[var(--text-tertiary)]'} rounded-full`}
+                                            />
                                         </div>
 
-                                        {/* Text Overlay - Small, muted capacity text */}
-                                        <div className={`mt-1 font-medium ${statTextColor} transition-colors ${dayTasks.length > 0 ? 'text-xs' : 'text-[10px]'}`}>
+                                        {/* Capacity Text */}
+                                        <div className={`mt-1.5 text-[10px] font-medium text-[var(--text-tertiary)]`}>
                                             {dayTasks.length} tasks · {plannedDurationText}
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </motion.div>
                         );
                     })}
                 </div>

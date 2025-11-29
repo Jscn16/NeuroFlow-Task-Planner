@@ -230,8 +230,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     const isExpanded = expandedCategories[cat.id];
                     const isDraggedOver = dragOverCategory === cat.id;
 
-                    if (catTasks.length === 0 && cat.id !== 'backlog' && !isDraggedOver) return null;
-
                     return (
                         <div
                             key={cat.id}

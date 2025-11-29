@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, Task, Habit, BrainDumpList } from './types';
-import { getAdjustedDate, getWeekDays, formatDate, INITIAL_TASKS, INITIAL_HABITS } from './constants';
+import { AppData, BrainDumpList } from './types';
+import { getAdjustedDate, INITIAL_TASKS, INITIAL_HABITS } from './constants';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -10,7 +10,7 @@ import { WeekView } from './components/features/board/WeekView';
 import { FocusMode } from './components/features/dashboard/FocusMode';
 import { HabitTracker } from './components/features/tools/HabitTracker';
 import { BrainDump } from './components/features/tools/BrainDump';
-import { themes, getThemeById, applyTheme } from './themes';
+import { getThemeById, applyTheme } from './themes';
 import { StorageService } from './services/StorageService';
 import { screenTransition } from './utils/animations';
 

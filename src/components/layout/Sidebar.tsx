@@ -3,6 +3,7 @@ import { Plus, ChevronDown, ChevronUp, Settings, PanelLeftClose, PanelLeftOpen, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType } from '../../types';
 import { TaskCard } from '@/components/TaskCard';
+import { CATEGORIES } from '../../constants';
 
 interface SidebarProps {
     tasks: Task[];
@@ -19,14 +20,7 @@ interface SidebarProps {
     onToggle: () => void;
 }
 
-const CATEGORIES = [
-    { id: 'high', label: 'High', color: '#f43f5e', emoji: '🔥' },
-    { id: 'medium', label: 'Medium', color: '#f97316', emoji: '⚡' },
-    { id: 'low', label: 'Low', color: '#facc15', emoji: '📋' },
-    { id: 'leisure', label: 'Leisure', color: '#22d3ee', emoji: '🎮' },
-    { id: 'chores', label: 'Chores', color: '#a8b3c1', emoji: '🧹' },
-    { id: 'backlog', label: 'Backlog', color: '#5a6472', emoji: '📥' },
-];
+
 
 // 6 buttons for even grid
 const QUICK_DURATIONS = [15, 30, 45, 60, 90, 120];

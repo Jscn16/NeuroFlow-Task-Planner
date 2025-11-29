@@ -20,23 +20,6 @@
 }
 
 :root {
-  /* Default theme values (True Neutral / Zinc) */
-  --bg-primary: #09090b;
-  /* zinc-950 */
-  --bg-secondary: #000000;
-  /* black (Sidebar) */
-  --bg-tertiary: #18181b;
-  /* zinc-900 */
-  --bg-glow: rgba(255, 255, 255, 0.02);
-
-  --text-primary: #f4f4f5;
-  /* zinc-100 */
-  --text-secondary: #a1a1aa;
-  /* zinc-400 */
-  --text-muted: #52525b;
-  /* zinc-600 */
-
-  --accent: #8d8d8db8;
   background-image:
     radial-gradient(circle at 50% -10%, var(--bg-glow) 0%, transparent 70%),
     linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary), black 20%) 100%);

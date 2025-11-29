@@ -19,7 +19,7 @@ interface TaskCardProps {
     viewMode?: 'show' | 'fade' | 'hide';
 }
 
-export const TaskCard: React.FC<TaskCardProps> = ({
+export const TaskCard = React.memo<TaskCardProps>(({
     task,
     variant,
     index,
@@ -382,4 +382,4 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             </div>
         </motion.div>
     );
-};
+});

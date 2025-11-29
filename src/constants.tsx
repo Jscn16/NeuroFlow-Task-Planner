@@ -32,6 +32,15 @@ export const TASK_CARD_BORDER_COLORS: Record<TaskType, string> = {
   chores: 'border-l-slate-500',
 };
 
+export const CATEGORIES = [
+  { id: 'high', label: 'High', color: '#f43f5e', emoji: '🔥' },
+  { id: 'medium', label: 'Medium', color: '#f97316', emoji: '⚡' },
+  { id: 'low', label: 'Low', color: '#facc15', emoji: '📋' },
+  { id: 'leisure', label: 'Leisure', color: '#22d3ee', emoji: '🎮' },
+  { id: 'chores', label: 'Chores', color: '#a8b3c1', emoji: '🧹' },
+  { id: 'backlog', label: 'Backlog', color: '#5a6472', emoji: '📥' },
+];
+
 export const getWeekDays = (startDate: Date = new Date()) => {
   const startOfWeek = new Date(startDate);
   const day = startOfWeek.getDay();
@@ -122,7 +131,7 @@ export const ROW_CONFIG: Record<GridRow, {
   'FOCUS': { label: 'FOCUS', sub: 'Deep work', icon: Flame, color: 'text-orange-400', barColor: 'bg-orange-500', flexClass: 'flex-[3] min-h-[100px]', description: ' uninterrupted blocks for complex tasks.' },
   'WORK': { label: 'WORK', sub: 'Business', icon: Briefcase, color: 'text-amber-400', barColor: 'bg-amber-400', flexClass: 'flex-[3] min-h-[100px]', description: 'Standard operational tasks and meetings.' },
   'LEISURE': { label: 'LEISURE', sub: 'Recharge', icon: Gamepad2, color: 'text-cyan-400', barColor: 'bg-cyan-400', flexClass: 'flex-[3] min-h-[100px]', description: 'Time to rest, play, and recover.' },
-  'CHORES': { label: 'CHORES', sub: 'Life admin', icon: Brush, color: 'text-slate-400', barColor: 'bg-slate-500', flexClass: 'flex-[3] min-h-[100px]', description: 'Maintenance, errands, and cleaning.' },
+  'CHORES': { label: 'CHORES', sub: 'Life admin', icon: Brush, color: 'text-zinc-400', barColor: 'bg-zinc-500', flexClass: 'flex-[3] min-h-[100px]', description: 'Maintenance, errands, and cleaning.' },
 };
 
 export const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, Task, Habit, BrainDumpList } from './types';
 import { getAdjustedDate, getWeekDays, formatDate, INITIAL_TASKS, INITIAL_HABITS } from './constants';
 import { MainLayout } from './components/layout/MainLayout';
@@ -11,6 +12,7 @@ import { HabitTracker } from './components/features/tools/HabitTracker';
 import { BrainDump } from './components/features/tools/BrainDump';
 import { themes, getThemeById, applyTheme } from './themes';
 import { StorageService } from './services/StorageService';
+import { screenTransition } from './utils/animations';
 
 // Hooks
 import { useTaskManager } from './hooks/useTaskManager';
@@ -51,6 +53,7 @@ const App = () => {
     // --- UI State ---
     const [activeTab, setActiveTab] = useState<string>('planner');
     const [currentDate, setCurrentDate] = useState(getAdjustedDate());
+    const [weekDirection, setWeekDirection] = useState<'next' | 'prev'>('next');
     const [isStacked, setIsStacked] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
@@ -90,6 +93,7 @@ const App = () => {
 
     // --- Handlers ---
     const handleWeekChange = (direction: 'prev' | 'next') => {
+        setWeekDirection(direction);
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
         setCurrentDate(newDate);
@@ -117,6 +121,8 @@ const App = () => {
                         onOpenSettings={() => setShowSettings(true)}
                         isOpen={isSidebarOpen}
                         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+                        isDragging={taskManager.isDragging}
+                        onDragEnd={taskManager.handleDragEnd}
                     />
                 }
                 header={
@@ -132,52 +138,101 @@ const App = () => {
                     />
                 }
             >
-                {activeTab === 'planner' && (
-                    <WeekView
-                        tasks={taskManager.tasks}
-                        currentDate={currentDate}
-                        isStacked={isStacked}
-                        onDropOnGrid={taskManager.handleDropOnGrid}
-                        onDragStart={taskManager.handleDragStart}
-                        onUpdateTask={taskManager.updateTask}
-                        onDeleteTask={taskManager.deleteTask}
-                        onToggleTaskComplete={taskManager.toggleTaskComplete}
-                        onTaskDrop={taskManager.handleReorderTasks}
-                        viewMode={viewMode}
-                    />
-                )}
-                {activeTab === 'focus' && (
-                    <FocusMode
-                        tasks={taskManager.tasks}
-                        onDragStart={taskManager.handleDragStart}
-                        onToggleTaskComplete={taskManager.toggleTaskComplete}
-                        onStartFocus={setActiveTaskId}
-                        onUpdateTask={taskManager.updateTask}
-                        showCompleted={viewMode === 'show'}
-                    />
-                )}
-                {activeTab === 'habits' && (
-                    <HabitTracker
-                        habits={habitManager.habits}
-                        toggleHabit={habitManager.toggleHabit}
-                        onDeleteHabit={habitManager.deleteHabit}
-                        onAddHabit={habitManager.addHabit}
-                    />
-                )}
-                {activeTab === 'braindump' && (
-                    <BrainDump
-                        lists={brainDumpManager.lists}
-                        onUpdateList={brainDumpManager.updateList}
-                        onAddList={brainDumpManager.addList}
-                        onDeleteList={brainDumpManager.deleteList}
-                        onUpdateTitle={brainDumpManager.updateTitle}
-                    />
-                )}
-                {activeTab === 'analytics' && (
-                    <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading analytics...</div>}>
-                        <AnalyticsDashboard tasks={taskManager.tasks} />
-                    </Suspense>
-                )}
+                <AnimatePresence mode="wait">
+                    {activeTab === 'planner' && (
+                        <motion.div
+                            key="planner"
+                            variants={screenTransition}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                            <WeekView
+                                tasks={taskManager.tasks}
+                                currentDate={currentDate}
+                                weekDirection={weekDirection}
+                                isStacked={isStacked}
+                                onDropOnGrid={taskManager.handleDropOnGrid}
+                                onDragStart={taskManager.handleDragStart}
+                                onUpdateTask={taskManager.updateTask}
+                                onDeleteTask={taskManager.deleteTask}
+                                onToggleTaskComplete={taskManager.toggleTaskComplete}
+                                onTaskDrop={taskManager.handleReorderTasks}
+                                onDragEnd={taskManager.handleDragEnd}
+                                viewMode={viewMode}
+                            />
+                        </motion.div>
+                    )}
+                    {activeTab === 'focus' && (
+                        <motion.div
+                            key="focus"
+                            variants={screenTransition}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                            <FocusMode
+                                tasks={taskManager.tasks}
+                                onDragStart={taskManager.handleDragStart}
+                                onToggleTaskComplete={taskManager.toggleTaskComplete}
+                                onStartFocus={setActiveTaskId}
+                                onUpdateTask={taskManager.updateTask}
+                                showCompleted={viewMode === 'show'}
+                            />
+                        </motion.div>
+                    )}
+                    {activeTab === 'habits' && (
+                        <motion.div
+                            key="habits"
+                            variants={screenTransition}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                            <HabitTracker
+                                habits={habitManager.habits}
+                                toggleHabit={habitManager.toggleHabit}
+                                onDeleteHabit={habitManager.deleteHabit}
+                                onAddHabit={habitManager.addHabit}
+                            />
+                        </motion.div>
+                    )}
+                    {activeTab === 'braindump' && (
+                        <motion.div
+                            key="braindump"
+                            variants={screenTransition}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                            <BrainDump
+                                lists={brainDumpManager.lists}
+                                onUpdateList={brainDumpManager.updateList}
+                                onAddList={brainDumpManager.addList}
+                                onDeleteList={brainDumpManager.deleteList}
+                                onUpdateTitle={brainDumpManager.updateTitle}
+                            />
+                        </motion.div>
+                    )}
+                    {activeTab === 'analytics' && (
+                        <motion.div
+                            key="analytics"
+                            variants={screenTransition}
+                            initial="initial"
+                            animate="animate"
+                            exit="exit"
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                        >
+                            <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading analytics...</div>}>
+                                <AnalyticsDashboard tasks={taskManager.tasks} />
+                            </Suspense>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </MainLayout>
 
             {showSettings && (

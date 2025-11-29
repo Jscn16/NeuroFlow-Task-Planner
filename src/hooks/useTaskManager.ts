@@ -48,13 +48,21 @@ export function useTaskManager(initialTasks: Task[]) {
     }, []);
 
     // Drag and Drop Logic
+    const [isDragging, setIsDragging] = useState(false);
+
     const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
         e.dataTransfer.setData('taskId', taskId);
         e.dataTransfer.effectAllowed = 'move';
+        setIsDragging(true);
+    }, []);
+
+    const handleDragEnd = useCallback((e: React.DragEvent) => {
+        setIsDragging(false);
     }, []);
 
     const handleDropOnGrid = useCallback((e: React.DragEvent, day: Date, row: GridRow | null) => {
         e.preventDefault();
+        setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
         if (!taskId) return;
 
@@ -94,6 +102,7 @@ export function useTaskManager(initialTasks: Task[]) {
 
     const handleDropOnSidebar = useCallback((e: React.DragEvent) => {
         e.preventDefault();
+        setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
         if (!taskId) return;
         manager.unscheduleTask(taskId);
@@ -101,6 +110,7 @@ export function useTaskManager(initialTasks: Task[]) {
 
     const handleDropOnEisenhower = useCallback((e: React.DragEvent, quad: 'do' | 'decide' | 'delegate' | 'delete') => {
         e.preventDefault();
+        setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
         if (!taskId) return;
         manager.setEisenhowerQuad(taskId, quad);
@@ -114,6 +124,8 @@ export function useTaskManager(initialTasks: Task[]) {
         toggleTaskComplete,
         handleReorderTasks,
         handleDragStart,
+        handleDragEnd,
+        isDragging,
         handleDropOnGrid,
         handleDropOnSidebar,
         handleDropOnEisenhower,

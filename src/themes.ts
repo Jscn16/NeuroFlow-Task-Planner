@@ -8,21 +8,21 @@ export interface Theme {
     bgSecondary: string;
     bgTertiary: string;
     bgGlow: string;
-    
+
     // Text colors
     textPrimary: string;
     textSecondary: string;
     textMuted: string;
-    
+
     // Accent colors
     accent: string;
     accentGlow: string;
     accentMuted: string;
-    
+
     // Border colors
     borderLight: string;
     borderMedium: string;
-    
+
     // Status colors (kept consistent across themes)
     success: string;
     warning: string;
@@ -58,62 +58,35 @@ export const themes: Theme[] = [
       error: '#ef4444',
     },
     fonts: {
-      sans: "'Inter', sans-serif",
-      display: "'Outfit', sans-serif",
+      sans: "'Manrope', sans-serif",
+      display: "'Manrope', sans-serif",
       mono: "'Manrope', monospace",
     },
   },
   {
-    id: 'forest',
-    name: 'Forest',
-    description: 'Deep greens with emerald accents',
+    id: 'minimal-dark',
+    name: 'Minimal Dark',
+    description: 'Ultra-minimal pure black with subtle accents',
     colors: {
-      bgPrimary: '#0a1410',
-      bgSecondary: '#0f1f18',
-      bgTertiary: '#142a20',
-      bgGlow: 'rgba(16, 185, 129, 0.15)',
-      textPrimary: '#d1fae5',
-      textSecondary: '#a7d7c5',
-      textMuted: '#5e9980',
-      accent: '#34d399',
-      accentGlow: 'rgba(52, 211, 153, 0.5)',
-      accentMuted: 'rgba(52, 211, 153, 0.1)',
-      borderLight: 'rgba(255, 255, 255, 0.05)',
-      borderMedium: 'rgba(255, 255, 255, 0.1)',
-      success: '#34d399',
-      warning: '#fbbf24',
-      error: '#f87171',
+      bgPrimary: '#0a0a0a',
+      bgSecondary: '#121212',
+      bgTertiary: '#21212154', // zinc-900 with opacity
+      bgGlow: 'rgba(255, 255, 255, 0.02)',
+      textPrimary: '#ffffff',
+      textSecondary: '#a8a8a8',
+      textMuted: '#6b6b6b',
+      accent: '#2070c2',
+      accentGlow: 'rgba(82, 167, 255, 0.3)',
+      accentMuted: 'rgba(82, 167, 255, 0.08)',
+      borderLight: 'rgba(255, 255, 255, 0.04)',
+      borderMedium: 'rgba(255, 255, 255, 0.08)',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
     },
     fonts: {
-      sans: "'Inter', sans-serif",
-      display: "'Outfit', sans-serif",
-      mono: "'Manrope', monospace",
-    },
-  },
-  {
-    id: 'nord',
-    name: 'Nord',
-    description: 'Arctic, bluish calm palette',
-    colors: {
-      bgPrimary: '#2e3440',
-      bgSecondary: '#3b4252',
-      bgTertiary: '#434c5e',
-      bgGlow: 'rgba(136, 192, 208, 0.15)',
-      textPrimary: '#eceff4',
-      textSecondary: '#d8dee9',
-      textMuted: '#7b88a1',
-      accent: '#88c0d0',
-      accentGlow: 'rgba(136, 192, 208, 0.5)',
-      accentMuted: 'rgba(136, 192, 208, 0.1)',
-      borderLight: 'rgba(255, 255, 255, 0.05)',
-      borderMedium: 'rgba(255, 255, 255, 0.1)',
-      success: '#a3be8c',
-      warning: '#ebcb8b',
-      error: '#bf616a',
-    },
-    fonts: {
-      sans: "'Inter', sans-serif",
-      display: "'Outfit', sans-serif",
+      sans: "'Manrope', sans-serif",
+      display: "'Manrope', sans-serif",
       mono: "'Manrope', monospace",
     },
   },
@@ -122,32 +95,32 @@ export const themes: Theme[] = [
     name: 'Monochrome',
     description: 'Pure grayscale minimalism',
     colors: {
-      bgPrimary: '#0a0a0a',
-      bgSecondary: '#141414',
-      bgTertiary: '#1f1f1f',
-      bgGlow: 'rgba(255, 255, 255, 0.05)',
+      bgPrimary: '#0d0d0d',
+      bgSecondary: '#171717',
+      bgTertiary: '#242424',
+      bgGlow: 'rgba(255, 255, 255, 0.03)',
       textPrimary: '#fafafa',
-      textSecondary: '#a3a3a3',
-      textMuted: '#525252',
-      accent: '#e5e5e5',
-      accentGlow: 'rgba(255, 255, 255, 0.3)',
-      accentMuted: 'rgba(255, 255, 255, 0.05)',
-      borderLight: 'rgba(255, 255, 255, 0.05)',
-      borderMedium: 'rgba(255, 255, 255, 0.1)',
-      success: '#a3a3a3',
-      warning: '#d4d4d4',
-      error: '#737373',
+      textSecondary: '#b3b3b3',
+      textMuted: '#666666',
+      accent: '#ffffff38',
+      accentGlow: 'rgba(255, 255, 255, 0.4)',
+      accentMuted: 'rgba(255, 255, 255, 0.06)',
+      borderLight: 'rgba(255, 255, 255, 0.06)',
+      borderMedium: 'rgba(255, 255, 255, 0.12)',
+      success: '#d4d4d4',
+      warning: '#e5e5e5',
+      error: '#a3a3a3',
     },
     fonts: {
-      sans: "'Inter', sans-serif",
-      display: "'Inter', sans-serif",
+      sans: "'Manrope', sans-serif",
+      display: "'Manrope', sans-serif",
       mono: "'Manrope', monospace",
     },
   },
   {
     id: 'northern-lights',
     name: 'Northern Lights',
-    description: 'Aurora borealis inspired greens & purples',
+    description: 'Aurora borealis inspired blues \u0026 purples',
     colors: {
       bgPrimary: '#0d1117',
       bgSecondary: '#161b22',
@@ -156,18 +129,45 @@ export const themes: Theme[] = [
       textPrimary: '#e6edf3',
       textSecondary: '#8b949e',
       textMuted: '#6e7681',
-      accent: '#58d68d',
-      accentGlow: 'rgba(88, 214, 141, 0.5)',
-      accentMuted: 'rgba(88, 214, 141, 0.1)',
+      accent: '#2f6fff82',
+      accentGlow: 'rgba(88, 166, 255, 0.5)',
+      accentMuted: 'rgba(88, 166, 255, 0.1)',
       borderLight: 'rgba(255, 255, 255, 0.05)',
       borderMedium: 'rgba(255, 255, 255, 0.1)',
-      success: '#58d68d',
+      success: '#3fb950',
       warning: '#d29922',
       error: '#f85149',
     },
     fonts: {
-      sans: "'Inter', sans-serif",
-      display: "'Outfit', sans-serif",
+      sans: "'Manrope', sans-serif",
+      display: "'Manrope', sans-serif",
+      mono: "'Manrope', monospace",
+    },
+  },
+  {
+    id: 'true-neutral',
+    name: 'Industrial Dark',
+    description: 'Strict Industrial Dark (Zinc/Black)',
+    colors: {
+      bgPrimary: '#09090b', // zinc-950
+      bgSecondary: '#000000', // black
+      bgTertiary: '#18181b', // zinc-900
+      bgGlow: 'rgba(255, 255, 255, 0.02)',
+      textPrimary: '#f4f4f5', // zinc-100
+      textSecondary: '#a1a1aa', // zinc-400
+      textMuted: '#52525b', // zinc-600
+      accent: '#8d8d8db8',
+      accentGlow: 'rgba(255, 255, 255, 0.15)',
+      accentMuted: 'rgba(255, 255, 255, 0.05)',
+      borderLight: 'rgba(255, 255, 255, 0.05)',
+      borderMedium: 'rgba(255, 255, 255, 0.1)',
+      success: '#10b981',
+      warning: '#f59e0b',
+      error: '#ef4444',
+    },
+    fonts: {
+      sans: "'Manrope', sans-serif",
+      display: "'Manrope', sans-serif",
       mono: "'Manrope', monospace",
     },
   },
@@ -179,33 +179,33 @@ export const getThemeById = (id: string): Theme => {
 
 export const applyTheme = (theme: Theme): void => {
   const root = document.documentElement;
-  
+
   // Apply colors
   root.style.setProperty('--bg-primary', theme.colors.bgPrimary);
   root.style.setProperty('--bg-secondary', theme.colors.bgSecondary);
   root.style.setProperty('--bg-tertiary', theme.colors.bgTertiary);
   root.style.setProperty('--bg-glow', theme.colors.bgGlow);
-  
+
   root.style.setProperty('--text-primary', theme.colors.textPrimary);
   root.style.setProperty('--text-secondary', theme.colors.textSecondary);
   root.style.setProperty('--text-muted', theme.colors.textMuted);
-  
+
   root.style.setProperty('--accent', theme.colors.accent);
   root.style.setProperty('--accent-glow', theme.colors.accentGlow);
   root.style.setProperty('--accent-muted', theme.colors.accentMuted);
-  
+
   root.style.setProperty('--border-light', theme.colors.borderLight);
   root.style.setProperty('--border-medium', theme.colors.borderMedium);
-  
+
   root.style.setProperty('--success', theme.colors.success);
   root.style.setProperty('--warning', theme.colors.warning);
   root.style.setProperty('--error', theme.colors.error);
-  
+
   // Apply fonts
   root.style.setProperty('--font-sans', theme.fonts.sans);
   root.style.setProperty('--font-display', theme.fonts.display);
   root.style.setProperty('--font-mono', theme.fonts.mono);
-  
+
   // Set theme id as data attribute for potential CSS selectors
   root.setAttribute('data-theme', theme.id);
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarDays, Target, ListChecks, Notebook, BarChart3, ChevronLeft, ChevronRight, Moon, PanelLeft } from 'lucide-react';
 import { formatDate, getWeekDays, isLateNight } from '../../constants';
+import { pulseScale } from '../../utils/animations';
 interface HeaderProps {
     activeTab: string;
     setActiveTab: (tab: string) => void;
@@ -27,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({
 
     const tabs = [
         { id: 'planner', label: 'Planner', icon: CalendarDays },
-        { id: 'focus', label: 'Deep Work', icon: Target },
+        { id: 'focus', label: 'Deep Focus', icon: Target },
         { id: 'braindump', label: 'Brain Dump', icon: Notebook },
         { id: 'habits', label: 'Habits', icon: ListChecks },
         { id: 'analytics', label: 'Stats', icon: BarChart3 },
@@ -46,20 +48,20 @@ export const Header: React.FC<HeaderProps> = ({
                 {!isSidebarOpen && (
                     <button
                         onClick={onToggleSidebar}
-                        className="p-2 rounded-xl transition-colors hover:bg-white/10 text-slate-400 hover:text-white"
+                        className="p-2 rounded-xl transition-colors hover:bg-white/10 text-zinc-400 hover:text-white"
                         title="Open Sidebar"
                     >
                         <PanelLeft size={20} />
                     </button>
                 )}
-                <div className="flex flex-col justify-center">
+                <div className="flex items-center gap-3">
                     <h1
                         className="text-xl font-display font-extrabold tracking-tight drop-shadow-[0_2px_10px_rgba(255,255,255,0.1)]"
                         style={{ color: 'var(--text-primary)' }}
                     >
-                        Overview
+                        Overview:
                     </h1>
-                    <p className="text-[10px] font-medium ml-0.5" style={{ color: 'var(--text-muted)' }}>
+                    <p className="text-xl font-display font-bold" style={{ color: 'var(--text-primary)' }}>
                         {currentWeekDays[0].toLocaleDateString('en-US', { month: 'short' })} {currentWeekDays[0].getDate()} — {currentWeekDays[6].getDate()}, {currentWeekDays[0].getFullYear()}
                     </p>
                 </div>
@@ -87,7 +89,8 @@ export const Header: React.FC<HeaderProps> = ({
                                 style={{
                                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                                     backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                    boxShadow: isActive ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none'
+                                    boxShadow: isActive ? '0 4px 6px -1px rgba(0, 0, 0, 0.1)' : 'none',
+                                    transform: isActive ? 'scale(1.02)' : 'scale(1)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (!isActive) {
@@ -105,10 +108,12 @@ export const Header: React.FC<HeaderProps> = ({
                                 <Icon size={14} style={{ color: isActive ? 'var(--accent)' : 'inherit' }} />
                                 <span>{tab.label}</span>
                                 {isActive && (
-                                    <div
+                                    <motion.div
+                                        layoutId="activeTabIndicator"
                                         className="absolute inset-0 rounded-xl bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none border"
                                         style={{ borderColor: 'var(--border-light)' }}
-                                    ></div>
+                                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                                    ></motion.div>
                                 )}
                             </button>
                         )
@@ -147,12 +152,20 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* Late Night Badge */}
-                {isLateNightSession && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                        <Moon size={12} />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Late Night Session</span>
-                    </div>
-                )}
+                <AnimatePresence>
+                    {isLateNightSession && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                            transition={{ duration: 0.18, ease: 'easeOut' }}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
+                        >
+                            <Moon size={12} />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Late Night Session</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

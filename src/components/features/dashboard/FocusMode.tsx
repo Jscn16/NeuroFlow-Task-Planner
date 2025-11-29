@@ -208,23 +208,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
 
     return (
         <div className="h-full p-8 overflow-y-auto">
-            <div className="max-w-3xl mx-auto mt-10 px-8">
+            <div className="max-w-7xl mx-auto mt-10 px-8">
                 <div className="mb-8 text-center md:text-left flex items-end justify-between">
                     <div>
-                        <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus Mode</h2>
+                        <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus</h2>
                         <p className="text-sm text-slate-500 font-medium">
                             Today total: {totalTasks} tasks · {timeString} planned
                         </p>
                     </div>
-                    {!activeTask && focusTasks.length > 0 && (
-                        <button
-                            onClick={() => handleStartTask(focusTasks[0].id)}
-                            className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm font-bold flex items-center gap-2"
-                        >
-                            <Play size={16} fill="currentColor" />
-                            Start first task
-                        </button>
-                    )}
                 </div>
 
                 <div className="space-y-8">
@@ -303,9 +294,9 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                             </div>
                         </div>
                     ) : (
-                        <div className="w-full border-dashed border-2 border-emerald-400/30 bg-slate-900/40 rounded-2xl p-8 text-center">
-                            <h3 className="text-xl font-bold text-slate-300 mb-2">No active deep work session</h3>
-                            <p className="text-slate-500">Pick a task from your queue to start</p>
+                        <div className="w-full border-dashed border-2 border-slate-800/50 bg-slate-900/20 rounded-2xl p-8 text-center">
+                            <h3 className="text-xl font-bold text-slate-500 mb-2">No active deep work session</h3>
+                            <p className="text-slate-600">Pick a task from your queue to start</p>
                         </div>
                     )}
 
@@ -326,10 +317,10 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 </div>
                                 <button
                                     onClick={() => handleStartTask(task.id)}
-                                    className="px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm font-bold flex items-center gap-2 shrink-0"
+                                    className="p-3 rounded-full bg-slate-800/50 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all shrink-0"
+                                    title={`Start: ${task.title}`}
                                 >
-                                    <Play size={16} fill="currentColor" />
-                                    Start ({task.duration}m)
+                                    <Play size={20} fill="currentColor" />
                                 </button>
                             </div>
                         ))}

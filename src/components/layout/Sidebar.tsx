@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { LayoutGrid, Plus, ChevronDown, ChevronUp, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Settings, PanelLeftClose, PanelLeftOpen, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType } from '../../types';
 import { TaskCard } from '@/components/TaskCard';
@@ -7,7 +7,9 @@ import { TaskCard } from '@/components/TaskCard';
 interface SidebarProps {
     tasks: Task[];
     onDragStart: (e: React.DragEvent, taskId: string) => void;
+    onDragEnd: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
+    isDragging: boolean;
     onAddTask: (title: string, duration: number, type: TaskType) => void;
     onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask: (taskId: string) => void;
@@ -39,7 +41,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onToggleTaskComplete,
     onOpenSettings,
     isOpen,
-    onToggle
+    onToggle,
+    isDragging,
+    onDragEnd
 }) => {
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDuration, setNewTaskDuration] = useState(30);
@@ -123,17 +127,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Logo */}
                 <div className="p-4 pb-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div
-                            className="w-9 h-9 rounded-xl flex items-center justify-center"
-                            style={{ backgroundColor: 'var(--accent)' }}
-                        >
-                            <LayoutGrid size={18} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-display font-bold" style={{ color: 'var(--text-primary)' }}>
+                        <Check size={32} strokeWidth={4} style={{ color: 'var(--accent)' }} />
+                        <div className="flex flex-col">
+                            <h1 className="text-2xl font-display font-bold leading-none tracking-tight" style={{ color: 'var(--text-primary)' }}>
                                 Neuro<span style={{ color: 'var(--accent)' }}>Flow</span>
                             </h1>
-                            <p className="text-[10px] font-medium -mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                            <p className="text-[9px] font-medium tracking-[0.2em] uppercase leading-none mt-1" style={{ color: 'var(--text-primary)', opacity: 0.8 }}>
                                 Task Planner
                             </p>
                         </div>
@@ -175,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onChange={(e) => setNewTaskTitle(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                                 placeholder="Add new task..."
-                                className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-slate-500 focus:outline-none border"
+                                className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-zinc-500 focus:outline-none border"
                                 style={{
                                     color: 'var(--text-primary)',
                                     borderColor: newTaskTitle ? 'var(--accent)' : 'var(--border-light)'
@@ -258,63 +257,86 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 onDragOver={(e) => e.preventDefault()}
                                 onDragLeave={(e) => handleCategoryDragLeave(e, cat.id)}
                                 onDrop={(e) => handleCategoryDrop(e, cat.id)}
+                                className="mt-3 first:mt-0" // Top divider spacing
                             >
-                                <button
-                                    onClick={() => toggleCategory(cat.id)}
-                                    className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg transition-all"
-                                    style={{
-                                        backgroundColor: isDraggedOver ? `${cat.color}15` : 'transparent',
-                                        border: isDraggedOver ? `2px dashed ${cat.color}` : '2px solid transparent'
-                                    }}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                                        <span className="text-xs font-bold uppercase tracking-wide" style={{ color: cat.color }}>
-                                            {cat.label}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span
-                                            className="text-[11px] font-bold px-2 py-0.5 rounded"
-                                            style={{ backgroundColor: `${cat.color}15`, color: cat.color }}
-                                        >
-                                            {catTasks.length}
-                                        </span>
-                                        <ChevronDown
-                                            size={14}
-                                            className="transition-transform"
-                                            style={{
-                                                color: 'var(--text-muted)',
-                                                transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-                                            }}
-                                        />
-                                    </div>
-                                </button>
-
-                                <div
-                                    className="space-y-1.5 overflow-hidden transition-all duration-200"
-                                    style={{
-                                        maxHeight: isExpanded ? 'none' : '0px',
-                                        opacity: isExpanded ? 1 : 0,
-                                        paddingTop: isExpanded && catTasks.length > 0 ? '6px' : '0'
-                                    }}
-                                >
-                                    {catTasks.map(task => (
-                                        <TaskCard
-                                            key={task.id}
-                                            task={task}
-                                            variant="sidebar"
-                                            onDragStart={onDragStart}
-                                            onUpdateTask={onUpdateTask}
-                                            onDeleteTask={onDeleteTask}
-                                            onToggleComplete={onToggleTaskComplete}
-                                        />
-                                    ))}
-                                    {catTasks.length === 0 && (
-                                        <div className="text-xs py-2 px-2" style={{ color: 'var(--text-muted)' }}>
-                                            {isDraggedOver ? 'Drop here to add' : 'No tasks — drag here'}
+                                {/* Section Header */}
+                                <div className={`border-t border-zinc-800/40 pt-3 px-3 pb-1 flex items-center justify-between group ${cat.id === 'high' ? 'border-t-0 pt-0' : ''}`}>
+                                    <button
+                                        onClick={() => toggleCategory(cat.id)}
+                                        className="flex-1 flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-2 h-2 rounded-full shadow-[0_0_6px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
+                                            <span className="text-[11px] font-medium tracking-[0.12em] uppercase text-zinc-400 group-hover:text-zinc-200 transition-colors">
+                                                {cat.label}
+                                            </span>
                                         </div>
-                                    )}
+
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 font-mono">
+                                                {catTasks.length}
+                                            </span>
+                                            <ChevronDown
+                                                size={14}
+                                                className="transition-transform text-zinc-600 group-hover:text-zinc-400"
+                                                style={{
+                                                    transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
+                                                }}
+                                            />
+                                        </div>
+                                    </button>
+                                </div>
+
+                                {/* Section Body */}
+                                <div
+                                    className="overflow-hidden transition-all duration-200"
+                                    style={{
+                                        maxHeight: isExpanded || isDragging ? 'none' : '0px',
+                                        opacity: isExpanded || isDragging ? 1 : 0,
+                                    }}
+                                >
+                                    <div className="mt-2 px-3 space-y-2 pb-2">
+                                        {catTasks.map(task => (
+                                            <TaskCard
+                                                key={task.id}
+                                                task={task}
+                                                variant="sidebar"
+                                                onDragStart={onDragStart}
+                                                onUpdateTask={onUpdateTask}
+                                                onDeleteTask={onDeleteTask}
+                                                onToggleComplete={onToggleTaskComplete}
+                                            />
+                                        ))}
+
+                                        {/* Drop Zone Placeholder */}
+                                        {isDragging ? (
+                                            <div
+                                                className={`
+                                                    mt-2 border-2 border-dashed rounded-md h-12 w-full flex items-center justify-center text-xs transition-colors duration-200
+                                                    ${isDraggedOver
+                                                        ? 'bg-opacity-10'
+                                                        : 'border-zinc-700/50 bg-zinc-800/20 text-zinc-500'
+                                                    }
+                                                `}
+                                                style={isDraggedOver ? {
+                                                    borderColor: cat.color,
+                                                    backgroundColor: `${cat.color}20`,
+                                                    color: cat.color
+                                                } : undefined}
+                                            >
+                                                Drop to add
+                                            </div>
+                                        ) : (
+                                            /* Empty State */
+                                            catTasks.length === 0 && (
+                                                <div
+                                                    className="text-[11px] italic px-3 py-3 text-center text-zinc-500/60"
+                                                >
+                                                    No tasks — drag here
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         );

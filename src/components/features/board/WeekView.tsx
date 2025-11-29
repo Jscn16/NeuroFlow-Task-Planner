@@ -5,10 +5,12 @@ import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, ROW_CONFIG, DAYS, getAdj
 import { TaskCard } from '@/components/TaskCard';
 import { GridCell } from './GridCell';
 import { CheckCircle2 } from 'lucide-react';
+import { weekSwitch, fadeLift } from '../../../utils/animations';
 
 interface WeekViewProps {
     tasks: Task[];
     currentDate: Date;
+    weekDirection: 'next' | 'prev';
     isStacked: boolean;
     onDropOnGrid: (e: React.DragEvent, day: Date, row: GridRow | null) => void;
     onDragStart: (e: React.DragEvent, taskId: string) => void;
@@ -42,6 +44,7 @@ const getGradientColor = (percent: number): string => {
 export const WeekView: React.FC<WeekViewProps> = ({
     tasks,
     currentDate,
+    weekDirection,
     isStacked,
     onDropOnGrid,
     onDragStart,
@@ -55,11 +58,21 @@ export const WeekView: React.FC<WeekViewProps> = ({
     const todayStr = formatDate(getAdjustedDate());
     const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
 
+    // Generate a unique key for the current week
+    const weekKey = formatDate(currentWeekDays[0]);
+
     // Track which icon is hovered (not row)
     const [hoveredIcon, setHoveredIcon] = useState<GridRow | null>(null);
 
     const renderWeekStacked = () => (
-        <div className="flex-grow flex relative mt-0 overflow-y-auto no-scrollbar gap-2">
+        <motion.div
+            key={weekKey}
+            variants={weekSwitch(weekDirection)}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex-grow flex relative mt-0 overflow-y-auto no-scrollbar gap-2"
+        >
             {currentWeekDays.map((day, i) => {
                 // Get all tasks for the day (including completed)
                 const allDayTasks = tasks.filter(t =>
@@ -91,9 +104,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         onDrop={(e) => onDropOnGrid(e, day, null)}
                         className="flex-1 w-0 flex flex-col p-2 rounded-2xl gap-2 transition-all duration-300"
                         style={{
-                            backgroundColor: isToday
-                                ? 'color-mix(in srgb, var(--accent) 2%, transparent)'
-                                : (isPastDay ? 'rgba(2, 6, 23, 0.4)' : 'transparent'), // bg-slate-950/40
+                            backgroundColor: 'transparent',
                             border: isToday ? '1px solid' : (isPastDay ? '1px solid color-mix(in srgb, var(--border-light), transparent 35%)' : '1px solid transparent'),
                             borderColor: isToday ? 'color-mix(in srgb, var(--accent) 10%, transparent)' : 'transparent'
                         }}
@@ -182,11 +193,18 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     </div>
                 );
             })}
-        </div>
+        </motion.div>
     );
 
     const renderWeekMatrix = () => (
-        <div className="flex-grow flex flex-col relative mt-0 overflow-y-auto no-scrollbar pr-1">
+        <motion.div
+            key={weekKey}
+            variants={weekSwitch(weekDirection)}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="flex-grow flex flex-col relative mt-0 overflow-y-auto no-scrollbar pr-1"
+        >
             {ROW_LABELS.map(row => {
                 const rowConfig = ROW_CONFIG[row];
                 const style = rowConfig;
@@ -244,10 +262,10 @@ export const WeekView: React.FC<WeekViewProps> = ({
                             </div>
 
                             <div
-                                className="text-[8px] font-medium mt-0.5"
+                                className="text-[10px] font-bold mt-0.5"
                                 style={{
                                     color: 'var(--text-secondary)',
-                                    opacity: 0.8
+                                    opacity: 0.9
                                 }}
                             >
                                 {rowConfig.sub}
@@ -279,13 +297,14 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                     onTaskDrop={onTaskDrop}
                                     viewMode={viewMode}
                                     isPastDay={isPastDay}
+                                    isFirstColumn={i === 0}
                                 />
                             );
                         })}
                     </div>
                 );
             })}
-        </div>
+        </motion.div>
     );
 
     return (
@@ -327,13 +346,13 @@ export const WeekView: React.FC<WeekViewProps> = ({
                         return (
                             <div key={i} className="flex-1 w-0 text-center relative group px-1">
                                 <div
-                                    className="flex flex-col items-center py-3 px-2 rounded-2xl transition-all duration-300 relative"
+                                    className="flex flex-col items-center py-3 px-2 rounded-t-2xl transition-all duration-300 relative"
                                     style={{
-                                        background: isToday
-                                            ? `linear-gradient(to bottom, color-mix(in srgb, var(--accent) 3%, transparent), transparent)`
-                                            : 'transparent',
-                                        borderTop: isToday ? '2px solid' : 'none',
-                                        borderColor: isToday ? 'color-mix(in srgb, var(--accent) 30%, transparent)' : 'transparent',
+                                        background: isToday ? 'rgba(255,255,255,0.02)' : 'transparent',
+                                        borderLeft: isToday ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                        borderRight: isToday ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                        borderTop: isToday ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                        boxShadow: isToday ? '0 0 20px rgba(34,211,238,0.15)' : 'none',
                                         zIndex: isToday ? 10 : 'auto',
                                         opacity: isPastDay ? 0.85 : 1
                                     }}
@@ -417,7 +436,9 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 </div>
 
                 {/* Rows */}
-                {isStacked ? renderWeekStacked() : renderWeekMatrix()}
+                <AnimatePresence mode="wait">
+                    {isStacked ? renderWeekStacked() : renderWeekMatrix()}
+                </AnimatePresence>
             </div >
         </div >
     );

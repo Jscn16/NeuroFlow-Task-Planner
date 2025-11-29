@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { CheckCircle2, X, Plus } from 'lucide-react';
 import { Habit } from '../../../types';
 import { DAYS } from '../../../constants';
@@ -23,8 +24,8 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
     };
 
     return (
-        <div className="h-full p-8 overflow-y-auto">
-            <h2 className="text-3xl font-display font-bold text-white mb-8">Habit Tracker</h2>
+        <div className="h-full overflow-y-auto flex-1 overflow-hidden relative pt-5 max-w-7xl mx-auto w-full">
+            <h2 className="text-3xl font-display font-bold text-white mb-8" style={{ textAlign: 'left', paddingLeft: '1rem' }}>Habit Tracker</h2>
             <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-8 overflow-x-auto">
                 <table className="w-full">
                     <thead>
@@ -60,18 +61,24 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                     </td>
                                     {habit.checks.map((checked, i) => (
                                         <td key={i} className="py-4 px-2 text-center">
-                                            <button
+                                            <motion.button
                                                 onClick={() => toggleHabit(habit.id, i)}
+                                                whileTap={{ scale: 0.94 }}
+                                                whileHover={{ scale: 1.05 }}
+                                                animate={{
+                                                    scale: checked ? [1, 1.02, 1] : 1,
+                                                }}
+                                                transition={{ duration: 0.14, ease: 'easeOut' }}
                                                 className={`
-                                                    w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center mx-auto
-                                                    ${checked
-                                                        ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)] scale-110'
+                                                        w-8 h-8 rounded-lg transition-all duration-300 flex items-center justify-center mx-auto
+                                                        ${checked
+                                                        ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
                                                         : 'bg-white/[0.05] text-transparent hover:bg-white/[0.1]'
                                                     }
-                                                `}
+                                                    `}
                                             >
                                                 <CheckCircle2 size={16} strokeWidth={4} />
-                                            </button>
+                                            </motion.button>
                                         </td>
                                     ))}
                                     <td className="py-4 px-4 text-center">

@@ -35,7 +35,8 @@ export const GridCell: React.FC<GridCellProps> = ({
     onTaskDrop,
 
     viewMode,
-    isPastDay
+    isPastDay,
+    isFirstColumn
 }) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const dayStr = formatDate(day);
@@ -92,14 +93,13 @@ export const GridCell: React.FC<GridCellProps> = ({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className="relative flex-1 w-0 flex flex-col p-1.5 gap-1 transition-colors duration-150"
+            className="relative flex-1 w-0 flex flex-col p-1.5 pt-3 gap-1 transition-colors duration-150"
             style={{
-                borderRight: isPastDay ? '1px solid color-mix(in srgb, var(--border-light), transparent 20%)' : '1px solid var(--border-light)',
+                borderLeft: isToday ? '1px solid rgba(255,255,255,0.05)' : (!isFirstColumn ? '1px solid rgba(255,255,255,0.05)' : 'none'),
+                borderRight: isToday ? '1px solid rgba(255,255,255,0.05)' : (isPastDay ? '1px solid color-mix(in srgb, var(--border-light), transparent 20%)' : '1px solid var(--border-light)'),
                 backgroundColor: isDragOver
                     ? 'var(--accent-muted)'
-                    : isToday
-                        ? 'color-mix(in srgb, var(--accent) 3%, transparent)'
-                        : (isPastDay ? 'rgba(2, 6, 23, 0.4)' : 'transparent')
+                    : (isToday ? 'rgba(255,255,255,0.02)' : 'transparent')
             }}
         >
             {/* Tasks */}
@@ -122,7 +122,7 @@ export const GridCell: React.FC<GridCellProps> = ({
                             onDeleteTask={onDeleteTask}
                             onToggleComplete={onToggleComplete}
                             onTaskDrop={onTaskDrop}
-                            isOverdue={isPastDay}
+                            isOverdue={isPastDay && task.status !== 'completed'}
                             viewMode={viewMode}
                         />
                     </motion.div>

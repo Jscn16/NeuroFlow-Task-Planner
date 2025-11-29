@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Clock, Check, X } from 'lucide-react';
 import { Task } from '../types';
 import { TYPE_COLORS, TASK_CARD_BORDER_COLORS, TYPE_INDICATOR_COLORS } from '../constants';
@@ -94,7 +95,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     // Edit mode rendering
     if (isEditing) {
         return (
-            <div 
+            <div
                 className="relative flex flex-col gap-2 p-3 rounded-xl border backdrop-blur-md animate-in zoom-in-95 duration-200"
                 style={{
                     backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 90%, transparent)',
@@ -109,9 +110,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                             onChange={(e) => setEditedTitle(e.target.value)}
                             onKeyDown={handleKeyDown}
                             className="bg-black/20 text-sm font-medium rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-1 transition-all"
-                            style={{ 
-                                color: 'var(--text-primary)', 
-                                '--tw-ring-color': 'var(--accent)' 
+                            style={{
+                                color: 'var(--text-primary)',
+                                '--tw-ring-color': 'var(--accent)'
                             } as React.CSSProperties}
                             autoFocus
                         />
@@ -122,9 +123,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                                 onChange={(e) => setEditedDuration(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 className="bg-black/20 text-xs rounded-lg px-3 py-1.5 w-16 focus:outline-none focus:ring-1 transition-all"
-                                style={{ 
-                                    color: 'var(--text-muted)', 
-                                    '--tw-ring-color': 'var(--accent)' 
+                                style={{
+                                    color: 'var(--text-muted)',
+                                    '--tw-ring-color': 'var(--accent)'
                                 } as React.CSSProperties}
                             />
                             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
@@ -195,29 +196,42 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     // Board variant - Optimized layout
     if (variant === 'board') {
         return (
-            <div
+            <motion.div
                 draggable={!isEditing}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDoubleClick={handleDoubleClick}
+                layout
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                whileHover={{
+                    scale: 1.02,
+                    y: -2,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                    transition: { type: "spring", stiffness: 400, damping: 25 }
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 className={`
                     relative h-full flex flex-col p-2.5 rounded-lg border
                     cursor-grab active:cursor-grabbing
-                    transition-all duration-150
-                    ${isDragging ? 'opacity-40 scale-95' : 'hover:shadow-md'}
-                    ${isCompleted 
-                        ? 'bg-emerald-500/15 border-emerald-500/30' 
-                        : `bg-white/[0.04] hover:bg-white/[0.07] border-white/[0.08] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
+                    ${isDragging ? 'opacity-40' : ''}
+                    ${isCompleted
+                        ? 'bg-emerald-500/15 border-emerald-500/30'
+                        : `bg-white/[0.04] border-white/[0.08] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
                     }
                 `}
             >
                 {/* Main content - centered vertically */}
                 <div className="flex-1 flex items-center gap-2">
-                    <button
+                    <motion.button
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggleComplete(task.id);
                         }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         className={`
                             flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
                             transition-all duration-200
@@ -227,58 +241,71 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         `}
                     >
                         <Check size={12} strokeWidth={3} />
-                    </button>
-                    
-                    <h3 
+                    </motion.button>
+
+                    <h3
                         className={`flex-1 font-medium text-[13px] leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}
                         style={{ color: isCompleted ? undefined : 'var(--text-primary)' }}
                     >
                         {task.title}
                     </h3>
                 </div>
-                
+
                 {/* Bottom: Duration badge */}
                 <div className="flex justify-end mt-1">
-                    <span 
+                    <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
-                        style={{ 
+                        style={{
                             backgroundColor: isCompleted ? undefined : 'rgba(255,255,255,0.06)',
-                            color: isCompleted ? undefined : 'var(--text-secondary)' 
+                            color: isCompleted ? undefined : 'var(--text-secondary)'
                         }}
                     >
                         <Clock size={10} />
                         {formatDuration(task.duration)}
                     </span>
                 </div>
-            </div>
+            </motion.div>
         );
     }
 
     // Sidebar variant
     return (
-        <div
+        <motion.div
             draggable={!isEditing}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDoubleClick={handleDoubleClick}
+            layout
+            initial={{ opacity: 0, x: -20, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: -20, scale: 0.9, transition: { duration: 0.15 } }}
+            whileHover={{
+                scale: 1.01,
+                x: 4,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                transition: { type: "spring", stiffness: 400, damping: 25 }
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className={`
                 relative flex flex-col gap-2 p-3 rounded-xl border
                 cursor-grab active:cursor-grabbing
-                transition-all duration-150
-                ${isDragging ? 'opacity-40 scale-95' : 'hover:shadow-sm'}
-                ${isCompleted 
-                    ? 'bg-emerald-500/15 border-emerald-500/30' 
-                    : `bg-white/[0.03] hover:bg-white/[0.05] border-white/[0.06] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
+                ${isDragging ? 'opacity-40' : ''}
+                ${isCompleted
+                    ? 'bg-emerald-500/15 border-emerald-500/30'
+                    : `bg-white/[0.03] border-white/[0.06] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
                 }
             `}
         >
             {/* Checkbox + Title - centered vertically */}
             <div className="flex items-center gap-2.5">
-                <button
+                <motion.button
                     onClick={(e) => {
                         e.stopPropagation();
                         onToggleComplete(task.id);
                     }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                     className={`
                         flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
                         transition-all duration-200
@@ -288,29 +315,29 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     `}
                 >
                     <Check size={12} strokeWidth={3} />
-                </button>
-                
-                <h3 
+                </motion.button>
+
+                <h3
                     className={`flex-1 font-medium text-sm leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}
                     style={{ color: isCompleted ? undefined : 'var(--text-primary)' }}
                 >
                     {task.title}
                 </h3>
             </div>
-            
+
             {/* Bottom: Duration badge */}
             <div className="flex justify-end">
-                <span 
+                <span
                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${isCompleted ? 'bg-emerald-500/20 text-emerald-400' : ''}`}
-                    style={{ 
+                    style={{
                         backgroundColor: isCompleted ? undefined : 'rgba(255,255,255,0.05)',
-                        color: isCompleted ? undefined : 'var(--text-secondary)' 
+                        color: isCompleted ? undefined : 'var(--text-secondary)'
                     }}
                 >
                     <Clock size={11} />
                     {formatDuration(task.duration)}
                 </span>
             </div>
-        </div>
+        </motion.div>
     );
 };

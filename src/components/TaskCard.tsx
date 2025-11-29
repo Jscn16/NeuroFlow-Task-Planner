@@ -201,18 +201,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDoubleClick={handleDoubleClick}
-                layout
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
                 whileHover={{
-                    scale: 1.02,
-                    y: -2,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                    transition: { type: "spring", stiffness: 400, damping: 25 }
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                transition={{ duration: 0.15 }}
                 className={`
                     relative h-full flex flex-col p-2.5 rounded-lg border
                     cursor-grab active:cursor-grabbing
@@ -225,13 +217,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             >
                 {/* Main content - centered vertically */}
                 <div className="flex-1 flex items-center gap-2">
-                    <motion.button
+                    <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onToggleComplete(task.id);
                         }}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
                         className={`
                             flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
                             transition-all duration-200
@@ -241,7 +231,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                         `}
                     >
                         <Check size={12} strokeWidth={3} />
-                    </motion.button>
+                    </button>
 
                     <h3
                         className={`flex-1 font-medium text-[13px] leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}
@@ -275,18 +265,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDoubleClick={handleDoubleClick}
-            layout
-            initial={{ opacity: 0, x: -20, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -20, scale: 0.9, transition: { duration: 0.15 } }}
             whileHover={{
-                scale: 1.01,
-                x: 4,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                transition: { type: "spring", stiffness: 400, damping: 25 }
+                boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
             }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            transition={{ duration: 0.15 }}
             className={`
                 relative flex flex-col gap-2 p-3 rounded-xl border
                 cursor-grab active:cursor-grabbing
@@ -299,13 +281,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         >
             {/* Checkbox + Title - centered vertically */}
             <div className="flex items-center gap-2.5">
-                <motion.button
+                <button
                     onClick={(e) => {
                         e.stopPropagation();
                         onToggleComplete(task.id);
                     }}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
                     className={`
                         flex-shrink-0 w-5 h-5 rounded flex items-center justify-center
                         transition-all duration-200
@@ -315,7 +295,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                     `}
                 >
                     <Check size={12} strokeWidth={3} />
-                </motion.button>
+                </button>
 
                 <h3
                     className={`flex-1 font-medium text-sm leading-snug line-clamp-2 ${isCompleted ? 'text-emerald-400/70 line-through' : ''}`}

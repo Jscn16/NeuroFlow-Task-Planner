@@ -10,6 +10,15 @@ interface AnalyticsDashboardProps {
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
     const [showFlowScoreTooltip, setShowFlowScoreTooltip] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    React.useEffect(() => {
+        // Small delay to ensure layout is fully calculated before rendering charts
+        const timer = setTimeout(() => {
+            setIsMounted(true);
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
     const todayStr = formatDate(new Date());
     const todayTasks = tasks.filter(t => t.dueDate === todayStr && t.status !== 'unscheduled');
     const completedToday = todayTasks.filter(t => t.status === 'completed');
@@ -142,22 +151,20 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                             </div>
                         </div>
                         <div className="w-28 h-28 relative">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={flowData}
-                                        innerRadius={32}
-                                        outerRadius={42}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {flowData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={entry.color} />
-                                        ))}
-                                    </Pie>
-                                </PieChart>
-                            </ResponsiveContainer>
+                            <PieChart width={112} height={112}>
+                                <Pie
+                                    data={flowData}
+                                    innerRadius={32}
+                                    outerRadius={42}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {flowData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
                             <div className="absolute inset-0 flex items-center justify-center flex-col">
                                 <span className="text-2xl font-bold text-white">{flowScore}</span>
                                 <span className="text-[9px] text-slate-500">%</span>
@@ -225,26 +232,28 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                                 {weeklyData.reduce((a, d) => a + d.tasks, 0)} tasks · {weeklyData.reduce((a, d) => a + d.hours, 0).toFixed(1)}h
                             </div>
                         </div>
-                        <div className="h-40">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={weeklyData}>
-                                    <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#1e2338',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: '12px',
-                                            fontSize: '12px'
-                                        }}
-                                        formatter={(value: number, name: string) => [
-                                            name === 'hours' ? `${value}h` : `${value} tasks`,
-                                            name === 'hours' ? 'Time' : 'Tasks'
-                                        ]}
-                                    />
-                                    <Bar dataKey="hours" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                        <div className="h-40 w-full">
+                            {isMounted && (
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={50}>
+                                    <BarChart data={weeklyData}>
+                                        <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                backgroundColor: '#1e2338',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '12px',
+                                                fontSize: '12px'
+                                            }}
+                                            formatter={(value: number, name: string) => [
+                                                name === 'hours' ? `${value}h` : `${value} tasks`,
+                                                name === 'hours' ? 'Time' : 'Tasks'
+                                            ]}
+                                        />
+                                        <Bar dataKey="hours" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            )}
                         </div>
                     </div>
 

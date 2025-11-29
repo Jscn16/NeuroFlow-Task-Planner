@@ -94,7 +94,8 @@ export class StorageService {
                             habits: Array.isArray(data.habits) ? data.habits : [],
                             brainDumpLists: Array.isArray(data.brainDumpLists) ? data.brainDumpLists : [],
                             brainDumpContent: data.brainDumpContent,
-                            notes: data.notes
+                            notes: data.notes,
+                            dayHistory: data.dayHistory || {}
                         };
                         resolve(validData);
                     } else {

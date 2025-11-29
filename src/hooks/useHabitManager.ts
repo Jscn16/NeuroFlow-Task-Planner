@@ -16,11 +16,7 @@ export function useHabitManager(initialHabits: Habit[]) {
         return manager.subscribe(setHabits);
     }, []);
 
-    useEffect(() => {
-        if (JSON.stringify(initialHabits) !== JSON.stringify(manager.getHabits())) {
-            manager.setHabits(initialHabits);
-        }
-    }, [initialHabits]);
+
 
     const addHabit = useCallback((name: string, goal: number) => {
         manager.addHabit(name, goal);

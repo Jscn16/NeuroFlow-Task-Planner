@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Task, GridRow } from '../../../types';
+import { motion } from 'framer-motion';
+import { Task, GridRow, DayStats } from '../../../types';
 import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, ROW_CONFIG, DAYS, getAdjustedDate } from '../../../constants';
 import { TaskCard } from '@/components/TaskCard';
 import { GridCell } from './GridCell';
@@ -15,6 +16,8 @@ interface WeekViewProps {
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask?: (taskId: string) => void;
     onTaskDrop?: (sourceId: string, targetId: string) => void;
+    showCompleted: boolean;
+    dayHistory?: Record<string, DayStats>;
 }
 
 // Progress color: 0% = Red (nothing done), 100% = Green (all done)
@@ -47,7 +50,8 @@ export const WeekView: React.FC<WeekViewProps> = ({
     onUpdateTask,
     onDeleteTask,
     onTaskDrop,
-    showCompleted
+    showCompleted,
+    dayHistory = {}
 }) => {
     const currentWeekDays = getWeekDays(currentDate);
     const todayStr = formatDate(getAdjustedDate());
@@ -257,20 +261,54 @@ export const WeekView: React.FC<WeekViewProps> = ({
                 <div className={`flex ${isStacked ? 'pl-0' : 'pl-20'} pb-0 shrink-0 transition-all duration-300 pt-1 gap-0`}>
                     {currentWeekDays.map((day, i) => {
                         const isToday = formatDate(day) === todayStr;
-                        const dayTasks = tasks.filter(t => t.dueDate === formatDate(day) && t.status !== 'unscheduled');
-                        const completedTasks = dayTasks.filter(t => t.status === 'completed');
-                        const totalMinutes = dayTasks.reduce((acc, t) => acc + t.duration, 0);
-                        const completedMinutes = completedTasks.reduce((acc, t) => acc + t.duration, 0);
+                        const dateStr = formatDate(day);
 
-                        const targetMinutesPerDay = TARGET_HOURS_PER_DAY * 60;
-                        const plannedPercent = Math.min(100, (totalMinutes / targetMinutesPerDay) * 100);
-                        const completionPercent = totalMinutes > 0 ? Math.round((completedMinutes / totalMinutes) * 100) : 0;
+                        // Calculate start of the current week (Monday)
+                        const todayDate = new Date(todayStr);
+                        const currentDay = todayDate.getDay(); // 0 is Sunday
+                        const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+                        const startOfCurrentWeek = new Date(todayDate);
+                        startOfCurrentWeek.setDate(todayDate.getDate() - daysToMonday);
+                        startOfCurrentWeek.setHours(0, 0, 0, 0);
+
+                        // Check history first for past days (only if they belong to a PAST week)
+                        const history = dayHistory[dateStr];
+                        const dayDate = new Date(dateStr);
+                        const useHistory = history && dayDate < startOfCurrentWeek;
+
+                        let totalMinutes = 0;
+                        let completedMinutes = 0;
+                        let plannedPercent = 0;
+                        let completionPercent = 0;
+
+                        if (useHistory) {
+                            totalMinutes = history.totalMinutes;
+                            completedMinutes = history.completedMinutes;
+                            completionPercent = history.percentage;
+                            plannedPercent = Math.min(100, (totalMinutes / (TARGET_HOURS_PER_DAY * 60)) * 100);
+                        } else {
+                            const dayTasks = tasks.filter(t => t.dueDate === dateStr && t.status !== 'unscheduled');
+                            const completedTasks = dayTasks.filter(t => t.status === 'completed');
+                            totalMinutes = dayTasks.reduce((acc, t) => acc + t.duration, 0);
+                            completedMinutes = completedTasks.reduce((acc, t) => acc + t.duration, 0);
+                            const targetMinutesPerDay = TARGET_HOURS_PER_DAY * 60;
+                            plannedPercent = Math.min(100, (totalMinutes / targetMinutesPerDay) * 100);
+                            completionPercent = totalMinutes > 0 ? Math.round((completedMinutes / totalMinutes) * 100) : 0;
+                        }
 
                         const plannedHours = (totalMinutes / 60).toFixed(1).replace(/\.0$/, '');
                         const completionColor = getGradientColor(completionPercent);
 
                         const isOverCapacity = plannedPercent > 100;
                         const isNearCapacity = plannedPercent > 80;
+
+                        // Check if day is in the past (strictly before today)
+                        const currentDayDate = new Date(formatDate(day));
+                        const isPastDay = currentDayDate < todayDate;
+                        const isFullyComplete = completionPercent >= 100;
+
+                        // Apply subtle styling for past completed days
+                        const isSubtle = isPastDay;
 
                         return (
                             <div key={i} className="flex-1 w-0 text-center relative group px-1">
@@ -327,17 +365,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                                     className="w-full h-2 rounded-full overflow-hidden relative"
                                                     style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
                                                 >
-                                                    <div
-                                                        className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-700 ease-out"
-                                                        style={{
+                                                    <motion.div
+                                                        className="absolute left-0 top-0 bottom-0 rounded-full"
+                                                        initial={false}
+                                                        animate={{
                                                             width: `${completionPercent}%`,
                                                             backgroundColor: completionColor,
-                                                            boxShadow: completionPercent > 0 ? `0 0 10px ${completionColor}50` : 'none'
+                                                            opacity: isSubtle ? 0.4 : 1,
+                                                            boxShadow: (completionPercent > 0 && !isSubtle) ? `0 0 10px ${completionColor}50` : 'none'
                                                         }}
+                                                        transition={{ type: "spring", stiffness: 40, damping: 15 }}
                                                     />
                                                 </div>
 
-                                                <div className="flex items-center gap-1">
+                                                <div
+                                                    className="flex items-center gap-1"
+                                                    style={{ opacity: isSubtle ? 0.4 : 1 }}
+                                                >
                                                     {completionPercent >= 100 && (
                                                         <CheckCircle2 size={12} style={{ color: completionColor }} />
                                                     )}

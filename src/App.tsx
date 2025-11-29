@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
-import { AppData, Task, Habit, BrainDumpList } from './types';
-import { getAdjustedDate } from './constants';
+import { AppData, Task, Habit, BrainDumpList, DayStats } from './types';
+import { getAdjustedDate, getWeekDays, formatDate, INITIAL_TASKS, INITIAL_HABITS } from './constants';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
@@ -21,39 +21,14 @@ import { usePersistence } from './hooks/usePersistence';
 // Lazy load AnalyticsDashboard
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 
-// --- Initial Data Constants ---
-const INITIAL_TASKS: Task[] = [
-    { id: '1', title: 'Q3 Strategy Review', duration: 60, type: 'high', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: 'do', createdAt: Date.now() },
-    { id: '2', title: 'Inbox Zero', duration: 30, type: 'low', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: 'delegate', createdAt: Date.now() },
-    { id: '3', title: 'Deep Work: Coding', duration: 90, type: 'high', status: 'scheduled', dueDate: new Date().toISOString().split('T')[0], assignedRow: 'FOCUS', eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '4', title: 'Evening Run', duration: 45, type: 'leisure', status: 'scheduled', dueDate: new Date().toISOString().split('T')[0], assignedRow: 'LEISURE', eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '5', title: 'Client presentation', duration: 90, type: 'high', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '6', title: 'Fix critical bugs', duration: 180, type: 'high', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '7', title: 'Review Report', duration: 120, type: 'high', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '8', title: 'Brainstorm ideas', duration: 90, type: 'medium', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '9', title: 'Research eBay auto', duration: 120, type: 'medium', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '10', title: 'Order calendar', duration: 60, type: 'medium', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '11', title: 'Schedule dentist', duration: 15, type: 'low', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '12', title: 'Check mails', duration: 30, type: 'low', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '13', title: 'Pay electricity', duration: 10, type: 'low', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '14', title: 'Read one chapter', duration: 30, type: 'leisure', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '15', title: 'Organize Photos', duration: 180, type: 'leisure', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '16', title: 'Clean Up', duration: 15, type: 'chores', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-    { id: '17', title: 'Trash Out', duration: 5, type: 'chores', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() },
-];
-
-const INITIAL_HABITS: Habit[] = [
-    { id: 'h1', name: 'Meditation', goal: 7, checks: [false, false, true, false, false, false, false] },
-    { id: 'h2', name: 'Reading', goal: 5, checks: [true, false, true, true, false, false, false] },
-    { id: 'h3', name: 'Hydration', goal: 7, checks: [false, false, false, false, false, false, false] },
-];
-
 const App = () => {
     // --- Data Loading ---
     const [initialData, setInitialData] = useState<AppData | null>(() => StorageService.getInstance().load());
 
     const initialTasksState = initialData?.tasks || INITIAL_TASKS;
-    const initialHabitsState = initialData?.habits ? initialData.habits.map(h => ({ ...h, goal: h.goal || 7 })) : INITIAL_HABITS;
+    const initialHabitsState = React.useMemo(() =>
+        initialData?.habits ? initialData.habits.map(h => ({ ...h, goal: h.goal || 7 })) : INITIAL_HABITS,
+        [initialData]);
 
     // Brain Dump Initialization Logic
     const getInitialBrainDump = (): BrainDumpList[] => {
@@ -77,9 +52,11 @@ const App = () => {
     const [activeTab, setActiveTab] = useState<string>('planner');
     const [currentDate, setCurrentDate] = useState(getAdjustedDate());
     const [isStacked, setIsStacked] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [showCompleted, setShowCompleted] = useState(true);
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+    const [dayHistory, setDayHistory] = useState<Record<string, DayStats>>({});
 
     // --- Theme ---
     const [currentThemeId, setCurrentThemeId] = useState<string>(persistence.loadTheme());
@@ -102,27 +79,82 @@ const App = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [persistence]);
 
+    // Load dayHistory
+    useEffect(() => {
+        if (initialData && initialData.dayHistory) {
+            setDayHistory(initialData.dayHistory);
+        }
+    }, [initialData]);
+
+    // Snapshot Logic: Generate stats for past days if missing (Only for PAST WEEKS)
+    useEffect(() => {
+        const today = getAdjustedDate();
+
+        // Calculate start of the current week (Monday)
+        const currentDay = today.getDay(); // 0 is Sunday
+        const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+        const startOfCurrentWeek = new Date(today);
+        startOfCurrentWeek.setDate(today.getDate() - daysToMonday);
+        startOfCurrentWeek.setHours(0, 0, 0, 0);
+
+        let hasUpdates = false;
+        const newHistory = { ...dayHistory };
+
+        // Check the last 30 days to ensure we catch up on any missed snapshots
+        for (let i = 1; i <= 30; i++) {
+            const pastDay = new Date(startOfCurrentWeek);
+            pastDay.setDate(startOfCurrentWeek.getDate() - i);
+            const dateStr = formatDate(pastDay);
+
+            // If no snapshot exists for this past-week day
+            if (!newHistory[dateStr]) {
+                const dayTasks = taskManager.tasks.filter(t => t.dueDate === dateStr && t.status !== 'unscheduled');
+                const totalMinutes = dayTasks.reduce((acc, t) => acc + t.duration, 0);
+                const completedTasks = dayTasks.filter(t => t.status === 'completed');
+                const completedMinutes = completedTasks.reduce((acc, t) => acc + t.duration, 0);
+
+                let percentage = 0;
+                if (totalMinutes > 0) {
+                    percentage = Math.round((completedMinutes / totalMinutes) * 100);
+                }
+
+                newHistory[dateStr] = {
+                    date: dateStr,
+                    totalMinutes,
+                    completedMinutes,
+                    percentage
+                };
+                hasUpdates = true;
+            }
+        }
+
+        if (hasUpdates) {
+            setDayHistory(newHistory);
+            // Also update persistence to save this immediately
+            // Note: usePersistence handles auto-saving, but we might want to ensure this state is captured
+        }
+    }, [currentDate, taskManager.tasks, dayHistory]);
+
+    // --- App Loader Cleanup ---
+    useEffect(() => {
+        // Signal that the app is loaded to trigger the fade-out animation in index.html
+        const timer = setTimeout(() => {
+            document.body.classList.add('loaded');
+        }, 100); // Slight delay to ensure React has rendered
+
+        return () => clearTimeout(timer);
+    }, []);
+
     // --- Handlers ---
     const handleWeekChange = (direction: 'prev' | 'next') => {
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
         setCurrentDate(newDate);
-        // Note: Recurring chores logic removed for simplicity in this refactor step, 
-        // can be re-added to TaskManager if needed.
     };
 
     const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const data = await persistence.importData(e);
         if (data) {
-            // Force reload or update state through managers
-            // Ideally managers should expose a 'setAll' method or we rely on the initialTasks prop update
-            // But since hooks initialize once, we need a way to update them.
-            // Added setTasks/setHabits to managers/hooks for this purpose.
-            // Wait, useTaskManager exposes tasks but not setAll.
-            // I need to add setAll to hooks or reload page.
-            // For now, let's reload page for simplicity or add setAll methods.
-            // Actually, the hooks listen to initialTasks changes? No, only on mount usually.
-            // Let's reload for safety as it's a rare operation.
             window.location.reload();
         }
     };
@@ -140,6 +172,8 @@ const App = () => {
                         onDeleteTask={taskManager.deleteTask}
                         onToggleTaskComplete={taskManager.toggleTaskComplete}
                         onOpenSettings={() => setShowSettings(true)}
+                        isOpen={isSidebarOpen}
+                        onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                     />
                 }
                 header={
@@ -152,6 +186,8 @@ const App = () => {
                         setIsStacked={setIsStacked}
                         showCompleted={showCompleted}
                         setShowCompleted={setShowCompleted}
+                        isSidebarOpen={isSidebarOpen}
+                        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
                     />
                 }
             >
@@ -167,6 +203,7 @@ const App = () => {
                         onToggleTaskComplete={taskManager.toggleTaskComplete}
                         onTaskDrop={taskManager.handleReorderTasks}
                         showCompleted={showCompleted}
+                        dayHistory={dayHistory}
                     />
                 )}
                 {activeTab === 'focus' && (
@@ -210,8 +247,6 @@ const App = () => {
                     onImport={handleImport}
                     onDeleteAllTasks={() => {
                         if (window.confirm('Are you sure you want to delete ALL tasks?')) {
-                            // taskManager.deleteAll(); // Need to implement this
-                            // For now, manual filter
                             taskManager.tasks.forEach(t => taskManager.deleteTask(t.id));
                         }
                     }}

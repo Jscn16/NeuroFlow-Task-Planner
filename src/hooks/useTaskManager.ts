@@ -20,11 +20,7 @@ export function useTaskManager(initialTasks: Task[]) {
     }, []);
 
     // Sync initial tasks if they change (e.g. from localStorage load)
-    useEffect(() => {
-        if (JSON.stringify(initialTasks) !== JSON.stringify(manager.getTasks())) {
-            manager.setTasks(initialTasks);
-        }
-    }, [initialTasks]);
+
 
     // Expose stable API
     const addTask = useCallback((title: string, duration: number, type: TaskType) => {

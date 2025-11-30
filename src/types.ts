@@ -14,6 +14,7 @@ export interface Task {
   assignedRow: GridRow | null;
   eisenhowerQuad: 'do' | 'decide' | 'delegate' | 'delete' | null;
   createdAt: number;
+  isFrozen?: boolean;
 }
 
 export interface Habit {

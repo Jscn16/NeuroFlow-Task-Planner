@@ -146,7 +146,8 @@ export class TaskManager {
                     dueDate: targetDateStr,
                     assignedRow: row,
                     eisenhowerQuad: null,
-                    type: type || t.type
+                    type: type || t.type,
+                    isFrozen: false
                 };
             }
             return t;
@@ -162,7 +163,8 @@ export class TaskManager {
                     status: 'unscheduled',
                     dueDate: null,
                     assignedRow: null,
-                    eisenhowerQuad: null
+                    eisenhowerQuad: null,
+                    isFrozen: false
                 };
             }
             return t;

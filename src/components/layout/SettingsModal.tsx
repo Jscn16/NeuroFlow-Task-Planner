@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Cog, Download, Upload, Trash2, ChevronRight, AlertTriangle, Palette, Check, Sparkles } from 'lucide-react';
 import { themes } from '../../themes';
 import { modal, backdrop } from '../../utils/animations';
+import { FrostOverlay } from '../ui/FrostOverlay';
+import { useIceSound } from '../../hooks/useIceSound';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -27,10 +29,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     viewMode = 'fade',
     onViewModeChange
 }) => {
+    const [freezing, setFreezing] = useState(false);
+    const { play } = useIceSound();
+
+    const handleDoomLoop = () => {
+        if (!onDeleteAllTasks) return;
+        const confirmed = window.confirm('Freeze everything and start fresh? This will delete all tasks.');
+        if (!confirmed) return;
+
+        play();
+        setFreezing(true);
+        setTimeout(() => {
+            onDeleteAllTasks();
+        }, 500);
+        setTimeout(() => {
+            setFreezing(false);
+        }, 1500);
+    };
+
     return (
         <AnimatePresence>
             <div
-                className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-end md:items-center justify-center z-50 p-4"
                 onClick={onClose}
             >
                 <motion.div
@@ -38,7 +58,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="relative w-full max-w-md rounded-3xl overflow-hidden shadow-2xl"
+                    className="relative w-full h-[95vh] md:h-auto max-w-none md:max-w-md rounded-t-3xl md:rounded-3xl overflow-hidden shadow-2xl"
                     style={{
                         backgroundColor: 'var(--bg-secondary)',
                         border: '1px solid var(--border-medium)'
@@ -46,7 +66,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="p-6 pb-4 flex items-center justify-between">
+                    <div className="p-6 pb-4 flex items-center justify-between sticky top-0 z-10" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                        <button
+                            onClick={onClose}
+                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95 bg-white/[0.06] text-white font-bold"
+                            aria-label="Close settings"
+                        >
+                            Done
+                        </button>
                         <div className="flex items-center gap-3">
                             <div
                                 className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -67,20 +94,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 color: 'var(--text-muted)',
                                 backgroundColor: 'transparent'
                             }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)';
-                                e.currentTarget.style.color = 'var(--text-primary)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
-                                e.currentTarget.style.color = 'var(--text-muted)';
-                            }}
                         >
                             <X size={20} />
                         </button>
                     </div>
 
-                    <div className="px-6 pb-6 space-y-6">
+                    <div className="px-6 pb-6 space-y-6 overflow-y-auto h-[calc(95vh-80px)] md:h-auto">
                         {/* Theme Selection */}
                         <div>
                             <h3
@@ -300,19 +319,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 {/* Delete All Tasks Button */}
                                 {onDeleteAllTasks && (
                                     <button
-                                        onClick={onDeleteAllTasks}
+                                        onClick={handleDoomLoop}
                                         className="w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] group"
                                         style={{
                                             backgroundColor: 'rgba(239, 68, 68, 0.05)',
                                             borderColor: 'rgba(239, 68, 68, 0.2)'
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
-                                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-                                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)';
                                         }}
                                     >
                                         <div className="flex items-center gap-3">
@@ -321,10 +332,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                             </div>
                                             <div className="text-left">
                                                 <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                                                    Delete All Tasks
+                                                    Doom Loop Breaker
                                                 </div>
                                                 <div className="text-[10px]" style={{ color: 'var(--error)' }}>
-                                                    This action cannot be undone.
+                                                    Freezes and clears all tasks.
                                                 </div>
                                             </div>
                                         </div>
@@ -344,6 +355,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             NeuroFlow OS v1.2.0 • Build 2409
                         </span>
                     </div>
+                    <FrostOverlay isVisible={freezing} />
                 </motion.div>
             </div>
         </AnimatePresence>

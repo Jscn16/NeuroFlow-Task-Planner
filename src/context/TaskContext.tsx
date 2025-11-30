@@ -6,6 +6,7 @@ interface TaskContextType {
     tasks: Task[];
     addTask: (title: string, duration: number, type: TaskType) => void;
     updateTask: (taskId: string, updates: Partial<Task>) => void;
+    scheduleTask: (taskId: string, date: Date, row?: GridRow | null, type?: TaskType) => void;
     deleteTask: (taskId: string) => void;
     toggleTaskComplete: (taskId: string) => void;
     handleReorderTasks: (sourceId: string, targetId: string) => void;

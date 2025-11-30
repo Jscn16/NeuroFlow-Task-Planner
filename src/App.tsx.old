@@ -7,17 +7,14 @@ import { screenTransition } from './utils/animations';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
-import { MobileNavBar } from './components/layout/MobileNavBar';
 import { SettingsModal } from './components/layout/SettingsModal';
 import { WeekView } from './components/features/board/WeekView';
-import { MobilePlanner } from './components/features/board/MobilePlanner';
 import { FocusMode } from './components/features/dashboard/FocusMode';
 import { StorageService } from './services/StorageService';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { useHabitManager } from './hooks/useHabitManager';
 import { useBrainDumpManager } from './hooks/useBrainDumpManager';
 import { usePersistence } from './hooks/usePersistence';
-import { useIsMobile } from './hooks/useMediaQuery';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -29,9 +26,6 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
     const habitManager = useHabitManager(initialHabitsState);
     const brainDumpManager = useBrainDumpManager(getInitialBrainDump());
     const persistence = usePersistence(taskManager.tasks, habitManager.habits, brainDumpManager.lists);
-    
-    // --- Responsive ---
-    const isMobile = useIsMobile();
 
     // --- UI State ---
     const [activeTab, setActiveTab] = useState<string>('planner');
@@ -42,11 +36,6 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
     // activeTaskId moved to FocusMode
-    
-    // Auto-close sidebar when switching to mobile, auto-open on desktop
-    useEffect(() => {
-        setIsSidebarOpen(!isMobile);
-    }, [isMobile]);
 
     // --- Theme ---
     const [currentThemeId, setCurrentThemeId] = useState<string>(persistence.loadTheme());
@@ -100,8 +89,6 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                         onOpenSettings={() => setShowSettings(true)}
                         isOpen={isSidebarOpen}
                         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-                        onClose={() => setIsSidebarOpen(false)}
-                        isMobile={isMobile}
                     />
                 }
                 header={
@@ -125,23 +112,14 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: isMobile ? 80 : 0 }}
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
-                            {isMobile ? (
-                                <MobilePlanner
-                                    currentDate={currentDate}
-                                    viewMode={viewMode}
-                                    onWeekChange={handleWeekChange}
-                                    onOpenSidebar={() => setIsSidebarOpen(true)}
-                                />
-                            ) : (
-                                <WeekView
-                                    currentDate={currentDate}
-                                    weekDirection={weekDirection}
-                                    isStacked={isStacked}
-                                    viewMode={viewMode}
-                                />
-                            )}
+                            <WeekView
+                                currentDate={currentDate}
+                                weekDirection={weekDirection}
+                                isStacked={isStacked}
+                                viewMode={viewMode}
+                            />
                         </motion.div>
                     )}
                     {activeTab === 'focus' && (
@@ -151,7 +129,7 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: isMobile ? 80 : 0 }}
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
                             <FocusMode
                                 tasks={taskManager.tasks}
@@ -169,7 +147,7 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: isMobile ? 80 : 0 }}
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading habits...</div>}>
                                 <HabitTracker
@@ -188,7 +166,7 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: isMobile ? 80 : 0 }}
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading brain dump...</div>}>
                                 <BrainDump
@@ -208,7 +186,7 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            style={{ height: '100%', display: 'flex', flexDirection: 'column', paddingBottom: isMobile ? 80 : 0 }}
+                            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
                             <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading analytics...</div>}>
                                 <AnalyticsDashboard tasks={taskManager.tasks} />
@@ -230,10 +208,6 @@ const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabits
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                 />
-            )}
-
-            {isMobile && (
-                <MobileNavBar activeTab={activeTab} onChange={setActiveTab} />
             )}
         </>
     );

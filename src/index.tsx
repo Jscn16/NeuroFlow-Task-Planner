@@ -2,6 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import { registerSW } from 'virtual:pwa-register';
+
+// Register the service worker so the app can be installed and run standalone
+registerSW({
+  immediate: true,
+});
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
 
     return (
         <div
-            className="flex items-center justify-between px-6 py-4 backdrop-blur-md border-b sticky top-0 z-50"
+            className="hidden md:flex items-center justify-between px-6 py-4 backdrop-blur-md border-b sticky top-0 z-50"
             style={{
                 backgroundColor: 'color-mix(in srgb, var(--bg-primary) 80%, transparent)',
                 borderColor: 'var(--border-medium)'

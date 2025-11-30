@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Play, CheckCircle2, Maximize2, Minimize2, Clock, Pause, RotateCcw, X } from 'lucide-react';
 import { Task } from '../../../types';
-import { DeepWorkTaskCard } from '../../tasks/DeepWorkTaskCard';
+import { BoardTaskCard } from '../../tasks/BoardTaskCard';
 import { formatDate, getAdjustedDate } from '../../../constants';
+import { useIsMobile } from '../../../hooks/useMediaQuery';
+import { useRef } from 'react';
 
 interface FocusModeProps {
     tasks: Task[];
@@ -14,6 +16,8 @@ interface FocusModeProps {
 
 export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onUpdateTask, showCompleted }) => {
     const todayStr = formatDate(getAdjustedDate());
+    const isMobile = useIsMobile();
+    const wakeLockRef = useRef<any>(null);
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
     const [isZenMode, setIsZenMode] = useState(false);
     const [timer, setTimer] = useState(0); // Will be set based on task duration
@@ -58,6 +62,36 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         }
         return () => clearInterval(interval);
     }, [isTimerRunning, timer]);
+
+    // Keep screen awake during focus timer
+    useEffect(() => {
+        let cancelled = false;
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator && isTimerRunning) {
+                    const sentinel = await (navigator as any).wakeLock.request('screen');
+                    if (!cancelled) {
+                        wakeLockRef.current = sentinel;
+                        sentinel.addEventListener('release', () => {
+                            wakeLockRef.current = null;
+                        });
+                    } else {
+                        await sentinel.release();
+                    }
+                }
+            } catch {
+                // Ignore wake lock errors
+            }
+        };
+        requestWakeLock();
+        return () => {
+            cancelled = true;
+            if (wakeLockRef.current) {
+                wakeLockRef.current.release().catch(() => {});
+                wakeLockRef.current = null;
+            }
+        };
+    }, [isTimerRunning]);
 
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
@@ -109,16 +143,19 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
     // Zen Mode (fullscreen focus)
     if (isZenMode && activeTask) {
         return (
-            <div className="fixed inset-0 z-50 bg-[#0f1219] flex flex-col items-center justify-center p-8">
-                <button
-                    onClick={() => setIsZenMode(false)}
-                    className="absolute top-8 right-8 p-3 text-slate-500 hover:text-white transition-colors rounded-xl hover:bg-white/[0.05]"
-                >
-                    <Minimize2 size={24} />
-                </button>
+            <div className="fixed inset-0 z-50 bg-[#0f1219] flex flex-col min-h-[100dvh] p-6 md:p-10">
+                <div className="flex justify-end">
+                    <button
+                        onClick={() => setIsZenMode(false)}
+                        className="p-3 text-slate-500 hover:text-white transition-colors rounded-xl hover:bg-white/[0.05]"
+                        aria-label="Exit Zen mode"
+                    >
+                        <Minimize2 size={24} />
+                    </button>
+                </div>
 
-                <div className="max-w-4xl w-full text-center space-y-8">
-                    <div className="space-y-2">
+                <div className="flex-1 w-full max-w-5xl mx-auto flex flex-col justify-between text-center gap-8 md:gap-12">
+                    <div className="space-y-2 px-2">
                         <span
                             className="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest border"
                             style={{
@@ -129,18 +166,18 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                         >
                             Current Focus
                         </span>
-                        <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-tight">
+                        <h1 className="text-3xl md:text-5xl font-display font-bold text-white leading-tight">
                             {activeTask.title}
                         </h1>
-                        <p className="text-slate-500 text-lg">
+                        <p className="text-slate-500 text-sm md:text-lg flex items-center justify-center gap-2">
+                            <Clock size={16} />
                             Estimated: {activeTask.duration} minutes
                         </p>
                     </div>
 
-                    <div className="flex flex-col items-center gap-8">
-                        {/* Timer with circular progress */}
-                        <div className="relative">
-                            <svg className="w-80 h-80 -rotate-90">
+                    <div className="flex flex-col items-center gap-6">
+                        <div className="relative w-full max-w-[300px] md:max-w-[360px]">
+                            <svg className="w-full h-auto aspect-square -rotate-90">
                                 <circle
                                     cx="160"
                                     cy="160"
@@ -164,41 +201,41 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="text-[8rem] font-mono font-bold text-slate-200 leading-none tracking-tighter tabular-nums">
+                                <div className="text-[18vw] md:text-9xl font-mono font-bold text-slate-200 leading-none tracking-tighter tabular-nums">
                                     {formatTime(timer)}
                                 </div>
-                            </div>
                         </div>
+                        </div>
+                    </div>
 
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={resetTimer}
-                                className="p-5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-all border border-white/[0.1]"
-                                title="Reset Timer"
-                            >
-                                <RotateCcw size={28} />
-                            </button>
-                            <button
-                                onClick={toggleTimer}
-                                className="p-6 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white transition-all border border-white/[0.1]"
-                            >
-                                {isTimerRunning ? <Pause size={32} /> : <Play size={32} fill="currentColor" />}
-                            </button>
-                            <button
-                                onClick={handleCompleteActiveTask}
-                                className="px-12 py-6 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-3"
-                            >
-                                <CheckCircle2 size={24} />
-                                Mark Done
-                            </button>
-                            <button
-                                onClick={handleStopTask}
-                                className="p-5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
-                                title="Stop Focus"
-                            >
-                                <X size={28} />
-                            </button>
-                        </div>
+                    <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+                        <button
+                            onClick={resetTimer}
+                            className="p-4 md:p-5 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white transition-all border border-white/[0.1]"
+                            title="Reset Timer"
+                        >
+                            <RotateCcw size={24} />
+                        </button>
+                        <button
+                            onClick={toggleTimer}
+                            className="p-5 md:p-6 rounded-full bg-white/[0.05] hover:bg-white/[0.1] text-white transition-all border border-white/[0.1]"
+                        >
+                            {isTimerRunning ? <Pause size={28} /> : <Play size={28} fill="currentColor" />}
+                        </button>
+                        <button
+                            onClick={handleCompleteActiveTask}
+                            className="px-8 md:px-10 py-4 md:py-5 rounded-full bg-emerald-500/90 hover:bg-emerald-400 text-white font-bold text-base md:text-lg transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-3 border border-emerald-500/40"
+                        >
+                            <CheckCircle2 size={20} />
+                            Mark Done
+                        </button>
+                        <button
+                            onClick={handleStopTask}
+                            className="p-4 md:p-5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-all"
+                            title="Stop Focus"
+                        >
+                            <X size={26} />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -206,18 +243,16 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
     }
 
     return (
-        <div className="h-full p-8 overflow-y-auto">
-            <div className="max-w-7xl mx-auto mt-10 px-8">
-                <div className="mb-8 text-center md:text-left flex items-end justify-between">
-                    <div>
-                        <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus</h2>
-                        <p className="text-sm text-slate-500 font-medium">
-                            Today total: {totalTasks} tasks · {timeString} planned
-                        </p>
-                    </div>
+        <div className="h-full overflow-y-auto px-4 sm:px-8 py-6">
+            <div className={`max-w-7xl mx-auto ${isMobile ? 'mt-6' : 'mt-8'} w-full px-2 sm:px-6`}>
+                <div className="mb-8 text-center md:text-left">
+                    <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus</h2>
+                    <p className="text-sm text-slate-500 font-medium">
+                        Today total: {totalTasks} tasks · {timeString} planned
+                    </p>
                 </div>
 
-                <div className="space-y-8">
+                <div className="space-y-8 max-w-4xl mx-auto w-full px-2">
                     {/* Active Task Section */}
                     {activeTask ? (
                         <div className="w-full">
@@ -300,20 +335,21 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                     )}
 
                     {/* Queue List */}
-                    <div className="space-y-4">
+                    <div className="w-full max-w-md mx-auto flex flex-col gap-3 px-4 md:px-0">
                         {focusTasks.filter(t => t.id !== activeTaskId).map((task, index) => (
-                            <div key={task.id} className="flex items-center gap-4 group">
-                                <div className="flex-1">
-                                    <DeepWorkTaskCard
+                            <div key={task.id} className="flex items-center gap-3 w-full">
+                                <div className="flex-1 min-w-0">
+                                    <BoardTaskCard
                                         task={task}
-                                        index={index}
+                                        onDragStart={() => {}}
                                         onToggleComplete={onToggleTaskComplete}
-                                        onStartFocus={handleStartTask}
+                                        onUpdateTask={onUpdateTask}
+                                        viewMode={showCompleted ? 'show' : 'fade'}
                                     />
                                 </div>
                                 <button
                                     onClick={() => handleStartTask(task.id)}
-                                    className="p-3 rounded-full bg-slate-800/50 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all shrink-0"
+                                    className="h-12 w-12 md:h-10 md:w-10 rounded-full bg-slate-800/50 text-slate-500 hover:bg-emerald-500 hover:text-white transition-all shrink-0 flex items-center justify-center"
                                     title={`Start: ${task.title}`}
                                 >
                                     <Play size={20} fill="currentColor" />

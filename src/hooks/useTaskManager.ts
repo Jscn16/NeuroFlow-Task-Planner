@@ -35,6 +35,10 @@ export function useTaskManager(initialTasks: Task[]) {
         manager.deleteTask(taskId);
     }, []);
 
+    const scheduleTask = useCallback((taskId: string, date: Date, row: GridRow | null = null, type?: TaskType) => {
+        manager.scheduleTask(taskId, date, row, type);
+    }, []);
+
     const toggleTaskComplete = useCallback((taskId: string) => {
         const isNowComplete = manager.toggleTaskComplete(taskId);
         if (isNowComplete) {
@@ -120,6 +124,7 @@ export function useTaskManager(initialTasks: Task[]) {
         tasks,
         addTask,
         updateTask,
+        scheduleTask,
         deleteTask,
         toggleTaskComplete,
         handleReorderTasks,

@@ -107,22 +107,22 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
     };
 
     return (
-        <div className="h-full p-6 overflow-y-auto">
-            <div className="max-w-7xl mx-auto">
+        <div className="h-full p-6 overflow-y-auto overflow-x-hidden">
+            <div className="max-w-7xl mx-auto w-full max-w-full">
                 {/* Header with Motivational Message */}
-                <div className="mb-8 flex items-center justify-between">
+                <div className="mb-8 flex flex-col items-center text-center gap-4">
                     <div>
                         <h2 className="text-3xl font-display font-bold text-white mb-1">Productivity Insights</h2>
                         <p className="text-lg" style={{ color: 'var(--accent)' }}>{getMotivationalMessage()}</p>
                     </div>
                     {/* Level Badge */}
-                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                    <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-full max-w-md">
                         <Trophy size={28} className="text-amber-400" />
                         <div>
                             <div className="text-xs text-amber-400/80 font-bold uppercase tracking-wider">Level</div>
                             <div className="text-2xl font-bold text-amber-400">{level}</div>
                         </div>
-                        <div className="ml-4 w-32">
+                        <div className="ml-auto w-32">
                             <div className="text-[10px] text-amber-400/60 mb-1">{xp} / {xpForNextLevel} XP</div>
                             <div className="h-2 bg-amber-900/30 rounded-full overflow-hidden">
                                 <div
@@ -334,8 +334,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
                 {/* Task Type Breakdown */}
                 {typeBreakdown.length > 0 && (
                     <div className="mt-6 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4">Completed by Category</div>
-                        <div className="flex flex-wrap gap-3">
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4 text-center">Completed by Category</div>
+                        <div className="flex flex-wrap gap-3 justify-center">
                             {typeBreakdown.map(item => (
                                 <div
                                     key={item.type}

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { Task, TaskType } from '../../types';
+import { Task, TaskType, GridRow } from '../../types';
 import { CATEGORIES } from '../../constants';
 import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
 import { ChevronDown } from 'lucide-react';
@@ -20,6 +20,10 @@ interface VirtualSidebarListProps {
     onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask: (taskId: string) => void;
     onToggleComplete: (taskId: string) => void;
+    onScheduleTask: (taskId: string, date: Date, row: GridRow | null, type?: TaskType) => void;
+    isMobile: boolean;
+    onCloseSidebar?: () => void;
+    onLongPressTask?: (task: Task) => void;
 }
 
 type ListItem =
@@ -41,7 +45,11 @@ export const VirtualSidebarList: React.FC<VirtualSidebarListProps> = ({
     onDragEnd,
     onUpdateTask,
     onDeleteTask,
-    onToggleComplete
+    onToggleComplete,
+    onScheduleTask,
+    isMobile,
+    onCloseSidebar,
+    onLongPressTask
 }) => {
     const listRef = React.useRef<List>(null);
 
@@ -49,7 +57,7 @@ export const VirtualSidebarList: React.FC<VirtualSidebarListProps> = ({
         const items: ListItem[] = [];
 
         CATEGORIES.forEach(cat => {
-            const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled');
+            const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled' && !t.isFrozen);
             const isExpanded = expandedCategories[cat.id];
             const isDraggedOver = dragOverCategory === cat.id;
 
@@ -216,6 +224,10 @@ export const VirtualSidebarList: React.FC<VirtualSidebarListProps> = ({
                             onUpdateTask={onUpdateTask}
                             onDeleteTask={onDeleteTask}
                             onToggleComplete={onToggleComplete}
+                            onScheduleTask={onScheduleTask}
+                            isMobile={isMobile}
+                            onCloseSidebar={onCloseSidebar}
+                            onLongPress={onLongPressTask}
                         />
                     </div>
                 );

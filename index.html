@@ -3,9 +3,15 @@
 
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NeuroFlow">
+    <meta name="theme-color" content="#09090b" />
     <title>NeuroFlow OS</title>
     <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <style>
@@ -119,7 +125,7 @@
     </style>
 </head>
 
-<body>
+<body class="no-scrollbar">
     <div id="app-loader">
         <div class="loader-content">
             <div class="logo-container">
@@ -128,7 +134,7 @@
             <div class="spinner-ring"></div>
         </div>
     </div>
-    <div id="root"></div>
+    <div id="root" class="no-scrollbar"></div>
     <script type="module" src="/src/index.tsx"></script>
 </body>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, X, Plus } from 'lucide-react';
 import { Habit } from '../../../types';
-import { DAYS } from '../../../constants';
+import { DAYS, getAdjustedDate } from '../../../constants';
 
 interface HabitTrackerProps {
     habits: Habit[];
@@ -25,8 +25,11 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
 
     return (
         <div className="h-full overflow-y-auto flex-1 overflow-hidden relative pt-5 max-w-7xl mx-auto w-full">
-            <h2 className="text-3xl font-display font-bold text-white mb-8" style={{ textAlign: 'left', paddingLeft: '1rem' }}>Habit Tracker</h2>
-            <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-8 overflow-x-auto">
+            <div className="mb-8 text-center px-4">
+                <h2 className="text-3xl font-display font-bold text-white mb-1">Habit Tracker</h2>
+                <p className="text-sm text-slate-500 font-medium">Track and reinforce your routines</p>
+            </div>
+            <div className="bg-white/[0.02] border border-white/[0.05] rounded-3xl p-8 overflow-x-auto hidden md:block">
                 <table className="w-full">
                     <thead>
                         <tr>
@@ -158,6 +161,89 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                         Add
                     </button>
                 </div>
+            </div>
+
+            {/* Mobile Habit List (today only) */}
+            <div className="md:hidden space-y-3 px-2">
+                {habits.map(habit => {
+                    const today = getAdjustedDate();
+                    const todayIndex = (today.getDay() + 6) % 7; // map Sunday=0 to 6 with Mon start
+                    const checkedToday = habit.checks[todayIndex];
+                    const streak = habit.checks.filter(Boolean).length;
+                    return (
+                        <div
+                            key={habit.id}
+                            className="flex items-center justify-between px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/[0.05]"
+                        >
+                            <div className="flex flex-col gap-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-white text-sm truncate">{habit.name}</span>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400">Streak: {streak}</span>
+                                </div>
+                                <span className="text-[11px] text-slate-500 uppercase tracking-wider">Today</span>
+                            </div>
+                            <motion.button
+                                onClick={() => toggleHabit(habit.id, todayIndex)}
+                                whileTap={{ scale: 0.94 }}
+                                whileHover={{ scale: 1.05 }}
+                                animate={{
+                                    scale: checkedToday ? [1, 1.02, 1] : 1,
+                                }}
+                                transition={{ duration: 0.14, ease: 'easeOut' }}
+                                className={`
+                                    w-12 h-12 rounded-xl transition-all duration-300 flex items-center justify-center
+                                    ${checkedToday
+                                        ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                        : 'bg-white/[0.05] text-transparent hover:bg-white/[0.1]'
+                                    }
+                                `}
+                            >
+                                <CheckCircle2 size={24} strokeWidth={4} />
+                            </motion.button>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Mobile Add Habit */}
+            <div className="md:hidden mt-6 space-y-3 px-2 pb-24">
+                <div className="space-y-2">
+                    <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">New Habit Name</label>
+                    <input
+                        type="text"
+                        value={newHabitName}
+                        onChange={(e) => setNewHabitName(e.target.value)}
+                        placeholder="e.g. Gym, Reading..."
+                        className="w-full bg-white/[0.03] border rounded-xl px-4 py-2 text-sm outline-none transition-colors"
+                        style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
+                        onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
+                        onBlur={(e) => e.currentTarget.style.borderColor = 'var(--border-medium)'}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddHabit()}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                        <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Weekly Goal</label>
+                        <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{newHabitGoal} days</span>
+                    </div>
+                    <input
+                        type="range"
+                        min="1"
+                        max="7"
+                        value={newHabitGoal}
+                        onChange={(e) => setNewHabitGoal(parseInt(e.target.value))}
+                        className="w-full h-2 bg-white/[0.1] rounded-lg appearance-none cursor-pointer"
+                        style={{ accentColor: 'var(--accent)' }}
+                    />
+                </div>
+                <button
+                    onClick={handleAddHabit}
+                    disabled={!newHabitName.trim()}
+                    className="w-full px-6 py-3 rounded-xl text-white font-bold text-sm uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg bg-[var(--accent)]"
+                >
+                    <Plus size={16} />
+                    Add Habit
+                </button>
             </div>
         </div>
     );

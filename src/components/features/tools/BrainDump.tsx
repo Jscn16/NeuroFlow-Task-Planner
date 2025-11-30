@@ -17,39 +17,13 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
 
     return (
         <div className="h-full flex flex-col overflow-hidden relative pt-5 max-w-7xl mx-auto w-full">
-            <div className="flex items-center justify-between mb-6 flex-shrink-0" style={{ paddingLeft: '1rem' }}>
-                <div>
-                    <h2 className="text-3xl font-display font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Brain Dump</h2>
-                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Unload your thoughts. Multiple lists supported.</p>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-xs text-emerald-500 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-                        <Save size={12} />
-                        <span>Auto-saved</span>
-                    </div>
-                    <button
-                        onClick={onAddList}
-                        className="flex items-center gap-2 px-4 py-2 border rounded-xl transition-all font-bold text-sm"
-                        style={{
-                            backgroundColor: 'var(--accent-muted)',
-                            color: 'var(--accent)',
-                            borderColor: 'color-mix(in srgb, var(--accent) 30%, transparent)'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--accent) 30%, transparent)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'var(--accent-muted)';
-                        }}
-                    >
-                        <Plus size={16} />
-                        Add List
-                    </button>
-                </div>
+            <div className="mb-6 flex-shrink-0 px-4 sm:px-6 text-center">
+                <h2 className="text-3xl font-display font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Brain Dump</h2>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Unload your thoughts. Multiple lists supported.</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-4">
-                <div className="grid grid-cols-3 gap-6 auto-rows-fr px-1">
+            <div className="flex-1 overflow-y-auto pb-4 px-4 sm:px-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
                     <AnimatePresence mode="popLayout">
                         {lists.map(list => (
                             <motion.div
@@ -108,10 +82,9 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
                                     value={list.content}
                                     onChange={(e) => onUpdateList(list.id, e.target.value)}
                                     placeholder="Type anything..."
-                                    className="flex-1 w-full backdrop-blur-md rounded-b-3xl p-6 text-base leading-relaxed resize-none focus:outline-none transition-colors font-sans border-0"
+                                    className="flex-1 w-full backdrop-blur-md rounded-b-3xl p-6 text-base leading-relaxed resize-none focus:outline-none transition-colors font-sans border-0 text-zinc-100 placeholder:text-zinc-600"
                                     style={{
-                                        backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 40%, transparent)',
-                                        color: 'var(--text-secondary)',
+                                        backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 40%, transparent)'
                                     }}
                                     onFocus={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--bg-tertiary) 60%, transparent)'}
                                     onBlur={(e) => e.currentTarget.style.backgroundColor = 'color-mix(in srgb, var(--bg-tertiary) 40%, transparent)'}

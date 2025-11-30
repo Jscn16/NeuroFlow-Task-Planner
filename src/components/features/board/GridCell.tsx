@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, GridRow } from '../../../types';
 import { formatDate, ROW_CONFIG } from '../../../constants';
-import { TaskCard } from '@/components/TaskCard';
+import { BoardTaskCard } from '../../tasks/BoardTaskCard';
 
 interface GridCellProps {
     day: Date;
@@ -12,6 +12,7 @@ interface GridCellProps {
     tasks: Task[];
     onDrop: (e: React.DragEvent, day: Date, row: GridRow) => void;
     onDragStart: (e: React.DragEvent, taskId: string) => void;
+    onDragEnd: (e: React.DragEvent) => void;
     onToggleComplete: (taskId: string) => void;
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask?: (taskId: string) => void;
@@ -19,15 +20,17 @@ interface GridCellProps {
     onTaskDrop?: (sourceId: string, targetId: string) => void;
     viewMode: 'show' | 'fade' | 'hide';
     isPastDay?: boolean;
+    isFirstColumn?: boolean;
 }
 
-export const GridCell: React.FC<GridCellProps> = ({
+export const GridCell = React.memo<GridCellProps>(({
     day,
     row,
     isToday,
     tasks,
     onDrop,
     onDragStart,
+    onDragEnd,
     onToggleComplete,
     onUpdateTask,
     onDeleteTask,
@@ -39,16 +42,29 @@ export const GridCell: React.FC<GridCellProps> = ({
     isFirstColumn
 }) => {
     const [isDragOver, setIsDragOver] = useState(false);
-    const dayStr = formatDate(day);
-    const allCellTasks = tasks.filter(t => t.dueDate === dayStr && t.assignedRow === row);
+    const dayStr = useMemo(() => formatDate(day), [day]);
+
+    // Filter tasks for this specific cell
+    // Note: In a further optimization, this filtering should happen in the parent (WeekMatrixView)
+    // and passed down as `cellTasks` to avoid this filter running on every cell for every render.
+    // For now, we memoize it here.
+    const allCellTasks = useMemo(() =>
+        (tasks || []).filter(t => t.dueDate === dayStr && t.assignedRow === row),
+        [tasks, dayStr, row]);
 
     // Separate active tasks from rescheduled ones
-    const activeTasks = allCellTasks.filter(t => {
-        if (t.status === 'unscheduled' || t.status === 'rescheduled') return false;
-        if (t.status === 'completed' && viewMode === 'hide') return false;
-        return true;
-    });
-    const rescheduledTasks = allCellTasks.filter(t => t.status === 'rescheduled');
+    const { activeTasks, rescheduledTasks } = useMemo(() => {
+        const active = [];
+        const rescheduled = [];
+        for (const t of allCellTasks) {
+            if (t.status === 'rescheduled') {
+                rescheduled.push(t);
+            } else if (t.status !== 'unscheduled' && !(t.status === 'completed' && viewMode === 'hide')) {
+                active.push(t);
+            }
+        }
+        return { activeTasks: active, rescheduledTasks: rescheduled };
+    }, [allCellTasks, viewMode]);
 
     const slotCount = row === 'GOAL' ? 1 : 3;
     const visibleTasks = activeTasks.slice(0, slotCount);
@@ -111,17 +127,15 @@ export const GridCell: React.FC<GridCellProps> = ({
                         layout
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.15 } }}
                         transition={{ duration: 0.2 }}
                     >
-                        <TaskCard
+                        <BoardTaskCard
                             task={task}
-                            variant="board"
                             onDragStart={onDragStart}
+                            onDragEnd={onDragEnd}
                             onUpdateTask={onUpdateTask}
                             onDeleteTask={onDeleteTask}
                             onToggleComplete={onToggleComplete}
-                            onTaskDrop={onTaskDrop}
                             isOverdue={isPastDay && task.status !== 'completed'}
                             viewMode={viewMode}
                         />
@@ -133,13 +147,15 @@ export const GridCell: React.FC<GridCellProps> = ({
             {
                 rescheduledTasks.map((task) => (
                     <div key={task.id} className="flex-shrink-0 mt-1">
-                        <TaskCard
-                            task={task}
-                            variant="board"
-                            onDragStart={() => { }} // Disable drag
-                            onToggleComplete={() => { }} // Disable toggle
-                            onDeleteTask={() => { }} // Disable delete
-                        />
+                        <div className="flex items-center gap-2 px-2 py-1 rounded border border-dashed border-zinc-700/50 bg-zinc-800/20 select-none">
+                            <ArrowRight size={12} className="text-zinc-500" />
+                            <span className="text-[11px] text-zinc-500 truncate flex-1 font-medium">
+                                {task.title}
+                            </span>
+                            <span className="text-[10px] text-zinc-600">
+                                Rescheduled
+                            </span>
+                        </div>
                     </div>
                 ))
             }
@@ -165,21 +181,28 @@ export const GridCell: React.FC<GridCellProps> = ({
 
             {/* Empty slots */}
             {
-                emptySlotsToRender > 0 && !isDragOver && Array.from({ length: emptySlotsToRender }).map((_, index) => (
-                    <div key={`ghost-${index}`} className="flex-1 relative w-full min-h-0 pointer-events-none">
-                        <div
-                            className="absolute inset-0 rounded-lg border border-dashed flex items-center justify-center"
-                            style={{
-                                borderColor: 'var(--text-muted)',
-                                opacity: isPastDay ? 0.065 : 0.1
-                            }}
-                        >
-                            <Plus size={14} className="opacity-30" style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                    </div>
-                ))
+                emptySlotsToRender > 0 && !isDragOver && (
+                    <>
+                        {/* Use a simple loop instead of Array.from to avoid allocation if possible, 
+                            but React needs keys. We can use a stable array if max slots is small. 
+                            Since max slots is 3, we can just map over a small range. */}
+                        {[...Array(emptySlotsToRender)].map((_, index) => (
+                            <div key={`ghost-${index}`} className="flex-1 relative w-full min-h-0 pointer-events-none">
+                                <div
+                                    className="absolute inset-0 rounded-lg border border-dashed flex items-center justify-center"
+                                    style={{
+                                        borderColor: 'var(--text-muted)',
+                                        opacity: isPastDay ? 0.065 : 0.1
+                                    }}
+                                >
+                                    <Plus size={14} className="opacity-30" style={{ color: 'var(--text-muted)' }} />
+                                </div>
+                            </div>
+                        ))}
+                    </>
+                )
             }
 
         </div >
     );
-};
+});

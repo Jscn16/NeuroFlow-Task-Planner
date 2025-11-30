@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Play, CheckCircle2, Maximize2, Minimize2, Clock, Pause, RotateCcw, X } from 'lucide-react';
 import { Task } from '../../../types';
-import { TaskCard } from '../../TaskCard';
+import { DeepWorkTaskCard } from '../../tasks/DeepWorkTaskCard';
 import { formatDate, getAdjustedDate } from '../../../constants';
 
 interface FocusModeProps {
     tasks: Task[];
     onDragStart: (e: React.DragEvent, taskId: string) => void;
     onToggleTaskComplete: (taskId: string) => void;
-    onStartFocus: (taskId: string) => void;
     onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
     showCompleted: boolean;
 }
 
-export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onStartFocus, onUpdateTask, showCompleted }) => {
+export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onUpdateTask, showCompleted }) => {
     const todayStr = formatDate(getAdjustedDate());
     const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
     const [isZenMode, setIsZenMode] = useState(false);
@@ -30,7 +29,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         'chores': 6
     };
 
-    const focusTasks = tasks.filter(t =>
+    const focusTasks = (tasks || []).filter(t =>
         t.status === 'scheduled' &&
         t.dueDate === todayStr &&
         (showCompleted || t.status !== 'completed')
@@ -40,7 +39,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         return pA - pB;
     });
 
-    const activeTask = tasks.find(t => t.id === activeTaskId);
+    const activeTask = (tasks || []).find(t => t.id === activeTaskId);
 
     // Calculate summary stats
     const totalTasks = focusTasks.length;
@@ -305,14 +304,11 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                         {focusTasks.filter(t => t.id !== activeTaskId).map((task, index) => (
                             <div key={task.id} className="flex items-center gap-4 group">
                                 <div className="flex-1">
-                                    <TaskCard
+                                    <DeepWorkTaskCard
                                         task={task}
-                                        variant="deepwork"
                                         index={index}
-                                        onUpdate={onUpdateTask}
-                                        onDelete={() => { }}
                                         onToggleComplete={onToggleTaskComplete}
-                                        onDragStart={onDragStart}
+                                        onStartFocus={handleStartTask}
                                     />
                                 </div>
                                 <button
@@ -331,8 +327,8 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };

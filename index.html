@@ -2,123 +2,134 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NeuroFlow OS</title>
-  <link rel="icon" type="image/png" href="favicon.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    /* Critical CSS for immediate dark theme to prevent white flash */
-    :root {
-      --bg-color: var(--bg-primary);
-      --accent-color: #22d3ee;
-      /* Cyan-400 to match the checkmark */
-    }
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeuroFlow OS</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* Critical CSS for immediate dark theme to prevent white flash */
+        :root {
+            --bg-primary: #161b2e;
+            --bg-secondary: #1a1f35;
+            --bg-tertiary: #1e2338;
+            --bg-glow: rgba(56, 189, 248, 0.15);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #22d3ee;
+            --accent-glow: rgba(6, 182, 212, 0.5);
+            --accent-muted: rgba(6, 182, 212, 0.1);
+            --border-light: rgba(255, 255, 255, 0.05);
+            --border-medium: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
 
-    html,
-    body {
-      background-color: var(--bg-color);
-      color: #e4e4e7;
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      overflow: hidden;
-      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
+            --bg-color: var(--bg-primary);
+            --accent-color: var(--accent);
+        }
 
-    #root {
-      height: 100%;
-      width: 100%;
-      opacity: 0;
-      transition: opacity 0.5s ease-in;
-    }
+        html,
+        body {
+            color: #e4e4e7;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    /* NeuroFlow Loader Styles */
-    #app-loader {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      background-color: var(--bg-color);
-      background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
-      z-index: 9999;
-      transition: opacity 0.4s ease-out, visibility 0.4s;
-    }
+        #root {
+            height: 100%;
+            width: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
 
-    .loader-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 32px;
-    }
+        /* NeuroFlow Loader Styles */
+        #app-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+            background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
+            z-index: 9999;
+            transition: opacity 0.4s ease-out, visibility 0.4s;
+        }
 
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+        .loader-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 32px;
+        }
 
-    .logo-check {
-      color: var(--accent-color);
-      width: 32px;
-      height: 32px;
-    }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-    .neuro-text {
-      font-size: 2rem;
-      font-weight: 500;
-      letter-spacing: -0.02em;
-      color: #ffffff;
-      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
+        .logo-check {
+            color: var(--accent-color);
+            width: 32px;
+            height: 32px;
+        }
 
-    .spinner-ring {
-      width: 24px;
-      height: 24px;
-      border: 2.5px solid rgba(6, 182, 212, 0.1);
-      border-radius: 50%;
-      border-top-color: var(--accent-color);
-      animation: spin 0.8s linear infinite;
-    }
+        .neuro-text {
+            font-size: 2rem;
+            font-weight: 500;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
+        .spinner-ring {
+            width: 24px;
+            height: 24px;
+            border: 2.5px solid rgba(6, 182, 212, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 0.8s linear infinite;
+        }
 
-    .loaded #app-loader {
-      opacity: 0;
-      visibility: hidden;
-    }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-    .loaded #root {
-      opacity: 1;
-    }
-  </style>
+        .loaded #app-loader {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loaded #root {
+            opacity: 1;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="app-loader">
-    <div class="loader-content">
-      <div class="logo-container">
-        <svg class="logo-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 6L9 17l-5-5" />
-        </svg>
-        <div class="neuro-text">NeuroFlow</div>
-      </div>
-      <div class="spinner-ring"></div>
+    <div id="app-loader">
+        <div class="loader-content">
+            <div class="logo-container">
+                <div class="neuro-text">NeuroFlow</div>
+            </div>
+            <div class="spinner-ring"></div>
+        </div>
     </div>
-  </div>
-  <div id="root"></div>
-  <script type="module" src="/src/index.tsx"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
 </body>
 
 </html>

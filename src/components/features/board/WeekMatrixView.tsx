@@ -14,6 +14,7 @@ interface WeekMatrixViewProps {
     viewMode: 'show' | 'fade' | 'hide';
     onDropOnGrid: (e: React.DragEvent, day: Date, row: GridRow | null) => void;
     onDragStart: (e: React.DragEvent, taskId: string) => void;
+    onDragEnd: (e: React.DragEvent) => void;
     onUpdateTask?: (taskId: string, updates: Partial<Task>) => void;
     onDeleteTask?: (taskId: string) => void;
     onToggleTaskComplete: (taskId: string) => void;
@@ -29,6 +30,7 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
     viewMode,
     onDropOnGrid,
     onDragStart,
+    onDragEnd,
     onUpdateTask,
     onDeleteTask,
     onToggleTaskComplete,
@@ -115,7 +117,7 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
 
                         {/* Columns */}
                         {currentWeekDays.map((day, i) => {
-                            const dayTasks = tasks.filter(t => {
+                            const dayTasks = (tasks || []).filter(t => {
                                 if (t.status === 'unscheduled') return false;
                                 if (t.dueDate !== formatDate(day)) return false;
                                 return true;
@@ -128,9 +130,10 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                                     day={day}
                                     row={row}
                                     isToday={formatDate(day) === todayStr}
-                                    tasks={tasks}
+                                    tasks={tasks || []}
                                     onDrop={onDropOnGrid}
                                     onDragStart={onDragStart}
+                                    onDragEnd={onDragEnd}
                                     onUpdateTask={onUpdateTask}
                                     onDeleteTask={onDeleteTask}
                                     onToggleComplete={onToggleTaskComplete}

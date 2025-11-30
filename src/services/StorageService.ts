@@ -49,9 +49,9 @@ export class StorageService {
 
     loadTheme(): string {
         try {
-            return localStorage.getItem(this.THEME_KEY) || 'neuroflow';
+            return localStorage.getItem(this.THEME_KEY) || 'northern-lights';
         } catch {
-            return 'neuroflow';
+            return 'northern-lights';
         }
     }
 

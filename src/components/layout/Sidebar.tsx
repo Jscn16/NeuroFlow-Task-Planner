@@ -1,44 +1,38 @@
 import React, { useState, useRef } from 'react';
-import { Plus, ChevronDown, ChevronUp, Settings, PanelLeftClose, PanelLeftOpen, Check } from 'lucide-react';
+import { Plus, Settings, PanelLeftClose, PanelLeftOpen, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType } from '../../types';
-import { TaskCard } from '@/components/TaskCard';
+import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
+import { VirtualSidebarList } from './VirtualSidebarList';
 import { CATEGORIES } from '../../constants';
+import { useTaskContext } from '../../context/TaskContext';
 
 interface SidebarProps {
-    tasks: Task[];
-    onDragStart: (e: React.DragEvent, taskId: string) => void;
-    onDragEnd: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent) => void;
-    isDragging: boolean;
-    onAddTask: (title: string, duration: number, type: TaskType) => void;
-    onUpdateTask: (taskId: string, updates: Partial<Task>) => void;
-    onDeleteTask: (taskId: string) => void;
-    onToggleTaskComplete: (taskId: string) => void;
     onOpenSettings: () => void;
     isOpen: boolean;
     onToggle: () => void;
 }
 
-
-
 // 6 buttons for even grid
 const QUICK_DURATIONS = [15, 30, 45, 60, 90, 120];
 
 export const Sidebar: React.FC<SidebarProps> = ({
-    tasks,
-    onDragStart,
-    onDrop,
-    onAddTask,
-    onUpdateTask,
-    onDeleteTask,
-    onToggleTaskComplete,
     onOpenSettings,
     isOpen,
-    onToggle,
-    isDragging,
-    onDragEnd
+    onToggle
 }) => {
+    const {
+        tasks,
+        addTask,
+        updateTask,
+        deleteTask,
+        toggleTaskComplete,
+        handleDragStart,
+        handleDragEnd,
+        handleDropOnSidebar,
+        isDragging
+    } = useTaskContext();
+
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskDuration, setNewTaskDuration] = useState(30);
     const [newTaskType, setNewTaskType] = useState<TaskType>('backlog');
@@ -50,7 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;
-        onAddTask(newTaskTitle.trim(), newTaskDuration, newTaskType);
+        addTask(newTaskTitle.trim(), newTaskDuration, newTaskType);
         setNewTaskTitle('');
         setExpandedCategories(prev => ({ ...prev, [newTaskType]: true }));
     };
@@ -85,8 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setDragOverCategory(null);
 
         const taskId = e.dataTransfer.getData('taskId');
-        if (taskId && onUpdateTask) {
-            onUpdateTask(taskId, {
+        if (taskId && updateTask) {
+            updateTask(taskId, {
                 type: categoryId as TaskType,
                 status: 'unscheduled',
                 dueDate: null,
@@ -98,11 +92,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const handleSidebarDrop = (e: React.DragEvent) => {
         if (!dragOverCategory) {
-            onDrop(e);
+            handleDropOnSidebar(e);
         }
     };
 
     const selectedCategory = CATEGORIES.find(c => c.id === newTaskType);
+
+    // Defensive check for tasks
+    const safeTasks = Array.isArray(tasks) ? tasks : [];
 
     return (
         <motion.div
@@ -238,104 +235,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
 
                 {/* Main Task Lists (scrollable) */}
-                <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2 scrollbar-hide">
-                    {CATEGORIES.map(cat => {
-                        const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled');
-                        const isExpanded = expandedCategories[cat.id];
-                        const isDraggedOver = dragOverCategory === cat.id;
-
-                        return (
-                            <div
-                                key={cat.id}
-                                onDragEnter={(e) => handleCategoryDragEnter(e, cat.id)}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDragLeave={(e) => handleCategoryDragLeave(e, cat.id)}
-                                onDrop={(e) => handleCategoryDrop(e, cat.id)}
-                                className="mt-3 first:mt-0" // Top divider spacing
-                            >
-                                {/* Section Header */}
-                                <div className={`border-t border-zinc-800/40 pt-3 px-3 pb-1 flex items-center justify-between group ${cat.id === 'high' ? 'border-t-0 pt-0' : ''}`}>
-                                    <button
-                                        onClick={() => toggleCategory(cat.id)}
-                                        className="flex-1 flex items-center justify-between"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-2 h-2 rounded-full shadow-[0_0_6px_currentColor]" style={{ backgroundColor: cat.color, color: cat.color }} />
-                                            <span className="text-[11px] font-medium tracking-[0.12em] uppercase text-zinc-400 group-hover:text-zinc-200 transition-colors">
-                                                {cat.label}
-                                            </span>
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 font-mono">
-                                                {catTasks.length}
-                                            </span>
-                                            <ChevronDown
-                                                size={14}
-                                                className="transition-transform text-zinc-600 group-hover:text-zinc-400"
-                                                style={{
-                                                    transform: isExpanded ? 'rotate(0deg)' : 'rotate(-90deg)'
-                                                }}
-                                            />
-                                        </div>
-                                    </button>
-                                </div>
-
-                                {/* Section Body */}
-                                <div
-                                    className="overflow-hidden transition-all duration-200"
-                                    style={{
-                                        maxHeight: isExpanded || isDragging ? 'none' : '0px',
-                                        opacity: isExpanded || isDragging ? 1 : 0,
-                                    }}
-                                >
-                                    <div className="mt-2 px-3 space-y-2 pb-2">
-                                        {catTasks.map(task => (
-                                            <TaskCard
-                                                key={task.id}
-                                                task={task}
-                                                variant="sidebar"
-                                                onDragStart={onDragStart}
-                                                onUpdateTask={onUpdateTask}
-                                                onDeleteTask={onDeleteTask}
-                                                onToggleComplete={onToggleTaskComplete}
-                                            />
-                                        ))}
-
-                                        {/* Drop Zone Placeholder */}
-                                        {isDragging ? (
-                                            <div
-                                                className={`
-                                                    mt-2 border-2 border-dashed rounded-md h-12 w-full flex items-center justify-center text-xs transition-colors duration-200
-                                                    ${isDraggedOver
-                                                        ? 'bg-opacity-10'
-                                                        : 'border-zinc-700/50 bg-zinc-800/20 text-zinc-500'
-                                                    }
-                                                `}
-                                                style={isDraggedOver ? {
-                                                    borderColor: cat.color,
-                                                    backgroundColor: `${cat.color}20`,
-                                                    color: cat.color
-                                                } : undefined}
-                                            >
-                                                Drop to add
-                                            </div>
-                                        ) : (
-                                            /* Empty State */
-                                            catTasks.length === 0 && (
-                                                <div
-                                                    className="text-[11px] italic px-3 py-3 text-center text-zinc-500/60"
-                                                >
-                                                    No tasks — drag here
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                <VirtualSidebarList
+                    tasks={safeTasks}
+                    expandedCategories={expandedCategories}
+                    toggleCategory={toggleCategory}
+                    dragOverCategory={dragOverCategory}
+                    onCategoryDragEnter={handleCategoryDragEnter}
+                    onCategoryDragLeave={handleCategoryDragLeave}
+                    onCategoryDrop={handleCategoryDrop}
+                    isDragging={isDragging}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onUpdateTask={updateTask}
+                    onDeleteTask={deleteTask}
+                    onToggleComplete={toggleTaskComplete}
+                />
 
                 {/* Footer */}
                 <div

@@ -17,6 +17,14 @@
   --color-theme-text-muted: var(--text-muted, #64748b);
   --color-theme-accent: var(--accent, #22d3ee);
   --color-theme-border: var(--border-medium, rgba(255, 255, 255, 0.1));
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 13px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+
+  --font-weight-medium: 600;
 }
 
 :root {
@@ -28,17 +36,12 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-
 /* Smooth transitions for theme changes */
 *,
 *::before,
 *::after {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
 }
-
-/* ═══════════════════════════════════════════════════════════════════
-   ANIMATIONS - Smooth & Satisfying
-═══════════════════════════════════════════════════════════════════ */
 
 /* Task completion celebration */
 @keyframes complete-pop {

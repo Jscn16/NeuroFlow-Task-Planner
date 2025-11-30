@@ -2,50 +2,27 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, BrainDumpList } from './types';
 import { getAdjustedDate, INITIAL_TASKS, INITIAL_HABITS } from './constants';
+import { getThemeById, applyTheme } from './themes';
+import { screenTransition } from './utils/animations';
 import { MainLayout } from './components/layout/MainLayout';
 import { Sidebar } from './components/layout/Sidebar';
 import { Header } from './components/layout/Header';
 import { SettingsModal } from './components/layout/SettingsModal';
 import { WeekView } from './components/features/board/WeekView';
 import { FocusMode } from './components/features/dashboard/FocusMode';
-import { HabitTracker } from './components/features/tools/HabitTracker';
-import { BrainDump } from './components/features/tools/BrainDump';
-import { getThemeById, applyTheme } from './themes';
 import { StorageService } from './services/StorageService';
-import { screenTransition } from './utils/animations';
-
-// Hooks
-import { useTaskManager } from './hooks/useTaskManager';
+import { TaskProvider, useTaskContext } from './context/TaskContext';
 import { useHabitManager } from './hooks/useHabitManager';
 import { useBrainDumpManager } from './hooks/useBrainDumpManager';
 import { usePersistence } from './hooks/usePersistence';
-
-// Lazy load AnalyticsDashboard
+// Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
+const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
+const BrainDump = React.lazy(() => import('./components/features/tools/BrainDump').then(module => ({ default: module.BrainDump })));
 
-const App = () => {
-    // --- Data Loading ---
-    const [initialData, setInitialData] = useState<AppData | null>(() => StorageService.getInstance().load());
-
-    const initialTasksState = initialData?.tasks || INITIAL_TASKS;
-    const initialHabitsState = React.useMemo(() =>
-        initialData?.habits ? initialData.habits.map(h => ({ ...h, goal: h.goal || 7 })) : INITIAL_HABITS,
-        [initialData]);
-
-    // Brain Dump Initialization Logic
-    const getInitialBrainDump = (): BrainDumpList[] => {
-        if (initialData?.brainDumpLists && initialData.brainDumpLists.length > 0) {
-            return initialData.brainDumpLists;
-        }
-        const legacyContent = initialData?.brainDumpContent || '';
-        if (initialData?.notes && initialData.notes.length > 0) {
-            return [{ id: '1', title: 'Main List', content: initialData.notes.map(n => n.content).join('\n\n') }];
-        }
-        return [{ id: '1', title: 'Main List', content: legacyContent }];
-    };
-
-    // --- Hooks ---
-    const taskManager = useTaskManager(initialTasksState);
+const AppContent = ({ initialHabitsState, getInitialBrainDump }: { initialHabitsState: any, getInitialBrainDump: () => BrainDumpList[] }) => {
+    // --- Context & Hooks ---
+    const taskManager = useTaskContext(); // Consuming context
     const habitManager = useHabitManager(initialHabitsState);
     const brainDumpManager = useBrainDumpManager(getInitialBrainDump());
     const persistence = usePersistence(taskManager.tasks, habitManager.habits, brainDumpManager.lists);
@@ -58,7 +35,7 @@ const App = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
-    const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
+    // activeTaskId moved to FocusMode
 
     // --- Theme ---
     const [currentThemeId, setCurrentThemeId] = useState<string>(persistence.loadTheme());
@@ -83,11 +60,9 @@ const App = () => {
 
     // --- App Loader Cleanup ---
     useEffect(() => {
-        // Signal that the app is loaded to trigger the fade-out animation in index.html
         const timer = setTimeout(() => {
             document.body.classList.add('loaded');
-        }, 100); // Slight delay to ensure React has rendered
-
+        }, 100);
         return () => clearTimeout(timer);
     }, []);
 
@@ -111,18 +86,9 @@ const App = () => {
             <MainLayout
                 sidebar={
                     <Sidebar
-                        tasks={taskManager.tasks}
-                        onDragStart={taskManager.handleDragStart}
-                        onDrop={taskManager.handleDropOnSidebar}
-                        onAddTask={taskManager.addTask}
-                        onUpdateTask={taskManager.updateTask}
-                        onDeleteTask={taskManager.deleteTask}
-                        onToggleTaskComplete={taskManager.toggleTaskComplete}
                         onOpenSettings={() => setShowSettings(true)}
                         isOpen={isSidebarOpen}
                         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-                        isDragging={taskManager.isDragging}
-                        onDragEnd={taskManager.handleDragEnd}
                     />
                 }
                 header={
@@ -153,14 +119,14 @@ const App = () => {
                                 currentDate={currentDate}
                                 weekDirection={weekDirection}
                                 isStacked={isStacked}
+                                viewMode={viewMode}
                                 onDropOnGrid={taskManager.handleDropOnGrid}
                                 onDragStart={taskManager.handleDragStart}
+                                onDragEnd={taskManager.handleDragEnd}
+                                onToggleTaskComplete={taskManager.toggleTaskComplete}
                                 onUpdateTask={taskManager.updateTask}
                                 onDeleteTask={taskManager.deleteTask}
-                                onToggleTaskComplete={taskManager.toggleTaskComplete}
                                 onTaskDrop={taskManager.handleReorderTasks}
-                                onDragEnd={taskManager.handleDragEnd}
-                                viewMode={viewMode}
                             />
                         </motion.div>
                     )}
@@ -177,7 +143,6 @@ const App = () => {
                                 tasks={taskManager.tasks}
                                 onDragStart={taskManager.handleDragStart}
                                 onToggleTaskComplete={taskManager.toggleTaskComplete}
-                                onStartFocus={setActiveTaskId}
                                 onUpdateTask={taskManager.updateTask}
                                 showCompleted={viewMode === 'show'}
                             />
@@ -192,12 +157,14 @@ const App = () => {
                             exit="exit"
                             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
-                            <HabitTracker
-                                habits={habitManager.habits}
-                                toggleHabit={habitManager.toggleHabit}
-                                onDeleteHabit={habitManager.deleteHabit}
-                                onAddHabit={habitManager.addHabit}
-                            />
+                            <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading habits...</div>}>
+                                <HabitTracker
+                                    habits={habitManager.habits}
+                                    toggleHabit={habitManager.toggleHabit}
+                                    onDeleteHabit={habitManager.deleteHabit}
+                                    onAddHabit={habitManager.addHabit}
+                                />
+                            </Suspense>
                         </motion.div>
                     )}
                     {activeTab === 'braindump' && (
@@ -209,13 +176,15 @@ const App = () => {
                             exit="exit"
                             style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                         >
-                            <BrainDump
-                                lists={brainDumpManager.lists}
-                                onUpdateList={brainDumpManager.updateList}
-                                onAddList={brainDumpManager.addList}
-                                onDeleteList={brainDumpManager.deleteList}
-                                onUpdateTitle={brainDumpManager.updateTitle}
-                            />
+                            <Suspense fallback={<div className="flex items-center justify-center h-full text-white/50">Loading brain dump...</div>}>
+                                <BrainDump
+                                    lists={brainDumpManager.lists}
+                                    onUpdateList={brainDumpManager.updateList}
+                                    onAddList={brainDumpManager.addList}
+                                    onDeleteList={brainDumpManager.deleteList}
+                                    onUpdateTitle={brainDumpManager.updateTitle}
+                                />
+                            </Suspense>
                         </motion.div>
                     )}
                     {activeTab === 'analytics' && (
@@ -240,11 +209,7 @@ const App = () => {
                     onClose={() => setShowSettings(false)}
                     onExport={persistence.exportData}
                     onImport={handleImport}
-                    onDeleteAllTasks={() => {
-                        if (window.confirm('Are you sure you want to delete ALL tasks?')) {
-                            taskManager.tasks.forEach(t => taskManager.deleteTask(t.id));
-                        }
-                    }}
+                    onDeleteAllTasks={taskManager.deleteAllTasks}
                     onClearRescheduled={taskManager.clearRescheduledTasks}
                     currentThemeId={currentThemeId}
                     onThemeChange={setCurrentThemeId}
@@ -253,6 +218,34 @@ const App = () => {
                 />
             )}
         </>
+    );
+};
+
+const App = () => {
+    // --- Data Loading ---
+    const [initialData, setInitialData] = useState<AppData | null>(() => StorageService.getInstance().load());
+
+    const initialTasksState = initialData?.tasks || INITIAL_TASKS;
+    const initialHabitsState = React.useMemo(() =>
+        initialData?.habits ? initialData.habits.map(h => ({ ...h, goal: h.goal || 7 })) : INITIAL_HABITS,
+        [initialData]);
+
+    // Brain Dump Initialization Logic
+    const getInitialBrainDump = (): BrainDumpList[] => {
+        if (initialData?.brainDumpLists && initialData.brainDumpLists.length > 0) {
+            return initialData.brainDumpLists;
+        }
+        const legacyContent = initialData?.brainDumpContent || '';
+        if (initialData?.notes && initialData.notes.length > 0) {
+            return [{ id: '1', title: 'Main List', content: initialData.notes.map(n => n.content).join('\n\n') }];
+        }
+        return [{ id: '1', title: 'Main List', content: legacyContent }];
+    };
+
+    return (
+        <TaskProvider initialTasks={initialTasksState}>
+            <AppContent initialHabitsState={initialHabitsState} getInitialBrainDump={getInitialBrainDump} />
+        </TaskProvider>
     );
 };
 

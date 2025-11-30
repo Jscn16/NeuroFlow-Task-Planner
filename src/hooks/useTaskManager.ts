@@ -50,7 +50,7 @@ export function useTaskManager(initialTasks: Task[]) {
     // Drag and Drop Logic
     const [isDragging, setIsDragging] = useState(false);
 
-    const handleDragStart = useCallback((e: React.DragEvent, taskId: string) => {
+    const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, taskId: string) => {
         e.dataTransfer.setData('taskId', taskId);
         e.dataTransfer.effectAllowed = 'move';
         setIsDragging(true);
@@ -60,7 +60,7 @@ export function useTaskManager(initialTasks: Task[]) {
         setIsDragging(false);
     }, []);
 
-    const handleDropOnGrid = useCallback((e: React.DragEvent, day: Date, row: GridRow | null) => {
+    const handleDropOnGrid = useCallback((e: React.DragEvent<HTMLElement>, day: Date, row: GridRow | null) => {
         e.preventDefault();
         setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
@@ -100,7 +100,7 @@ export function useTaskManager(initialTasks: Task[]) {
         manager.scheduleTask(taskId, day, targetRow as GridRow, targetType);
     }, [tasks]);
 
-    const handleDropOnSidebar = useCallback((e: React.DragEvent) => {
+    const handleDropOnSidebar = useCallback((e: React.DragEvent<HTMLElement>) => {
         e.preventDefault();
         setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
@@ -108,7 +108,7 @@ export function useTaskManager(initialTasks: Task[]) {
         manager.unscheduleTask(taskId);
     }, []);
 
-    const handleDropOnEisenhower = useCallback((e: React.DragEvent, quad: 'do' | 'decide' | 'delegate' | 'delete') => {
+    const handleDropOnEisenhower = useCallback((e: React.DragEvent<HTMLElement>, quad: 'do' | 'decide' | 'delegate' | 'delete') => {
         e.preventDefault();
         setIsDragging(false);
         const taskId = e.dataTransfer.getData('taskId');
@@ -129,6 +129,7 @@ export function useTaskManager(initialTasks: Task[]) {
         handleDropOnGrid,
         handleDropOnSidebar,
         handleDropOnEisenhower,
-        clearRescheduledTasks: () => manager.clearRescheduledTasks()
+        clearRescheduledTasks: () => manager.clearRescheduledTasks(),
+        deleteAllTasks: () => manager.deleteAllTasks()
     };
 }

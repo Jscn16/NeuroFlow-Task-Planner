@@ -20,7 +20,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
         return () => clearTimeout(timer);
     }, []);
     const todayStr = formatDate(new Date());
-    const todayTasks = tasks.filter(t => t.dueDate === todayStr && t.status !== 'unscheduled');
+    const todayTasks = (tasks || []).filter(t => t.dueDate === todayStr && t.status !== 'unscheduled');
     const completedToday = todayTasks.filter(t => t.status === 'completed');
     const rescheduledToday = todayTasks.filter(t => t.status === 'rescheduled');
 
@@ -29,7 +29,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
     const completionRate = todayTasks.length > 0 ? Math.round((completedToday.length / todayTasks.length) * 100) : 0;
 
     // Total completed tasks and time
-    const allCompleted = tasks.filter(t => t.status === 'completed');
+    const allCompleted = (tasks || []).filter(t => t.status === 'completed');
     const totalCompletedMinutes = allCompleted.reduce((acc, t) => acc + t.duration, 0);
     const totalCompletedHours = Math.floor(totalCompletedMinutes / 60);
 
@@ -54,7 +54,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
 
     // Streak calculation
     const completedDates = new Set(
-        tasks
+        (tasks || [])
             .filter(t => t.status === 'completed' && t.dueDate)
             .map(t => t.dueDate)
     );
@@ -65,7 +65,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks })
     const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const weeklyData = weekDays.map((day, i) => {
         const dayStr = formatDate(day);
-        const dayCompleted = tasks.filter(t => t.dueDate === dayStr && t.status === 'completed');
+        const dayCompleted = (tasks || []).filter(t => t.dueDate === dayStr && t.status === 'completed');
         const dayMinutes = dayCompleted.reduce((acc, t) => acc + t.duration, 0);
         return {
             name: dayNames[i],

@@ -56,6 +56,11 @@ export class TaskManager {
         this.notify();
     }
 
+    deleteAllTasks() {
+        this.tasks = [];
+        this.notify();
+    }
+
     clearRescheduledTasks() {
         this.tasks = this.tasks.filter(t => t.status !== 'rescheduled');
         this.notify();

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useTaskManager } from '../hooks/useTaskManager';
 import { Task, TaskType, GridRow } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { mapTaskFromDb, DbTaskRow } from '../services/supabaseDataService';
 
 interface TaskContextType {
@@ -55,7 +55,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, initialTas
     } = useTaskManager(initialTasks, userId, supabaseEnabled);
 
     useEffect(() => {
-        if (!userId || !supabaseEnabled) return;
+        if (!userId || !supabaseEnabled || !isSupabaseConfigured || !supabase) return;
 
         const channel = supabase
             .channel('tasks-realtime')

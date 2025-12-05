@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { Task, TaskStatus, TaskType, GridRow, Habit, BrainDumpList } from '../types';
 
 export interface DbTaskRow {
@@ -104,6 +104,10 @@ const mapNoteToDb = (list: BrainDumpList, userId: string): Omit<DbNoteRow, 'id' 
 
 export const SupabaseDataService = {
     async fetchTasks(userId: string): Promise<Task[]> {
+        if (!supabase || !isSupabaseConfigured) {
+            console.warn('Supabase is not configured. Returning empty task list.');
+            return [];
+        }
         const { data, error } = await supabase
             .from('tasks')
             .select('*')
@@ -119,6 +123,7 @@ export const SupabaseDataService = {
     },
 
     async upsertTasks(userId: string, tasks: Task[]): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         if (!tasks.length) return;
         const payload = tasks.map(t => mapTaskToDb(t, userId));
         const { error } = await supabase.from('tasks').upsert(payload);
@@ -128,6 +133,7 @@ export const SupabaseDataService = {
     },
 
     async deleteTask(userId: string, taskId: string): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('tasks').delete().eq('user_id', userId).eq('id', taskId);
         if (error) {
             console.error('Failed to delete task', error);
@@ -135,6 +141,7 @@ export const SupabaseDataService = {
     },
 
     async replaceTasks(userId: string, tasks: Task[]): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('tasks').delete().eq('user_id', userId);
         if (error) {
             console.error('Failed to clear tasks before import', error);
@@ -145,6 +152,10 @@ export const SupabaseDataService = {
     },
 
     async fetchHabits(userId: string): Promise<Habit[]> {
+        if (!supabase || !isSupabaseConfigured) {
+            console.warn('Supabase is not configured. Returning empty habits.');
+            return [];
+        }
         const { data, error } = await supabase
             .from('habits')
             .select('*')
@@ -158,6 +169,7 @@ export const SupabaseDataService = {
     },
 
     async upsertHabit(userId: string, habit: Habit): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const payload = mapHabitToDb(habit, userId);
         const { error } = await supabase.from('habits').upsert(payload);
         if (error) {
@@ -166,6 +178,7 @@ export const SupabaseDataService = {
     },
 
     async deleteHabit(userId: string, habitId: string): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('habits').delete().eq('user_id', userId).eq('id', habitId);
         if (error) {
             console.error('Failed to delete habit', error);
@@ -173,6 +186,7 @@ export const SupabaseDataService = {
     },
 
     async replaceHabits(userId: string, habits: Habit[]): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('habits').delete().eq('user_id', userId);
         if (error) {
             console.error('Failed to clear habits before import', error);
@@ -187,6 +201,10 @@ export const SupabaseDataService = {
     },
 
     async fetchNotes(userId: string): Promise<BrainDumpList[]> {
+        if (!supabase || !isSupabaseConfigured) {
+            console.warn('Supabase is not configured. Returning empty notes.');
+            return [];
+        }
         const { data, error } = await supabase
             .from('notes')
             .select('*')
@@ -200,6 +218,7 @@ export const SupabaseDataService = {
     },
 
     async upsertNote(userId: string, list: BrainDumpList): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const payload = mapNoteToDb(list, userId);
         const { error } = await supabase.from('notes').upsert(payload);
         if (error) {
@@ -208,6 +227,7 @@ export const SupabaseDataService = {
     },
 
     async deleteNote(userId: string, noteId: string): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('notes').delete().eq('user_id', userId).eq('id', noteId);
         if (error) {
             console.error('Failed to delete note', error);
@@ -215,6 +235,7 @@ export const SupabaseDataService = {
     },
 
     async replaceNotes(userId: string, notes: BrainDumpList[]): Promise<void> {
+        if (!supabase || !isSupabaseConfigured) return;
         const { error } = await supabase.from('notes').delete().eq('user_id', userId);
         if (error) {
             console.error('Failed to clear notes before import', error);

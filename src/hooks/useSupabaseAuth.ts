@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface UseSupabaseAuthResult {
     user: User | null;
@@ -20,6 +20,12 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     const [magicLinkSent, setMagicLinkSent] = useState(false);
 
     useEffect(() => {
+        if (!isSupabaseConfigured || !supabase) {
+            setAuthError('Supabase is not configured. Using local-only mode.');
+            setIsAuthReady(true);
+            return;
+        }
+
         let isMounted = true;
         supabase.auth.getSession().then(({ data, error }) => {
             if (!isMounted) return;
@@ -44,6 +50,10 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     }, []);
 
     const signInWithEmail = useCallback(async (email: string) => {
+        if (!isSupabaseConfigured || !supabase) {
+            setAuthError('Supabase is not configured. Sign-in is unavailable.');
+            return;
+        }
         setAuthError(null);
         setMagicLinkSent(false);
         const { error } = await supabase.auth.signInWithOtp({ email });
@@ -56,6 +66,10 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     }, []);
 
     const signInWithOAuth = useCallback(async (provider: 'google' | 'github') => {
+        if (!isSupabaseConfigured || !supabase) {
+            setAuthError('Supabase is not configured. Sign-in is unavailable.');
+            return;
+        }
         setAuthError(null);
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
@@ -68,6 +82,9 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     }, []);
 
     const signOut = useCallback(async () => {
+        if (!isSupabaseConfigured || !supabase) {
+            return;
+        }
         const { error } = await supabase.auth.signOut();
         if (error) {
             console.error('Sign out failed', error);

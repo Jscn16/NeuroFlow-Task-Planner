@@ -22,6 +22,7 @@ import { SupabaseDataService } from './services/supabaseDataService';
 import { AuthOverlay } from './components/auth/AuthOverlay';
 import { generateId } from './utils/id';
 import { StorageService } from './services/StorageService';
+import { isSupabaseConfigured } from './lib/supabase';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -312,7 +313,7 @@ const AppContent = ({
 const App = () => {
     const storage = StorageService.getInstance();
     const localData = React.useMemo(() => storage.load(), []);
-    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(() => storage.loadSyncPreference());
+    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(() => isSupabaseConfigured && storage.loadSyncPreference());
 
     const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth } = useSupabaseAuth();
     const [initialTasksState, setInitialTasksState] = useState<Task[]>(localData?.tasks || []);
@@ -406,6 +407,12 @@ const App = () => {
     };
 
     const handleToggleSupabaseSync = (enabled: boolean) => {
+        if (enabled && !isSupabaseConfigured) {
+            setDataError('Supabase is not configured for this build.');
+            setUseSupabaseSync(false);
+            storage.saveSyncPreference(false);
+            return;
+        }
         setUseSupabaseSync(enabled);
         storage.saveSyncPreference(enabled);
         if (!enabled) {

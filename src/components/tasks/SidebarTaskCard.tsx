@@ -4,6 +4,7 @@ import { Clock, Check, X, CalendarDays } from 'lucide-react';
 import { GridRow, Task, TaskType } from '../../types';
 import { TASK_CARD_BORDER_COLORS, formatDate, getAdjustedDate } from '../../constants';
 import { useCompletionSound } from '../../hooks/useCompletionSound';
+import { setTaskDragData } from '../../utils/drag';
 
 interface SidebarTaskCardProps {
     task: Task;
@@ -110,8 +111,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
     };
 
     const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('taskId', task.id);
-        e.dataTransfer.effectAllowed = 'move';
+        setTaskDragData(e, task.id);
         setIsDragging(true);
         onDragStart(e, task.id);
 

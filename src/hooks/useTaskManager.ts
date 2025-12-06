@@ -4,6 +4,7 @@ import { Task, TaskType, GridRow } from '../types';
 import { playSuccessSound } from '../constants';
 import { SupabaseDataService } from '../services/supabaseDataService';
 import { generateId } from '../utils/id';
+import { getTaskIdFromDragEvent, setTaskDragData } from '../utils/drag';
 
 export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEnabled: boolean = true) {
     const managerRef = useRef<TaskManager>();
@@ -154,8 +155,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     const [isDragging, setIsDragging] = useState(false);
 
     const handleDragStart = useCallback((e: React.DragEvent<HTMLElement>, taskId: string) => {
-        e.dataTransfer.setData('taskId', taskId);
-        e.dataTransfer.effectAllowed = 'move';
+        setTaskDragData(e, taskId);
         setIsDragging(true);
     }, []);
 
@@ -166,7 +166,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     const handleDropOnGrid = useCallback((e: React.DragEvent<HTMLElement>, day: Date, row: GridRow | null) => {
         e.preventDefault();
         setIsDragging(false);
-        const taskId = e.dataTransfer.getData('taskId');
+        const taskId = getTaskIdFromDragEvent(e);
         if (!taskId) return;
 
         const task = tasks.find(t => t.id === taskId);
@@ -206,7 +206,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     const handleDropOnSidebar = useCallback((e: React.DragEvent<HTMLElement>) => {
         e.preventDefault();
         setIsDragging(false);
-        const taskId = e.dataTransfer.getData('taskId');
+        const taskId = getTaskIdFromDragEvent(e);
         if (!taskId) return;
         manager.unscheduleTask(taskId);
         const changed = diffTasks(tasks, manager.getTasks());
@@ -218,7 +218,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     const handleDropOnEisenhower = useCallback((e: React.DragEvent<HTMLElement>, quad: 'do' | 'decide' | 'delegate' | 'delete') => {
         e.preventDefault();
         setIsDragging(false);
-        const taskId = e.dataTransfer.getData('taskId');
+        const taskId = getTaskIdFromDragEvent(e);
         if (!taskId) return;
         manager.setEisenhowerQuad(taskId, quad);
         const changed = diffTasks(tasks, manager.getTasks());

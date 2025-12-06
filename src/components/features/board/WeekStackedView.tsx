@@ -73,7 +73,10 @@ export const WeekStackedView: React.FC<WeekStackedViewProps> = ({
                 return (
                     <div
                         key={i}
-                        onDragOver={(e) => e.preventDefault()}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'move';
+                        }}
                         onDrop={(e) => onDropOnGrid(e, day, null)}
                         className="flex-1 w-0 flex flex-col p-2 rounded-2xl gap-2 transition-all duration-300"
                         style={{

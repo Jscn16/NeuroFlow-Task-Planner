@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Check, AlertCircle } from 'lucide-react';
 import { Task } from '../../types';
 import { TASK_CARD_BORDER_COLORS } from '../../constants';
+import { setTaskDragData } from '../../utils/drag';
 
 interface BoardTaskCardProps {
     task: Task;
@@ -66,8 +67,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
     };
 
     const handleDragStart = (e: React.DragEvent) => {
-        e.dataTransfer.setData('taskId', task.id);
-        e.dataTransfer.effectAllowed = 'move';
+        setTaskDragData(e, task.id);
         setIsDragging(true);
         onDragStart(e, task.id);
 

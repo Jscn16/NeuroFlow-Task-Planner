@@ -11,6 +11,7 @@ import { formatDate, getAdjustedDate } from '../../constants';
 import { FrostOverlay } from '../ui/FrostOverlay';
 import { useIceSound } from '../../hooks/useIceSound';
 import { useDoomLoopDetector } from '../../hooks/useDoomLoopDetector';
+import { getTaskIdFromDragEvent } from '../../utils/drag';
 
 interface SidebarProps {
     onOpenSettings: () => void;
@@ -92,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         dragCounters.current[categoryId] = 0;
         setDragOverCategory(null);
 
-        const taskId = e.dataTransfer.getData('taskId');
+        const taskId = getTaskIdFromDragEvent(e);
         if (taskId && updateTask) {
             updateTask(taskId, {
                 type: categoryId as TaskType,

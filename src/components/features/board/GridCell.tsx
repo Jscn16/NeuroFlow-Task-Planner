@@ -73,6 +73,7 @@ export const GridCell = React.memo<GridCellProps>(({
     // Only set drag over on the actual cell element, not children
     const handleDragEnter = (e: React.DragEvent) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
         // Only respond if entering the cell itself
         if (e.currentTarget === e.target || !e.currentTarget.contains(e.relatedTarget as Node)) {
             setIsDragOver(true);
@@ -81,6 +82,7 @@ export const GridCell = React.memo<GridCellProps>(({
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
         // Ensure we stay in drag over state while over the cell
         if (!isDragOver) {
             setIsDragOver(true);

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { Task, TaskType, GridRow } from '../../types';
@@ -156,6 +156,22 @@ export const VirtualSidebarList: React.FC<VirtualSidebarListProps> = ({
         }
     }, [flatList]);
 
+    const getItemKey = useCallback((index: number) => {
+        const item = flatList[index];
+        switch (item.type) {
+            case 'task':
+                return `task-${item.task.id}`;
+            case 'header':
+                return `header-${item.category.id}`;
+            case 'dropZone':
+                return `drop-${item.category.id}`;
+            case 'empty':
+                return `empty-${item.category.id}`;
+            default:
+                return index;
+        }
+    }, [flatList]);
+
     const getItemSize = (index: number) => {
         const item = flatList[index];
         switch (item.type) {
@@ -286,6 +302,7 @@ export const VirtualSidebarList: React.FC<VirtualSidebarListProps> = ({
                         width={width}
                         itemCount={flatList.length}
                         itemSize={getItemSize}
+                        itemKey={getItemKey}
                         className="scrollbar-hide"
                     >
                         {Row}

@@ -31,9 +31,13 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     // Remote load
     const fetchRemoteTasks = useCallback(async () => {
         if (!userId || !supabaseEnabled) return;
-        const remoteTasks = await SupabaseDataService.fetchTasks(userId);
-        if (remoteTasks.length) {
-            manager.setTasks(remoteTasks);
+        try {
+            const remoteTasks = await SupabaseDataService.fetchTasks(userId);
+            if (remoteTasks.length) {
+                manager.setTasks(remoteTasks);
+            }
+        } catch (error) {
+            console.error('Failed to refresh tasks from Supabase', error);
         }
     }, [userId, manager, supabaseEnabled]);
 
@@ -45,12 +49,19 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
                 return;
             }
             setIsLoading(!initialTasks.length);
-            const remoteTasks = await SupabaseDataService.fetchTasks(userId);
-            if (!mounted) return;
-            if (remoteTasks.length) {
-                manager.setTasks(remoteTasks);
+            try {
+                const remoteTasks = await SupabaseDataService.fetchTasks(userId);
+                if (!mounted) return;
+                if (remoteTasks.length) {
+                    manager.setTasks(remoteTasks);
+                }
+            } catch (error) {
+                console.error('Failed to load tasks from Supabase', error);
+            } finally {
+                if (mounted) {
+                    setIsLoading(false);
+                }
             }
-            setIsLoading(false);
         };
         load();
         return () => { mounted = false; };
@@ -100,6 +111,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     const addTask = useCallback((title: string, duration: number, type: TaskType) => {
         const newTask = manager.addTask(title, duration, type, generateId());
         persistTasks([newTask]);
+        return newTask;
     }, [manager, persistTasks]);
 
     const updateTask = useCallback((taskId: string, updates: Partial<Task>) => {
@@ -252,9 +264,12 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
             removed.forEach(t => deleteTaskRemote(t.id));
         },
         deleteAllTasks: () => {
+            const toDelete = manager.getTasks();
             manager.deleteAllTasks();
-            if (userId) {
+            if (userId && supabaseEnabled) {
+                // Clear server and ensure any lingering IDs are removed
                 void SupabaseDataService.replaceTasks(userId, []);
+                toDelete.forEach(t => deleteTaskRemote(t.id));
             }
         },
         syncRemoteTask,

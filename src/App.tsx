@@ -1,6 +1,6 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, BrainDumpList, Habit, Task } from './types';
+import { AppData, BrainDumpList, Habit, Task, TaskType, GridRow } from './types';
 import { getAdjustedDate } from './constants';
 import { getThemeById, applyTheme } from './themes';
 import { screenTransition } from './utils/animations';
@@ -22,6 +22,7 @@ import { SupabaseDataService } from './services/supabaseDataService';
 import { AuthOverlay } from './components/auth/AuthOverlay';
 import { generateId } from './utils/id';
 import { StorageService } from './services/StorageService';
+import { supabaseAvailable } from './lib/supabase';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -69,6 +70,15 @@ const AppContent = ({
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
     // activeTaskId moved to FocusMode
+    const today = getAdjustedDate();
+    const [sampleTasksAdded, setSampleTasksAdded] = useState(false);
+    const hasAnyTasks = (taskManager.tasks?.length || 0) > 0;
+
+    useEffect(() => {
+        if (hasAnyTasks) {
+            setSampleTasksAdded(true);
+        }
+    }, [hasAnyTasks]);
 
     // Auto-close sidebar when switching to mobile, auto-open on desktop
     useEffect(() => {
@@ -149,6 +159,38 @@ const AppContent = ({
                 isFrozen: true
             });
         });
+    };
+
+    const handleAddSampleTasks = () => {
+        const sampleSpecs: Array<{ title: string; duration: number; type: TaskType; offsetDays?: number; row?: GridRow }> = [
+            { title: 'Plan the week', duration: 25, type: 'high', offsetDays: 0, row: 'GOAL' },
+            { title: 'Deep work: main project', duration: 90, type: 'medium', offsetDays: 0, row: 'FOCUS' },
+            { title: 'Quick wins inbox', duration: 30, type: 'low', offsetDays: 1, row: 'WORK' },
+            { title: 'Reach out to partner', duration: 20, type: 'medium', offsetDays: 2, row: 'FOCUS' },
+            { title: 'Move & recharge', duration: 30, type: 'leisure' }
+        ];
+
+        sampleSpecs.forEach(spec => {
+            const newTask = taskManager.addTask(spec.title, spec.duration, spec.type);
+            if (spec.offsetDays !== undefined && spec.row) {
+                const target = new Date(today);
+                target.setDate(target.getDate() + spec.offsetDays);
+                taskManager.scheduleTask(newTask.id, target, spec.row, spec.type);
+            }
+        });
+        setActiveTab('planner');
+        setSampleTasksAdded(true);
+    };
+
+    const handleDeleteAllTasks = () => {
+        taskManager.deleteAllTasks();
+        // Persist cleared tasks to local storage so nothing repopulates
+        storage.save({
+            tasks: [],
+            habits: habitManager.habits,
+            brainDumpLists: brainDumpManager.lists
+        });
+        setSampleTasksAdded(true);
     };
 
     return (
@@ -290,7 +332,7 @@ const AppContent = ({
                     onClose={() => setShowSettings(false)}
                     onExport={persistence.exportData}
                     onImport={handleImport}
-                    onDeleteAllTasks={taskManager.deleteAllTasks}
+                    onDeleteAllTasks={handleDeleteAllTasks}
                     onFreezeOverloaded={handleFreezeOverloaded}
                     onClearRescheduled={taskManager.clearRescheduledTasks}
                     currentThemeId={currentThemeId}
@@ -299,6 +341,9 @@ const AppContent = ({
                     onViewModeChange={setViewMode}
                     supabaseEnabled={supabaseEnabled}
                     onToggleSupabase={onToggleSupabaseSync}
+                    onAddSampleTasks={handleAddSampleTasks}
+                    sampleTasksAdded={sampleTasksAdded}
+                    showSampleTasks={!sampleTasksAdded && !hasAnyTasks}
                 />
             )}
 
@@ -312,7 +357,8 @@ const AppContent = ({
 const App = () => {
     const storage = StorageService.getInstance();
     const localData = React.useMemo(() => storage.load(), []);
-    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(() => storage.loadSyncPreference());
+    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(() => storage.loadSyncPreference() && supabaseAvailable);
+    const [authTimeoutReached, setAuthTimeoutReached] = useState(false);
 
     const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth } = useSupabaseAuth();
     const [initialTasksState, setInitialTasksState] = useState<Task[]>(localData?.tasks || []);
@@ -326,6 +372,21 @@ const App = () => {
     const [dataError, setDataError] = useState<string | null>(null);
     const hasLocalData = (localData?.tasks?.length || 0) > 0 || (localData?.habits?.length || 0) > 0 || (localData?.brainDumpLists?.length || 0) > 0;
 
+    const fallbackToLocal = useCallback((reason?: string) => {
+        console.warn('Supabase unavailable, switching to local mode.', reason);
+        setUseSupabaseSync(false);
+        storage.saveSyncPreference(false);
+        setDataError(null);
+        setIsDataLoading(false);
+        setInitialTasksState(localData?.tasks || []);
+        setInitialHabitsState(localData?.habits?.map(h => ({ ...h, goal: h.goal || 7 })) || []);
+        setInitialBrainDumpState(
+            (localData?.brainDumpLists && localData.brainDumpLists.length > 0)
+                ? localData.brainDumpLists
+                : [{ id: generateId(), title: 'Main List', content: localData?.brainDumpContent || '' }]
+        );
+    }, [localData, storage]);
+
     const pushLocalToSupabase = async (data: AppData) => {
         if (!useSupabaseSync || !user) return;
         try {
@@ -338,12 +399,31 @@ const App = () => {
     };
 
     useEffect(() => {
+        if (!useSupabaseSync) return;
+        setAuthTimeoutReached(false);
+        const timer = window.setTimeout(() => setAuthTimeoutReached(true), 5000);
+        return () => window.clearTimeout(timer);
+    }, [useSupabaseSync]);
+
+    useEffect(() => {
+        if (!useSupabaseSync) return;
+        // Keep auth overlay visible instead of silently falling back; errors are shown in the overlay.
+        if (authError || !user || (authTimeoutReached && !isAuthReady)) {
+            setIsDataLoading(false);
+        }
+    }, [authError, authTimeoutReached, isAuthReady, useSupabaseSync, user]);
+
+    useEffect(() => {
         if (!useSupabaseSync) {
             setIsDataLoading(false);
             return;
         }
+        if (!supabaseAvailable) {
+            fallbackToLocal('Supabase is not configured.');
+            return;
+        }
         if (!user) {
-            setIsDataLoading(false);
+            // Allow auth fallback effect to handle switching modes
             return;
         }
         let active = true;
@@ -378,7 +458,7 @@ const App = () => {
             } catch (error) {
                 console.error('Failed to load Supabase data', error);
                 if (active) {
-                    setDataError('Unable to load data from Supabase.');
+                    fallbackToLocal('Unable to load data from Supabase.');
                 }
             } finally {
                 if (active) {
@@ -388,7 +468,7 @@ const App = () => {
         };
         load();
         return () => { active = false; };
-    }, [user, useSupabaseSync, hasLocalData, localData]);
+    }, [user, useSupabaseSync, hasLocalData, localData, fallbackToLocal, storage]);
 
     const handleDataImported = (data: AppData) => {
         const normalized: AppData = {
@@ -405,7 +485,15 @@ const App = () => {
         void pushLocalToSupabase(normalized);
     };
 
-    const handleToggleSupabaseSync = (enabled: boolean) => {
+    const handleToggleSupabaseSync = async (enabled: boolean) => {
+        if (enabled && !supabaseAvailable) {
+            alert('Supabase is not configured. Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable sync.');
+            setUseSupabaseSync(false);
+            storage.saveSyncPreference(false);
+            setDataError(null);
+            setIsDataLoading(false);
+            return;
+        }
         setUseSupabaseSync(enabled);
         storage.saveSyncPreference(enabled);
         if (!enabled) {
@@ -417,19 +505,23 @@ const App = () => {
     };
 
     if (useSupabaseSync) {
-        if (!isAuthReady) {
-            return <LoadingScreen message="Checking your session..." />;
-        }
-
+        // Always surface the auth overlay when sync is requested and there is no session,
+        // even if auth is still warming up.
         if (!user) {
             return (
                 <AuthOverlay
                     onMagicLink={signInWithEmail}
                     onOAuth={signInWithOAuth}
                     magicLinkSent={magicLinkSent}
-                    authError={authError}
+                    authError={authTimeoutReached && !isAuthReady ? (authError || 'Supabase is slow to respond. Try signing in or continue without sync.') : authError}
+                    onCancel={() => handleToggleSupabaseSync(false)}
                 />
             );
+        }
+
+        // If auth somehow still isn't ready after we have a user, show a brief loader.
+        if (!isAuthReady) {
+            return <LoadingScreen message="Checking your session..." />;
         }
 
         if (dataError) {
@@ -442,30 +534,30 @@ const App = () => {
 
         return (
             <TaskProvider initialTasks={initialTasksState} userId={user.id} supabaseEnabled={true}>
+                <AppContent
+                    userId={user.id}
+                    initialHabitsState={initialHabitsState}
+                    initialBrainDump={initialBrainDumpState}
+                    onDataImported={handleDataImported}
+                    supabaseEnabled={true}
+                    onToggleSupabaseSync={handleToggleSupabaseSync}
+                />
+            </TaskProvider>
+        );
+    }
+
+    // Local-only mode (no Supabase auth required)
+    return (
+        <TaskProvider initialTasks={initialTasksState} supabaseEnabled={false}>
             <AppContent
-                userId={user.id}
                 initialHabitsState={initialHabitsState}
                 initialBrainDump={initialBrainDumpState}
                 onDataImported={handleDataImported}
-                supabaseEnabled={true}
+                supabaseEnabled={false}
                 onToggleSupabaseSync={handleToggleSupabaseSync}
             />
         </TaskProvider>
     );
-}
-
-// Local-only mode (no Supabase auth required)
-return (
-    <TaskProvider initialTasks={initialTasksState} supabaseEnabled={false}>
-        <AppContent
-            initialHabitsState={initialHabitsState}
-            initialBrainDump={initialBrainDumpState}
-            onDataImported={handleDataImported}
-            supabaseEnabled={false}
-            onToggleSupabaseSync={handleToggleSupabaseSync}
-        />
-    </TaskProvider>
-);
 };
 
 export default App;

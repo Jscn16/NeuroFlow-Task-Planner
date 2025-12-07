@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cog, Download, Upload, Trash2, ChevronRight, AlertTriangle, Palette, Check, Sparkles, CloudOff, Cloud } from 'lucide-react';
+import { X, Cog, Download, Upload, Trash2, ChevronRight, AlertTriangle, Palette, Check, Sparkles, CloudOff, Cloud, ListChecks } from 'lucide-react';
 import { themes } from '../../themes';
 import { modal, backdrop } from '../../utils/animations';
 import { FrostOverlay } from '../ui/FrostOverlay';
@@ -19,6 +19,9 @@ interface SettingsModalProps {
     onViewModeChange?: (mode: 'show' | 'fade' | 'hide') => void;
     supabaseEnabled: boolean;
     onToggleSupabase: (enabled: boolean) => void;
+    onAddSampleTasks?: () => void;
+    sampleTasksAdded?: boolean;
+    showSampleTasks?: boolean;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -33,7 +36,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     viewMode = 'fade',
     onViewModeChange,
     supabaseEnabled,
-    onToggleSupabase
+    onToggleSupabase,
+    onAddSampleTasks,
+    sampleTasksAdded,
+    showSampleTasks
 }) => {
     const [freezing, setFreezing] = useState(false);
     const { play } = useIceSound();
@@ -51,6 +57,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setTimeout(() => {
             setFreezing(false);
         }, 1500);
+    };
+
+    const handleDeleteAll = () => {
+        const input = window.prompt('Type SURE to delete ALL tasks. This cannot be undone.', '');
+        if (input !== 'SURE') {
+            alert('Deletion cancelled. You must type SURE (all caps) to confirm.');
+            return;
+        }
+        onDeleteAllTasks?.();
     };
 
     return (
@@ -216,7 +231,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             >
                                 Data Management
                             </h3>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                                 <button
                                     onClick={onExport}
                                     className="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group"
@@ -243,6 +258,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                         Export Backup
                                     </span>
                                 </button>
+
+                                {showSampleTasks && onAddSampleTasks && (
+                                    <button
+                                        onClick={onAddSampleTasks}
+                                        disabled={sampleTasksAdded}
+                                        className="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] group"
+                                        style={{
+                                            backgroundColor: sampleTasksAdded ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.02)',
+                                            borderColor: sampleTasksAdded ? 'var(--border-light)' : 'var(--border-light)',
+                                            opacity: sampleTasksAdded ? 0.6 : 1,
+                                            cursor: sampleTasksAdded ? 'not-allowed' : 'pointer'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            if (sampleTasksAdded) return;
+                                            e.currentTarget.style.backgroundColor = 'var(--accent-muted)';
+                                            e.currentTarget.style.borderColor = 'var(--accent)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (sampleTasksAdded) return;
+                                            e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                                            e.currentTarget.style.borderColor = 'var(--border-light)';
+                                        }}
+                                    >
+                                        <div
+                                            className="w-12 h-12 rounded-xl flex items-center justify-center transition-colors"
+                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}
+                                        >
+                                            <ListChecks size={22} style={{ color: 'var(--accent)' }} />
+                                        </div>
+                                        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                            {sampleTasksAdded ? 'Sample Tasks Added' : 'Add Sample Tasks'}
+                                        </span>
+                                        <span className="text-[11px] text-center" style={{ color: 'var(--text-muted)' }}>
+                                            {sampleTasksAdded ? 'Already added for this session.' : 'Drop in a starter set to see the planner in action.'}
+                                        </span>
+                                    </button>
+                                )}
 
                                 <label
                                     className="flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
@@ -318,6 +370,31 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 Danger Zone
                             </h3>
                             <div className="space-y-3">
+                                {/* Delete All Tasks Button */}
+                                <button
+                                    onClick={handleDeleteAll}
+                                    className="w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] group"
+                                    style={{
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                        borderColor: 'rgba(239, 68, 68, 0.35)'
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-rose-500/20 flex items-center justify-center">
+                                            <Trash2 size={18} className="text-rose-300" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                                Delete All Tasks
+                                            </div>
+                                            <div className="text-[10px]" style={{ color: 'var(--error)' }}>
+                                                This action cannot be undone.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={18} className="text-rose-300 opacity-70 group-hover:opacity-100 transition-opacity" />
+                                </button>
+
                                 {/* Reset Schedule Button */}
                                 {onClearRescheduled && (
                                     <button
@@ -357,8 +434,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </button>
                                 )}
 
-                                {/* Delete All Tasks Button */}
-                                {onDeleteAllTasks && (
+                                {/* Doom Loop / Freeze Button */}
+                                {onDeleteAllTasks && onFreezeOverloaded && (
                                     <button
                                         onClick={handleDoomLoop}
                                         className="w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] group"
@@ -376,7 +453,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                                     Doom Loop Breaker
                                                 </div>
                                                 <div className="text-[10px]" style={{ color: 'var(--error)' }}>
-                                                    Freezes and clears all tasks.
+                                                    Freeze backlog and clear tasks.
                                                 </div>
                                             </div>
                                         </div>

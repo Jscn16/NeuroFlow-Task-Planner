@@ -1,12 +1,12 @@
 import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useTaskManager } from '../hooks/useTaskManager';
 import { Task, TaskType, GridRow } from '../types';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAvailable } from '../lib/supabase';
 import { mapTaskFromDb, DbTaskRow } from '../services/supabaseDataService';
 
 interface TaskContextType {
     tasks: Task[];
-    addTask: (title: string, duration: number, type: TaskType) => void;
+    addTask: (title: string, duration: number, type: TaskType) => Task;
     updateTask: (taskId: string, updates: Partial<Task>) => void;
     scheduleTask: (taskId: string, date: Date, row?: GridRow | null, type?: TaskType) => void;
     deleteTask: (taskId: string) => void;
@@ -55,7 +55,7 @@ export const TaskProvider: React.FC<TaskProviderProps> = ({ children, initialTas
     } = useTaskManager(initialTasks, userId, supabaseEnabled);
 
     useEffect(() => {
-        if (!userId || !supabaseEnabled) return;
+        if (!userId || !supabaseEnabled || !supabaseAvailable || !supabase) return;
 
         const channel = supabase
             .channel('tasks-realtime')

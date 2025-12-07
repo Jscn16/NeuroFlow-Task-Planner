@@ -48,6 +48,18 @@ export default defineConfig(({ mode }) => {
         devOptions: { enabled: false },
         includeAssets: ['favicon.png'],
         manifest: pwaManifest,
+        workbox: {
+          // Ensure any navigation (including deep links) falls back to index.html
+          navigateFallback: 'index.html',
+          navigateFallbackAllowlist: [/^\/.*$/],
+          // Silence "No route found" noise for source files by letting them pass through
+          runtimeCaching: [
+            {
+              urlPattern: /^\/src\/.*$/,
+              handler: 'NetworkOnly'
+            }
+          ]
+        }
       })
     ],
     optimizeDeps: {

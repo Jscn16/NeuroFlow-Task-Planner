@@ -6,13 +6,15 @@ interface AuthOverlayProps {
     onOAuth: (provider: 'google' | 'github') => Promise<void>;
     magicLinkSent: boolean;
     authError?: string | null;
+    onCancel?: () => void;
 }
 
 export const AuthOverlay: React.FC<AuthOverlayProps> = ({
     onMagicLink,
     onOAuth,
     magicLinkSent,
-    authError
+    authError,
+    onCancel
 }) => {
     const [email, setEmail] = useState('');
     const [submitting, setSubmitting] = useState(false);
@@ -103,6 +105,16 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                             {authError}
                         </div>
                     )}
+
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="text-sm text-white/70 hover:text-white underline underline-offset-4"
+                        >
+                            Continue without sync
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -100,13 +100,14 @@ export function computeDayStats(
     t => t.dueDate === dateStr && t.status !== 'unscheduled'
   );
   const completedTasks = dayTasks.filter(t => t.status === 'completed');
-  
+
   const totalMinutes = dayTasks.reduce((acc, t) => acc + t.duration, 0);
   const completedMinutes = completedTasks.reduce((acc, t) => acc + t.duration, 0);
-  
-  const plannedPercent = Math.min(100, (totalMinutes / targetMinutes) * 100);
-  const completionPercent = totalMinutes > 0 
-    ? Math.round((completedMinutes / totalMinutes) * 100) 
+
+  const rawPlannedPercent = (totalMinutes / targetMinutes) * 100;
+  const plannedPercent = Math.min(100, rawPlannedPercent);
+  const completionPercent = totalMinutes > 0
+    ? Math.round((completedMinutes / totalMinutes) * 100)
     : 0;
 
   return {
@@ -116,8 +117,8 @@ export function computeDayStats(
     completionPercent,
     completionColor: getProgressColor(completionPercent),
     plannedHours: (totalMinutes / 60).toFixed(1).replace(/\.0$/, ''),
-    isOverCapacity: plannedPercent > 100,
-    isNearCapacity: plannedPercent > 80
+    isOverCapacity: rawPlannedPercent > 100,
+    isNearCapacity: rawPlannedPercent > 80
   };
 }
 
@@ -132,7 +133,7 @@ export function computeWeekStats(
 ): DailyStats[] {
   const targetMinutes = targetHoursPerDay * 60;
   const safeTasks = tasks || [];
-  
+
   return weekDays.map(day => {
     const dateStr = formatDate(day);
     return computeDayStats(safeTasks, dateStr, targetMinutes);
@@ -287,10 +288,10 @@ export function selectTasksForCell(
     if (t.dueDate !== dateStr) return false;
     if (t.assignedRow !== row) return false;
     if (t.status === 'unscheduled') return false;
-    
+
     // Handle completed task visibility
     if (t.status === 'completed' && viewMode === 'hide') return false;
-    
+
     return true;
   });
 }

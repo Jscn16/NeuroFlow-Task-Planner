@@ -51,5 +51,12 @@ export function useBrainDumpManager(initialLists: BrainDumpList[], userId?: stri
         }
     };
 
-    return { lists, setLists, addList, updateList, updateTitle, deleteList };
+    const clearLists = () => {
+        setLists([]);
+        if (userId && supabaseEnabled) {
+            void SupabaseDataService.replaceNotes(userId, []);
+        }
+    };
+
+    return { lists, setLists, addList, updateList, updateTitle, deleteList, clearLists };
 }

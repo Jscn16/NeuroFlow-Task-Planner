@@ -265,9 +265,10 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
         },
         deleteAllTasks: () => {
             const toDelete = manager.getTasks();
+            // Remove locally
             manager.deleteAllTasks();
+            // Remove remotely
             if (userId && supabaseEnabled) {
-                // Clear server and ensure any lingering IDs are removed
                 void SupabaseDataService.replaceTasks(userId, []);
                 toDelete.forEach(t => deleteTaskRemote(t.id));
             }

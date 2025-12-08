@@ -22,7 +22,7 @@ import { SupabaseDataService } from './services/supabaseDataService';
 import { AuthOverlay } from './components/auth/AuthOverlay';
 import { generateId } from './utils/id';
 import { StorageService } from './services/StorageService';
-import { supabaseAvailable } from './lib/supabase';
+import { supabaseAvailable, supabaseUrl } from './lib/supabase';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -42,6 +42,7 @@ const AppContent = ({
     initialHabitsState,
     initialBrainDump,
     onDataImported,
+    onDeleteAllTasks,
     supabaseEnabled,
     onToggleSupabaseSync
 }: {
@@ -49,6 +50,7 @@ const AppContent = ({
     initialHabitsState: Habit[],
     initialBrainDump: BrainDumpList[],
     onDataImported: (data: AppData) => void,
+    onDeleteAllTasks: () => Promise<void>,
     supabaseEnabled: boolean,
     onToggleSupabaseSync: (enabled: boolean) => void
 }) => {
@@ -182,15 +184,14 @@ const AppContent = ({
         setSampleTasksAdded(true);
     };
 
-    const handleDeleteAllTasks = () => {
+    const handleDeleteAllTasks = async () => {
+        // Clear locally
         taskManager.deleteAllTasks();
-        // Persist cleared tasks to local storage so nothing repopulates
-        storage.save({
-            tasks: [],
-            habits: habitManager.habits,
-            brainDumpLists: brainDumpManager.lists
-        });
+        habitManager.clearHabits();
+        brainDumpManager.clearLists();
         setSampleTasksAdded(true);
+        // Delegate storage and remote clearing to App component
+        await onDeleteAllTasks();
     };
 
     return (
@@ -371,6 +372,26 @@ const App = () => {
     const [isDataLoading, setIsDataLoading] = useState<boolean>(useSupabaseSync);
     const [dataError, setDataError] = useState<string | null>(null);
     const hasLocalData = (localData?.tasks?.length || 0) > 0 || (localData?.habits?.length || 0) > 0 || (localData?.brainDumpLists?.length || 0) > 0;
+    const withTimeout = useCallback(async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+        return Promise.race<T>([
+            promise,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Supabase fetch timed out')), ms))
+        ]);
+    }, []);
+
+    const checkSupabaseHealth = useCallback(async (): Promise<boolean> => {
+        if (!supabaseAvailable || !supabaseUrl) return false;
+        try {
+            const controller = new AbortController();
+            const timer = window.setTimeout(() => controller.abort(), 4000);
+            const res = await fetch(`${supabaseUrl}/health`, { signal: controller.signal });
+            window.clearTimeout(timer);
+            return res.ok;
+        } catch (e) {
+            console.error('Supabase health check failed', e);
+            return false;
+        }
+    }, []);
 
     const fallbackToLocal = useCallback((reason?: string) => {
         console.warn('Supabase unavailable, switching to local mode.', reason);
@@ -389,13 +410,11 @@ const App = () => {
 
     const pushLocalToSupabase = async (data: AppData) => {
         if (!useSupabaseSync || !user) return;
-        try {
-            await SupabaseDataService.replaceTasks(user.id, data.tasks || []);
-            await SupabaseDataService.replaceHabits(user.id, data.habits || []);
-            await SupabaseDataService.replaceNotes(user.id, data.brainDumpLists || []);
-        } catch (error) {
-            console.error('Failed to push local data to Supabase', error);
-        }
+        await Promise.all([
+            withTimeout(SupabaseDataService.replaceTasks(user.id, data.tasks || []), 4000),
+            withTimeout(SupabaseDataService.replaceHabits(user.id, data.habits || []), 4000),
+            withTimeout(SupabaseDataService.replaceNotes(user.id, data.brainDumpLists || []), 4000)
+        ]);
     };
 
     useEffect(() => {
@@ -431,10 +450,14 @@ const App = () => {
             setIsDataLoading(true);
             setDataError(null);
             try {
+                const healthy = await checkSupabaseHealth();
+                if (!healthy) {
+                    console.warn('Supabase health check failed; attempting to load anyway.');
+                }
                 const [tasks, habits, notes] = await Promise.all([
-                    SupabaseDataService.fetchTasks(user.id),
-                    SupabaseDataService.fetchHabits(user.id),
-                    SupabaseDataService.fetchNotes(user.id)
+                    withTimeout(SupabaseDataService.fetchTasks(user.id), 4000),
+                    withTimeout(SupabaseDataService.fetchHabits(user.id), 4000),
+                    withTimeout(SupabaseDataService.fetchNotes(user.id), 4000)
                 ]);
                 if (!active) return;
                 const remoteEmpty = (!tasks.length && !habits.length && !notes.length);
@@ -468,7 +491,7 @@ const App = () => {
         };
         load();
         return () => { active = false; };
-    }, [user, useSupabaseSync, hasLocalData, localData, fallbackToLocal, storage]);
+    }, [user, useSupabaseSync, hasLocalData, localData, fallbackToLocal, storage, checkSupabaseHealth, withTimeout]);
 
     const handleDataImported = (data: AppData) => {
         const normalized: AppData = {
@@ -482,7 +505,33 @@ const App = () => {
         setInitialHabitsState(normalized.habits);
         setInitialBrainDumpState(normalized.brainDumpLists);
         storage.save(normalized);
-        void pushLocalToSupabase(normalized);
+        if (useSupabaseSync && user) {
+            pushLocalToSupabase(normalized).catch(err => {
+                console.error('Failed to sync imported data to Supabase', err);
+                setDataError('Imported locally. Supabase sync failed.');
+            });
+        }
+    };
+
+    const handleDeleteAllTasks = async () => {
+        // Reset local state
+        setInitialTasksState([]);
+        setInitialHabitsState([]);
+        setInitialBrainDumpState([]);
+        storage.save({ tasks: [], habits: [], brainDumpLists: [] });
+
+        // Best-effort remote clear with timeout
+        if (useSupabaseSync && user) {
+            try {
+                await Promise.all([
+                    withTimeout(SupabaseDataService.replaceTasks(user.id, []), 4000),
+                    withTimeout(SupabaseDataService.replaceHabits(user.id, []), 4000),
+                    withTimeout(SupabaseDataService.replaceNotes(user.id, []), 4000)
+                ]);
+            } catch (error) {
+                console.error('Failed to clear Supabase data', error);
+            }
+        }
     };
 
     const handleToggleSupabaseSync = async (enabled: boolean) => {
@@ -493,6 +542,12 @@ const App = () => {
             setDataError(null);
             setIsDataLoading(false);
             return;
+        }
+        if (enabled) {
+            const healthy = await checkSupabaseHealth();
+            if (!healthy) {
+                console.warn('Supabase health check failed; proceeding to attempt sync.');
+            }
         }
         setUseSupabaseSync(enabled);
         storage.saveSyncPreference(enabled);
@@ -539,6 +594,7 @@ const App = () => {
                     initialHabitsState={initialHabitsState}
                     initialBrainDump={initialBrainDumpState}
                     onDataImported={handleDataImported}
+                    onDeleteAllTasks={handleDeleteAllTasks}
                     supabaseEnabled={true}
                     onToggleSupabaseSync={handleToggleSupabaseSync}
                 />
@@ -553,6 +609,7 @@ const App = () => {
                 initialHabitsState={initialHabitsState}
                 initialBrainDump={initialBrainDumpState}
                 onDataImported={handleDataImported}
+                onDeleteAllTasks={handleDeleteAllTasks}
                 supabaseEnabled={false}
                 onToggleSupabaseSync={handleToggleSupabaseSync}
             />

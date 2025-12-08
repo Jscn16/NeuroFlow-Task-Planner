@@ -39,6 +39,13 @@ export function useHabitManager(initialHabits: Habit[], userId?: string, supabas
         }
     }, [manager, userId, supabaseEnabled]);
 
+    const clearHabits = useCallback(() => {
+        manager.clearHabits();
+        if (userId && supabaseEnabled) {
+            void SupabaseDataService.replaceHabits(userId, []);
+        }
+    }, [manager, userId, supabaseEnabled]);
+
     const toggleHabit = useCallback((habitId: string, dayIndex: number) => {
         const updated = manager.toggleHabit(habitId, dayIndex);
         if (updated) {
@@ -50,6 +57,7 @@ export function useHabitManager(initialHabits: Habit[], userId?: string, supabas
         habits,
         addHabit,
         deleteHabit,
-        toggleHabit
+        toggleHabit,
+        clearHabits
     };
 }

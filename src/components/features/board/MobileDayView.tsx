@@ -199,16 +199,16 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
               font-semibold text-sm leading-tight
               ${isCompleted ? 'line-through' : ''}
             `}
-            style={{ 
-              color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' 
+            style={{
+              color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)'
             }}
           >
             {task.title}
           </h4>
-          
+
           <div className="flex items-center gap-2 mt-1">
             {/* Duration */}
-            <div 
+            <div
               className="flex items-center gap-1 text-xs"
               style={{ color: 'var(--text-muted)' }}
             >
@@ -222,8 +222,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
                 className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
                 style={{
                   backgroundColor: 'rgba(255,255,255,0.05)',
-                  color: rowConfig.color.replace('text-', '#').includes('#') 
-                    ? rowConfig.color 
+                  color: rowConfig.color.replace('text-', '#').includes('#')
+                    ? rowConfig.color
                     : 'var(--text-muted)'
                 }}
               >
@@ -234,7 +234,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
         </div>
 
         {/* Drag handle hint (visual only on mobile) */}
-        <div 
+        <div
           className="opacity-30"
           style={{ color: 'var(--text-muted)' }}
         >
@@ -289,13 +289,13 @@ const RowSection: React.FC<RowSectionProps> = React.memo(({
       {/* Row Header */}
       <div className="flex items-center gap-2 mb-3 px-1">
         <Icon size={16} className={config.color} />
-        <span 
+        <span
           className="text-xs font-bold uppercase tracking-wider"
           style={{ color: 'var(--text-muted)' }}
         >
           {config.label}
         </span>
-        <span 
+        <span
           className="text-xs"
           style={{ color: 'var(--text-muted)', opacity: 0.5 }}
         >
@@ -426,11 +426,9 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
         break;
       case 'reschedule':
         // TODO: Open date picker
-        console.log('Reschedule not yet implemented');
         break;
       case 'edit':
         // TODO: Open edit modal
-        console.log('Edit not yet implemented');
         break;
     }
     setActionSheetTask(null);
@@ -478,24 +476,24 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
             ) : (
               // Empty state
               <div className="h-full flex flex-col items-center justify-center text-center px-8">
-                <div 
+                <div
                   className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
                   style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
                 >
                   <CheckCircle2 size={32} style={{ color: 'var(--text-muted)' }} />
                 </div>
-                <h3 
+                <h3
                   className="text-lg font-semibold mb-2"
                   style={{ color: 'var(--text-primary)' }}
                 >
                   {isPastDay ? 'No tasks recorded' : 'No tasks scheduled'}
                 </h3>
-                <p 
+                <p
                   className="text-sm"
                   style={{ color: 'var(--text-muted)' }}
                 >
-                  {isPastDay 
-                    ? 'This day has passed' 
+                  {isPastDay
+                    ? 'This day has passed'
                     : 'Drag tasks from the sidebar to plan your day'
                   }
                 </p>

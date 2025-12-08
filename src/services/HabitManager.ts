@@ -43,6 +43,11 @@ export class HabitManager {
         this.notify();
     }
 
+    clearHabits() {
+        this.habits = [];
+        this.notify();
+    }
+
     toggleHabit(habitId: string, dayIndex: number): Habit | undefined {
         let updatedHabit: Habit | undefined;
         this.habits = this.habits.map(h => {

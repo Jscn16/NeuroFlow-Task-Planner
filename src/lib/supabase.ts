@@ -21,3 +21,26 @@ export const supabase: SupabaseClient | null = supabaseAvailable
 if (!supabaseAvailable) {
     console.warn('Supabase env vars missing; running in local-only mode.');
 }
+
+/**
+ * Quick connectivity check - tests if Supabase Auth is reachable from current domain.
+ * Returns false within 3 seconds if unreachable, allowing quick fallback to local mode.
+ */
+export async function checkSupabaseConnectivity(): Promise<boolean> {
+    if (!supabaseAvailable || !supabase) return false;
+
+    try {
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 3000)
+        );
+
+        // Simple check - try to get session. If this works, Supabase auth is functional.
+        const sessionPromise = supabase.auth.getSession();
+
+        await Promise.race([sessionPromise, timeoutPromise]);
+        return true;
+    } catch {
+        console.warn('Supabase connectivity check failed - this domain may not be on the allowed list.');
+        return false;
+    }
+}

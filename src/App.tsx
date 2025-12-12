@@ -112,7 +112,7 @@ const AppContent = ({
     useEffect(() => {
         const timer = setTimeout(() => {
             document.body.classList.add('loaded');
-        }, 100);
+        }, 1200); // Show splash for 1.2s for smooth transition
         return () => clearTimeout(timer);
     }, []);
 
@@ -358,9 +358,16 @@ const AppContent = ({
 const App = () => {
     const storage = StorageService.getInstance();
     const localData = React.useMemo(() => storage.load(), []);
-    // Always start in local-only mode - user can enable Supabase sync manually in settings
-    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(false);
-    const [supabaseHealthy, setSupabaseHealthy] = useState<boolean | null>(null); // null = checking
+
+    // Check stored preference: null = first visit, false = chose local, true = chose sync
+    const storedPref = React.useMemo(() => storage.loadSyncPreference(), []);
+    const isFirstVisit = storedPref === null;
+
+    // Only show login/splash if: first visit OR user previously enabled sync
+    const shouldShowSync = supabaseAvailable && (isFirstVisit || storedPref === true);
+
+    const [useSupabaseSync, setUseSupabaseSync] = useState<boolean>(shouldShowSync);
+    const [supabaseHealthy, setSupabaseHealthy] = useState<boolean | null>(null);
     const [authTimeoutReached, setAuthTimeoutReached] = useState(false);
 
     const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth } = useSupabaseAuth();
@@ -614,6 +621,8 @@ const App = () => {
         }
     };
 
+    // HTML loader handles the splash screen - no React SplashScreen needed
+
     if (useSupabaseSync) {
         // Always surface the auth overlay when sync is requested and there is no session,
         // even if auth is still warming up.
@@ -625,6 +634,7 @@ const App = () => {
                     magicLinkSent={magicLinkSent}
                     authError={authTimeoutReached && !isAuthReady ? (authError || 'Supabase is slow to respond. Try signing in or continue without sync.') : authError}
                     onCancel={() => handleToggleSupabaseSync(false)}
+                    skipSplash={true}
                 />
             );
         }

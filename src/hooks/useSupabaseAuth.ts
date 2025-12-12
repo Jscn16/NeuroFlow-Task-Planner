@@ -29,15 +29,29 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     useEffect(() => {
         if (!supabaseAvailable || !supabase) return;
         let isMounted = true;
-        supabase.auth.getSession().then(({ data, error }) => {
-            if (!isMounted) return;
-            if (error) {
-                console.error('Auth session fetch failed', error);
-                setAuthError(error.message);
-            }
-            setSession(data.session);
-            setIsAuthReady(true);
-        });
+
+        // Add timeout to prevent indefinite hanging when Supabase is unreachable
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Auth session fetch timed out')), 5000)
+        );
+
+        Promise.race([sessionPromise, timeoutPromise])
+            .then(({ data, error }) => {
+                if (!isMounted) return;
+                if (error) {
+                    console.error('Auth session fetch failed', error);
+                    setAuthError(error.message);
+                }
+                setSession(data.session);
+                setIsAuthReady(true);
+            })
+            .catch((error) => {
+                if (!isMounted) return;
+                console.warn('Auth session timed out:', error.message);
+                setAuthError('Connection to Supabase timed out. Sign in or continue without sync.');
+                setIsAuthReady(true); // Mark ready so UI can proceed to auth overlay
+            });
 
         const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
             if (!isMounted) return;

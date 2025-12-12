@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:standalone": "node scripts/build-standalone.cjs",
     "preview": "vite preview",
+    "deploy": "pwsh -File deploy.ps1",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"

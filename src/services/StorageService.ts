@@ -64,13 +64,13 @@ export class StorageService {
         }
     }
 
-    loadSyncPreference(): boolean {
+    loadSyncPreference(): boolean | null {
         try {
             const val = localStorage.getItem(this.SYNC_PREF_KEY);
-            if (val === null) return true; // default to enabled
+            if (val === null) return null; // First visit - no preference set yet
             return val === 'true';
         } catch {
-            return true;
+            return null;
         }
     }
 

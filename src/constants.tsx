@@ -60,56 +60,62 @@ export const formatDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
 };
 
-// Circadian Logic: Day ends at 5 AM
-export const getAdjustedDate = (): Date => {
+// Circadian Logic: Day ends at configurable hour (default 5 AM)
+// This allows night owls to set when their "day" ends
+
+// Get the stored day boundary hour from localStorage (default: 5)
+export const getDayBoundaryHour = (): number => {
+  try {
+    const stored = localStorage.getItem('neuroflow_day_boundary_hour');
+    if (stored) {
+      const hour = parseInt(stored, 10);
+      if (!isNaN(hour) && hour >= 0 && hour <= 12) {
+        return hour;
+      }
+    }
+  } catch { }
+  return 5; // Default to 5 AM
+};
+
+// Save the day boundary hour to localStorage
+export const setDayBoundaryHour = (hour: number): void => {
+  try {
+    localStorage.setItem('neuroflow_day_boundary_hour', String(hour));
+  } catch { }
+};
+
+export const getAdjustedDate = (dayBoundaryHour?: number): Date => {
   const now = new Date();
   const hour = now.getHours();
-  // If it's before 5 AM, subtract 1 day to stay on "Yesterday"
-  if (hour < 5) {
+  const boundary = dayBoundaryHour ?? getDayBoundaryHour();
+  // If it's before the boundary hour, subtract 1 day to stay on "Yesterday"
+  if (hour < boundary) {
     now.setDate(now.getDate() - 1);
   }
   return now;
 };
 
-export const isLateNight = (): boolean => {
+export const isLateNight = (dayBoundaryHour?: number): boolean => {
   const hour = new Date().getHours();
-  return hour < 5;
+  const boundary = dayBoundaryHour ?? getDayBoundaryHour();
+  return hour < boundary;
 };
 
 export const TARGET_HOURS_PER_DAY = 6; // User-defined target for daily capacity
 
 // --- Sound Utility ---
+let taskCompleteAudio: HTMLAudioElement | null = null;
+
 export const playSuccessSound = () => {
   try {
-    const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContext) return;
-
-    const ctx = new AudioContext();
-    const now = ctx.currentTime;
-
-    // Create a pleasant "Major Chord" arpeggio (C6, E6, G6)
-    const frequencies = [1046.50, 1318.51, 1567.98];
-
-    frequencies.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      // Stagger start times slightly for an arpeggio effect
-      const startTime = now + (i * 0.05);
-
-      // Envelope: Fast attack, smooth decay
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.1, startTime + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.6);
-
-      osc.start(startTime);
-      osc.stop(startTime + 0.6);
+    if (!taskCompleteAudio) {
+      taskCompleteAudio = new Audio('/sounds/task-complete.mp3');
+      taskCompleteAudio.volume = 0.5;
+    }
+    taskCompleteAudio.currentTime = 0;
+    taskCompleteAudio.playbackRate = 1.25; // Set before each play
+    taskCompleteAudio.play().catch(() => {
+      // Swallow autoplay errors silently
     });
   } catch (e) {
     console.error("Audio play failed", e);

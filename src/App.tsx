@@ -156,11 +156,16 @@ const AppContent = ({
 
     // --- App Loader Cleanup ---
     useEffect(() => {
+        // Skip splash delay for returning logged-in users
+        if (userId) {
+            document.body.classList.add('loaded');
+            return;
+        }
         const timer = setTimeout(() => {
             document.body.classList.add('loaded');
-        }, 1200); // Show splash for 1.2s for smooth transition
+        }, 1200); // Show splash for 1.2s for smooth transition (new users only)
         return () => clearTimeout(timer);
-    }, []);
+    }, [userId]);
 
     // --- Handlers ---
     const handleWeekChange = (direction: 'prev' | 'next') => {

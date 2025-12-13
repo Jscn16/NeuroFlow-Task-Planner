@@ -148,6 +148,8 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
 }) => {
   const isOpen = task !== null;
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // Capture the task when date picker opens to prevent stale closures
+  const [capturedTask, setCapturedTask] = useState<Task | null>(null);
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -158,18 +160,25 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
 
   // Handle reschedule button - open date picker
   const handleRescheduleClick = () => {
-    setShowDatePicker(true);
+    // Capture the task at the moment the date picker opens
+    if (task) {
+      setCapturedTask(task);
+      setShowDatePicker(true);
+    }
   };
 
   // Handle date selection from picker
   const handleDateConfirm = (date: Date) => {
-    if (task) {
+    // Use captured task to avoid stale closure issues
+    const taskToMove = capturedTask || task;
+    if (taskToMove) {
       // Close date picker first
       setShowDatePicker(false);
+      setCapturedTask(null);
       // Format date and trigger reschedule action
       const dateStr = formatDate(date);
       // We'll pass the date via a custom property
-      const taskWithDate = { ...task, _rescheduleDate: dateStr } as Task & { _rescheduleDate: string };
+      const taskWithDate = { ...taskToMove, _rescheduleDate: dateStr } as Task & { _rescheduleDate: string };
       onAction('reschedule-to-date', taskWithDate as any);
     }
   };
@@ -313,9 +322,12 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
       {/* Date Picker Modal */}
       <MobileDatePicker
         isOpen={showDatePicker}
-        initialDate={task?.dueDate ? new Date(task.dueDate) : new Date()}
+        initialDate={capturedTask?.dueDate ? new Date(capturedTask.dueDate) : (task?.dueDate ? new Date(task.dueDate) : new Date())}
         onConfirm={handleDateConfirm}
-        onClose={() => setShowDatePicker(false)}
+        onClose={() => {
+          setShowDatePicker(false);
+          setCapturedTask(null);
+        }}
       />
     </AnimatePresence>
   );

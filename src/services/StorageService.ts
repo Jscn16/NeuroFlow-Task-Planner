@@ -96,6 +96,47 @@ export class StorageService {
         }
     }
 
+    /**
+     * Type guard to validate task structure
+     */
+    private isValidTask(item: unknown): boolean {
+        if (typeof item !== 'object' || item === null) return false;
+        const t = item as Record<string, unknown>;
+        return (
+            typeof t.id === 'string' && t.id.length > 0 &&
+            typeof t.title === 'string' &&
+            (t.duration === undefined || typeof t.duration === 'number') &&
+            (t.type === undefined || ['low', 'medium', 'high', 'leisure'].includes(t.type as string))
+        );
+    }
+
+    /**
+     * Type guard to validate habit structure
+     */
+    private isValidHabit(item: unknown): boolean {
+        if (typeof item !== 'object' || item === null) return false;
+        const h = item as Record<string, unknown>;
+        return (
+            typeof h.id === 'string' && h.id.length > 0 &&
+            typeof h.name === 'string' &&
+            (h.goal === undefined || typeof h.goal === 'number') &&
+            (h.checks === undefined || Array.isArray(h.checks))
+        );
+    }
+
+    /**
+     * Type guard to validate brain dump list structure
+     */
+    private isValidBrainDumpList(item: unknown): boolean {
+        if (typeof item !== 'object' || item === null) return false;
+        const l = item as Record<string, unknown>;
+        return (
+            typeof l.id === 'string' && l.id.length > 0 &&
+            typeof l.title === 'string' &&
+            (l.content === undefined || typeof l.content === 'string')
+        );
+    }
+
     async importData(file: File): Promise<AppData> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -104,22 +145,45 @@ export class StorageService {
                     const json = e.target?.result as string;
                     const data = JSON.parse(json);
 
-                    // Relaxed validation: Check if it looks somewhat like our data
-                    // We accept if it has tasks OR habits.
-                    if (data && (Array.isArray(data.tasks) || Array.isArray(data.habits))) {
-                        // Ensure required fields exist by defaulting to empty arrays if missing
-                        const validData: AppData = {
-                            tasks: Array.isArray(data.tasks) ? data.tasks : [],
-                            habits: Array.isArray(data.habits) ? data.habits : [],
-                            brainDumpLists: Array.isArray(data.brainDumpLists) ? data.brainDumpLists : [],
-                            brainDumpContent: data.brainDumpContent,
-                            notes: data.notes,
-                            dayHistory: data.dayHistory || {}
-                        };
-                        resolve(validData);
-                    } else {
-                        reject(new Error('Invalid data format: Missing tasks or habits array'));
+                    // Validate structure exists
+                    if (!data || typeof data !== 'object') {
+                        reject(new Error('Invalid data format: not a valid JSON object'));
+                        return;
                     }
+
+                    // Check if it has at least tasks or habits
+                    if (!Array.isArray(data.tasks) && !Array.isArray(data.habits)) {
+                        reject(new Error('Invalid data format: Missing tasks or habits array'));
+                        return;
+                    }
+
+                    // Filter and validate each item, removing malformed entries
+                    const validTasks = Array.isArray(data.tasks)
+                        ? data.tasks.filter((t: unknown) => this.isValidTask(t))
+                        : [];
+                    const validHabits = Array.isArray(data.habits)
+                        ? data.habits.filter((h: unknown) => this.isValidHabit(h))
+                        : [];
+                    const validLists = Array.isArray(data.brainDumpLists)
+                        ? data.brainDumpLists.filter((l: unknown) => this.isValidBrainDumpList(l))
+                        : [];
+
+                    // Log if items were filtered out
+                    const tasksFiltered = (data.tasks?.length || 0) - validTasks.length;
+                    const habitsFiltered = (data.habits?.length || 0) - validHabits.length;
+                    if (tasksFiltered > 0 || habitsFiltered > 0) {
+                        console.warn(`Import: filtered out ${tasksFiltered} invalid tasks and ${habitsFiltered} invalid habits`);
+                    }
+
+                    const validData: AppData = {
+                        tasks: validTasks,
+                        habits: validHabits,
+                        brainDumpLists: validLists,
+                        brainDumpContent: typeof data.brainDumpContent === 'string' ? data.brainDumpContent : undefined,
+                        notes: data.notes,
+                        dayHistory: typeof data.dayHistory === 'object' ? data.dayHistory : {}
+                    };
+                    resolve(validData);
                 } catch (error) {
                     reject(error);
                 }
@@ -129,3 +193,4 @@ export class StorageService {
         });
     }
 }
+

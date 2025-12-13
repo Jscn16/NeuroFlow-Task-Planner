@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, Settings, PanelLeftClose, Check, X, Snowflake } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType } from '../../types';
@@ -56,6 +56,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     });
     const [dragOverCategory, setDragOverCategory] = useState<string | null>(null);
     const dragCounters = useRef<Record<string, number>>({});
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Auto-focus input when sidebar opens on mobile
+    useEffect(() => {
+        if (isOpen && isMobile && inputRef.current) {
+            // Small delay to ensure sidebar animation has started
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
+    }, [isOpen, isMobile]);
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;
@@ -239,6 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     {/* Input Row */}
                     <div className="mb-4">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={newTaskTitle}
                             onChange={(e) => setNewTaskTitle(e.target.value)}

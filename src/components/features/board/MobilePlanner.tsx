@@ -3,6 +3,7 @@ import { Menu } from 'lucide-react';
 import { usePlannerController } from '../../../hooks/usePlannerController';
 import { MobileWeekStrip } from './MobileWeekStrip';
 import { MobileDayView } from './MobileDayView';
+import { MobileFAB } from '../../ui/MobileFAB';
 import { formatDate } from '../../../constants';
 
 // ============================================================================
@@ -55,7 +56,7 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
     const today = new Date(todayStr);
     const weekStart = currentWeekDays[0];
     const weekEnd = currentWeekDays[6];
-    
+
     if (today >= weekStart && today <= weekEnd) {
       return today;
     }
@@ -69,7 +70,7 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
   const handleSelectDate = useCallback((date: Date) => {
     const currentStr = formatDate(selectedDate);
     const newStr = formatDate(date);
-    
+
     setDirection(newStr > currentStr ? 1 : -1);
     setSelectedDate(date);
   }, [selectedDate]);
@@ -114,7 +115,7 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
     if (selectedStr < weekStart || selectedStr > weekEnd) {
       const today = new Date(todayStr);
       const todayInWeek = formatDate(today) >= weekStart && formatDate(today) <= weekEnd;
-      
+
       if (todayInWeek) {
         setSelectedDate(today);
       } else if (selectedStr < weekStart) {
@@ -138,7 +139,7 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
   }, [selectedDate]);
 
   return (
-    <div 
+    <div
       className="flex flex-col h-[100dvh] w-full overflow-hidden fixed inset-0"
     >
       {/* Sticky Header + Week Strip */}
@@ -154,14 +155,14 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
               <Menu size={20} />
             </button>
             <div>
-              <h2 
+              <h2
                 className="text-xl font-display font-bold"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {formattedDate}
               </h2>
               {formatDate(selectedDate) === todayStr && (
-                <span 
+                <span
                   className="text-xs font-semibold uppercase tracking-wider"
                   style={{ color: 'var(--accent)' }}
                 >
@@ -199,6 +200,9 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
           />
         </div>
       </div>
+
+      {/* Floating Action Button */}
+      <MobileFAB onClick={() => onOpenSidebar?.()} />
     </div>
   );
 };

@@ -86,7 +86,10 @@ const cardVariants = {
 // ============================================================================
 
 /**
- * MobileTaskCard - Individual task card with long-press support
+ * MobileTaskCard - Individual task card with swipe gestures
+ * 
+ * Swipe right: Complete task
+ * Long press: Open action sheet
  */
 const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
   task,
@@ -95,9 +98,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
   onToggleComplete,
   onLongPress
 }) => {
-  const longPressTimer = useRef<number | null>(null);
-  const [isPressed, setIsPressed] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [swipeX, setSwipeX] = useState(0);
   const { play } = useCompletionSound();
 
   const isCompleted = task.status === 'completed';
@@ -119,127 +121,176 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
     return colorMap[task.type] || colorMap.backlog;
   };
 
-  // Long press handlers
-  const handleTouchStart = useCallback(() => {
-    setIsPressed(true);
-    longPressTimer.current = window.setTimeout(() => {
-      onLongPress(task);
-      setIsPressed(false);
-    }, 500); // 500ms long press threshold
+  // Track if user is dragging (to distinguish tap from swipe)
+  const didSwipe = useRef(false);
+
+  // Swipe gesture handler
+  const handleDrag = useCallback((_: any, info: PanInfo) => {
+    setSwipeX(info.offset.x);
+    // Mark as swiping if moved more than 10px
+    if (Math.abs(info.offset.x) > 10) {
+      didSwipe.current = true;
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    const swipeThreshold = 100;
+
+    // Swipe right to complete
+    if (info.offset.x > swipeThreshold && !isCompleted) {
+      play();
+      onToggleComplete(task.id);
+      setFlash(true);
+      setTimeout(() => setFlash(false), 300);
+      // Haptic feedback
+      if (navigator.vibrate) navigator.vibrate(30);
+    }
+
+    setSwipeX(0);
+  }, [isCompleted, play, onToggleComplete, task.id]);
+
+  // Handle tap (only if not swiping and not on a button)
+  const handleTap = useCallback((event: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+    // Don't open action sheet if tapped on checkbox button
+    const target = event.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    if (!didSwipe.current) {
+      onLongPress(task); // Opens action sheet
+    }
+    didSwipe.current = false;
   }, [task, onLongPress]);
 
-  const handleTouchEnd = useCallback(() => {
-    setIsPressed(false);
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
+  // Reset swipe tracking on drag start
+  const handleDragStart = useCallback(() => {
+    didSwipe.current = false;
   }, []);
 
-  const handleTouchMove = useCallback(() => {
-    // Cancel long press if user moves finger
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    setIsPressed(false);
-  }, []);
+  // Calculate swipe progress for visual feedback
+  const swipeProgress = Math.min(Math.max(swipeX / 100, 0), 1);
+  const showSwipeHint = swipeX > 20 && !isCompleted;
 
   return (
-    <motion.div
-      className={`
-        relative rounded-xl overflow-hidden
-        transition-all duration-200
-        ${isPressed ? 'scale-[0.98]' : ''}
-      `}
-      style={{
-        backgroundColor: 'var(--bg-tertiary)',
-        opacity: isFaded ? 0.5 : 1,
-        borderLeft: `3px solid ${getTypeColor()}`,
-        minHeight: '50px'
-      }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onTouchMove={handleTouchMove}
-      onMouseDown={handleTouchStart}
-      onMouseUp={handleTouchEnd}
-      onMouseLeave={handleTouchEnd}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex items-center p-3 md:p-4 gap-2.5 relative">
-        {/* Completion Checkbox */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (task.status !== 'completed') {
-              play();
-            }
-            onToggleComplete(task.id);
-            setFlash(true);
-            window.setTimeout(() => setFlash(false), 300);
+    <div className="relative overflow-hidden rounded-xl">
+      {/* Swipe background (green for complete) */}
+      <motion.div
+        className="absolute inset-0 flex items-center pl-4 rounded-xl"
+        style={{
+          backgroundColor: `rgba(16, 185, 129, ${swipeProgress * 0.8})`,
+        }}
+        animate={{ opacity: showSwipeHint ? 1 : 0 }}
+      >
+        <motion.div
+          animate={{
+            scale: showSwipeHint ? 1 : 0.8,
+            opacity: showSwipeHint ? 1 : 0
           }}
-          className={`
-            w-6 h-6 rounded-full border-2 flex items-center justify-center
-            transition-all duration-200 shrink-0
-          `}
-          style={{
-            borderColor: isCompleted ? 'var(--success)' : 'rgba(255,255,255,0.2)',
-            backgroundColor: isCompleted ? 'var(--success)' : 'transparent'
-          }}
+          className="text-white font-semibold flex items-center gap-2"
         >
-          {isCompleted && (
-            <CheckCircle2 size={14} className="text-white" />
-          )}
-        </button>
+          <CheckCircle2 size={20} />
+          {swipeProgress > 0.8 && <span>Complete!</span>}
+        </motion.div>
+      </motion.div>
 
-        {/* Task Content */}
-        <div className="flex-1 min-w-0">
-          <h4
+      {/* Card content (swipeable) */}
+      <motion.div
+        className={`
+          relative rounded-xl overflow-hidden
+          transition-shadow duration-200
+        `}
+        style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          opacity: isFaded ? 0.5 : 1,
+          borderLeft: `3px solid ${getTypeColor()}`,
+          minHeight: '56px',
+          x: swipeX > 0 ? swipeX : 0
+        }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 150 }}
+        dragElastic={0.1}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+        onTap={handleTap}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className="flex items-center p-4 gap-3 relative">
+          {/* Completion Checkbox - larger touch target */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (task.status !== 'completed') {
+                play();
+              }
+              onToggleComplete(task.id);
+              setFlash(true);
+              window.setTimeout(() => setFlash(false), 300);
+            }}
             className={`
-              font-semibold text-sm leading-tight
-              ${isCompleted ? 'line-through' : ''}
+              w-7 h-7 rounded-full border-2 flex items-center justify-center
+              transition-all duration-200 shrink-0 touch-manipulation
             `}
             style={{
-              color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)'
+              borderColor: isCompleted ? 'var(--success)' : 'rgba(255,255,255,0.25)',
+              backgroundColor: isCompleted ? 'var(--success)' : 'transparent'
             }}
           >
-            {task.title}
-          </h4>
-
-          <div className="flex items-center gap-2 mt-1">
-            {/* Duration */}
-            <div
-              className="flex items-center gap-1 text-xs"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <Clock size={12} />
-              <span>{task.duration}m</span>
-            </div>
-
-            {/* Row/Category badge */}
-            {rowConfig && (
-              <span
-                className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  color: rowConfig.color.replace('text-', '#').includes('#')
-                    ? rowConfig.color
-                    : 'var(--text-muted)'
-                }}
-              >
-                {task.assignedRow}
-              </span>
+            {isCompleted && (
+              <CheckCircle2 size={16} className="text-white" />
             )}
+          </button>
+
+          {/* Task Content */}
+          <div className="flex-1 min-w-0">
+            <h4
+              className={`
+                font-semibold text-sm leading-tight
+                ${isCompleted ? 'line-through' : ''}
+              `}
+              style={{
+                color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)'
+              }}
+            >
+              {task.title}
+            </h4>
+
+            <div className="flex items-center gap-2 mt-1.5">
+              {/* Duration */}
+              <div
+                className="flex items-center gap-1 text-xs"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <Clock size={12} />
+                <span>{task.duration}m</span>
+              </div>
+
+              {/* Row/Category badge with icon */}
+              {rowConfig && (
+                <span
+                  className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+                  style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    color: rowConfig.color
+                  }}
+                >
+                  {React.createElement(rowConfig.icon, { size: 10 })}
+                  {task.assignedRow}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Swipe hint indicator */}
+          <div
+            className="opacity-20 text-xs"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            ⟩
           </div>
         </div>
 
-        {/* Drag handle hint (visual only on mobile) */}
-        <div
-          className="opacity-30"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <GripVertical size={18} />
-        </div>
+        {/* Completion flash animation */}
         <AnimatePresence>
           {flash && (
             <motion.div
@@ -251,8 +302,8 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
             />
           )}
         </AnimatePresence>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 });
 
@@ -377,6 +428,9 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
     return acc;
   }, {} as Record<GridRow, Task[]>);
 
+  // Tasks without a row (scheduled but no row assigned)
+  const unassignedTasks = dayTasks.filter(t => !t.assignedRow || !rows.includes(t.assignedRow));
+
   // Swipe gesture handler
   const handleDragEnd = useCallback((
     _event: MouseEvent | TouchEvent | PointerEvent,
@@ -412,21 +466,38 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
       case 'move-tomorrow': {
         const tomorrow = new Date(selectedDate);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        onUpdateTask(task.id, { dueDate: formatDate(tomorrow) });
+        onUpdateTask(task.id, {
+          dueDate: formatDate(tomorrow),
+          status: 'scheduled'
+        });
         break;
       }
       case 'move-yesterday': {
-        const yesterday = new Date(selectedDate);
-        yesterday.setDate(yesterday.getDate() - 1);
-        onUpdateTask(task.id, { dueDate: formatDate(yesterday) });
+        // This is actually "Move to Today" in mobile
+        const today = new Date();
+        onUpdateTask(task.id, {
+          dueDate: formatDate(today),
+          status: 'scheduled'
+        });
         break;
       }
       case 'delete':
         onDeleteTask(task.id);
         break;
       case 'reschedule':
-        // TODO: Open date picker
+        // Handled by MobileActionSheet internally with date picker
         break;
+      case 'reschedule-to-date': {
+        // Date picker confirmed - task has _rescheduleDate property
+        const newDate = (task as any)._rescheduleDate;
+        if (newDate) {
+          onUpdateTask(task.id, {
+            dueDate: newDate,
+            status: 'scheduled' // Ensure task shows in the new day
+          });
+        }
+        break;
+      }
       case 'edit':
         // TODO: Open edit modal
         break;
@@ -472,6 +543,46 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
                     onLongPress={handleLongPress}
                   />
                 ))}
+
+                {/* Unassigned tasks (scheduled but no row) */}
+                {unassignedTasks.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3 px-1">
+                      <span
+                        className="text-xs font-bold uppercase tracking-wider"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Scheduled
+                      </span>
+                      <span
+                        className="text-xs"
+                        style={{ color: 'var(--text-muted)', opacity: 0.5 }}
+                      >
+                        {unassignedTasks.length}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {unassignedTasks.map((task, index) => (
+                        <motion.div
+                          key={task.id}
+                          variants={cardVariants}
+                          initial="initial"
+                          animate="animate"
+                          exit="exit"
+                          custom={index}
+                        >
+                          <MobileTaskCard
+                            task={task}
+                            isPastDay={isPastDay}
+                            viewMode={viewMode}
+                            onToggleComplete={onToggleComplete}
+                            onLongPress={handleLongPress}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               // Empty state

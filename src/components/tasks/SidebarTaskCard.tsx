@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Check, X, CalendarDays } from 'lucide-react';
 import { GridRow, Task, TaskType } from '../../types';
@@ -31,7 +31,6 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
     onCloseSidebar,
     onLongPress
 }) => {
-    const longPressTimer = useRef<number | null>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title);
     const [editedDuration, setEditedDuration] = useState(task.duration.toString());
@@ -131,19 +130,17 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
         }
     };
 
-    const handleLongPressStart = useCallback(() => {
-        if (!isMobileView || !onLongPress) return;
-        longPressTimer.current = window.setTimeout(() => {
-            onLongPress(task);
-        }, 500);
-    }, [isMobileView, onLongPress, task]);
-
-    const clearLongPress = () => {
-        if (longPressTimer.current) {
-            clearTimeout(longPressTimer.current);
-            longPressTimer.current = null;
+    // Handle tap on mobile - open action sheet directly (like taskboard)
+    const handleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        // Don't trigger if tapping on a button or in edit mode
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || isEditing) {
+            return;
         }
-    };
+        if (isMobileView && onLongPress) {
+            onLongPress(task);
+        }
+    }, [isMobileView, onLongPress, task, isEditing]);
 
     const formatDuration = (mins: number) => {
         if (mins < 60) return `${mins} min`;
@@ -244,9 +241,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                     : `bg-white/[0.03] border-white/[0.06] ${TASK_CARD_BORDER_COLORS[task.type]} border-l-[3px]`
                 }
             `}
-            onTouchStart={handleLongPressStart}
-            onTouchEnd={clearLongPress}
-            onTouchMove={clearLongPress}
+            onClick={handleTap}
         >
             <div className="flex items-center gap-2.5">
                 <h3

@@ -1,24 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowRight, 
-  Trash2, 
-  X, 
+import {
+  ArrowRight,
+  Trash2,
+  X,
   Calendar,
   CheckCircle2,
-  ArrowLeft
+  CalendarCheck
 } from 'lucide-react';
 import { Task } from '../../../types';
+import { MobileDatePicker } from '../../ui/MobileDatePicker';
+import { formatDate } from '../../../constants';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type ActionSheetAction = 
+export type ActionSheetAction =
   | 'complete'
   | 'move-tomorrow'
   | 'move-yesterday'
   | 'reschedule'
+  | 'reschedule-to-date'
   | 'edit'
   | 'delete'
   | 'cancel';
@@ -50,11 +53,11 @@ const backdropVariants = {
 };
 
 const sheetVariants = {
-  hidden: { 
+  hidden: {
     y: '100%',
     transition: { type: 'spring', damping: 30, stiffness: 300 }
   },
-  visible: { 
+  visible: {
     y: 0,
     transition: { type: 'spring', damping: 30, stiffness: 300 }
   }
@@ -102,21 +105,21 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       whileTap={{ scale: 0.98 }}
       whileHover={{ backgroundColor: colors.bgHover }}
     >
-      <div 
+      <div
         className="w-10 h-10 rounded-full flex items-center justify-center"
         style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
       >
         <span style={{ color: colors.icon }}>{icon}</span>
       </div>
       <div className="flex-1 text-left">
-        <div 
+        <div
           className="font-semibold"
           style={{ color: colors.text }}
         >
           {label}
         </div>
         {sublabel && (
-          <div 
+          <div
             className="text-xs mt-0.5"
             style={{ color: 'var(--text-muted)' }}
           >
@@ -144,11 +147,30 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
   onClose
 }) => {
   const isOpen = task !== null;
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  // Handle reschedule button - open date picker
+  const handleRescheduleClick = () => {
+    setShowDatePicker(true);
+  };
+
+  // Handle date selection from picker
+  const handleDateConfirm = (date: Date) => {
+    if (task) {
+      // Close date picker first
+      setShowDatePicker(false);
+      // Format date and trigger reschedule action
+      const dateStr = formatDate(date);
+      // We'll pass the date via a custom property
+      const taskWithDate = { ...task, _rescheduleDate: dateStr } as Task & { _rescheduleDate: string };
+      onAction('reschedule-to-date', taskWithDate as any);
     }
   };
 
@@ -190,7 +212,7 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
           >
             {/* Handle bar */}
             <div className="flex justify-center pt-3 pb-2">
-              <div 
+              <div
                 className="w-10 h-1 rounded-full"
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
               />
@@ -200,18 +222,18 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
             <div className="px-5 pb-4 border-b" style={{ borderColor: 'var(--border-light)' }}>
               <div className="flex items-start gap-3">
                 {/* Type indicator */}
-                <div 
+                <div
                   className="w-1 h-12 rounded-full mt-1"
                   style={{ backgroundColor: getTypeColor(task.type) }}
                 />
                 <div className="flex-1 min-w-0">
-                  <h3 
+                  <h3
                     className="font-bold text-lg truncate"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {task.title}
                   </h3>
-                  <div 
+                  <div
                     className="text-sm mt-0.5 flex items-center gap-2"
                     style={{ color: 'var(--text-muted)' }}
                   >
@@ -256,20 +278,20 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
                 onClick={() => onAction('move-tomorrow', task)}
               />
 
-              {/* Move to Today (repurposed from yesterday for mobile convenience) */}
+              {/* Move to Today */}
               <ActionButton
-                icon={<ArrowLeft size={20} />}
+                icon={<CalendarCheck size={20} />}
                 label="Move to Today"
-                sublabel="Reschedule to today"
+                sublabel="Schedule for today"
                 onClick={() => onAction('move-yesterday', task)}
               />
 
-              {/* Reschedule (future: date picker) */}
+              {/* Reschedule - opens date picker */}
               <ActionButton
                 icon={<Calendar size={20} />}
-                label="Reschedule"
+                label="Move Task"
                 sublabel="Pick a different date"
-                onClick={() => onAction('reschedule', task)}
+                onClick={handleRescheduleClick}
               />
 
               {/* Delete */}
@@ -287,6 +309,14 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
           </motion.div>
         </>
       )}
+
+      {/* Date Picker Modal */}
+      <MobileDatePicker
+        isOpen={showDatePicker}
+        initialDate={task?.dueDate ? new Date(task.dueDate) : new Date()}
+        onConfirm={handleDateConfirm}
+        onClose={() => setShowDatePicker(false)}
+      />
     </AnimatePresence>
   );
 };

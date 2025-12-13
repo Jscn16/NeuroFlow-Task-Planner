@@ -26,6 +26,9 @@ import { FirstTaskGuide } from './components/onboarding/FirstTaskGuide';
 import { generateId } from './utils/id';
 import { StorageService } from './services/StorageService';
 import { supabaseAvailable, supabaseUrl } from './lib/supabase';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { QuickAddModal } from './components/ui/QuickAddModal';
+import { KeyboardShortcutsHelp } from './components/ui/KeyboardShortcutsHelp';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -79,8 +82,15 @@ const AppContent = ({
     const [sampleTasksAdded, setSampleTasksAdded] = useState(false);
     const hasAnyTasks = (taskManager.tasks?.length || 0) > 0;
 
+    // --- Keyboard Shortcuts State ---
+    const [showQuickAdd, setShowQuickAdd] = useState(false);
+    const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+
     // --- Onboarding Tour ---
+    // Don't show tour for returning (logged-in) users - they obviously know the app
     const [showTour, setShowTour] = useState(() => {
+        // If user is logged in with Supabase, skip tour entirely
+        if (userId) return false;
         try {
             return localStorage.getItem('neuroflow_tour_completed') !== 'true';
         } catch {
@@ -93,6 +103,13 @@ const AppContent = ({
             localStorage.setItem('neuroflow_tour_completed', 'true');
         } catch { }
         setShowTour(false);
+    }, []);
+
+    const handleResetTour = useCallback(() => {
+        try {
+            localStorage.removeItem('neuroflow_tour_completed');
+        } catch { }
+        setShowTour(true);
     }, []);
 
     useEffect(() => {
@@ -126,6 +143,16 @@ const AppContent = ({
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [persistence]);
+
+    // --- Keyboard Shortcuts ---
+    useKeyboardShortcuts({
+        onQuickAdd: () => setShowQuickAdd(true),
+        onToggleFocus: () => setActiveTab(activeTab === 'focus' ? 'planner' : 'focus'),
+        onNavigatePrev: () => handleWeekChange('prev'),
+        onNavigateNext: () => handleWeekChange('next'),
+        onShowHelp: () => setShowShortcutsHelp(prev => !prev),
+        onToggleSidebar: () => setIsSidebarOpen(prev => !prev),
+    }, !showSettings && !showQuickAdd);
 
     // --- App Loader Cleanup ---
     useEffect(() => {
@@ -380,12 +407,28 @@ const AppContent = ({
                     onAddSampleTasks={handleAddSampleTasks}
                     sampleTasksAdded={sampleTasksAdded}
                     showSampleTasks={!sampleTasksAdded && !hasAnyTasks}
+                    onResetTour={handleResetTour}
                 />
             )}
 
             {isMobile && (
                 <MobileNavBar activeTab={activeTab} onChange={setActiveTab} />
             )}
+
+            {/* Quick Add Modal (Ctrl+N) */}
+            <QuickAddModal
+                isOpen={showQuickAdd}
+                onClose={() => setShowQuickAdd(false)}
+                onAddTask={(title, duration, type) => {
+                    taskManager.addTask(title, duration, type);
+                }}
+            />
+
+            {/* Keyboard Shortcuts Help (?) */}
+            <KeyboardShortcutsHelp
+                isOpen={showShortcutsHelp}
+                onClose={() => setShowShortcutsHelp(false)}
+            />
         </>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Cog, Download, Upload, Trash2, ChevronRight, AlertTriangle, Palette, Check, Sparkles, CloudOff, Cloud, ListChecks } from 'lucide-react';
+import { X, Cog, Download, Upload, Trash2, ChevronRight, AlertTriangle, Palette, Check, Sparkles, CloudOff, Cloud, ListChecks, HelpCircle } from 'lucide-react';
 import { themes } from '../../themes';
 import { modal, backdrop } from '../../utils/animations';
 import { FrostOverlay } from '../ui/FrostOverlay';
@@ -22,6 +22,7 @@ interface SettingsModalProps {
     onAddSampleTasks?: () => void;
     sampleTasksAdded?: boolean;
     showSampleTasks?: boolean;
+    onResetTour?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -39,7 +40,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onToggleSupabase,
     onAddSampleTasks,
     sampleTasksAdded,
-    showSampleTasks
+    showSampleTasks,
+    onResetTour
 }) => {
     const [freezing, setFreezing] = useState(false);
     const { play } = useIceSound();
@@ -359,6 +361,58 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                 <ChevronRight size={18} className={supabaseEnabled ? 'text-emerald-400' : 'text-rose-400'} />
                             </button>
                         </div>
+
+                        {/* Help & Tutorial */}
+                        {onResetTour && (
+                            <div>
+                                <h3
+                                    className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3 flex items-center gap-2"
+                                    style={{ color: 'var(--text-muted)' }}
+                                >
+                                    <HelpCircle size={12} />
+                                    Help
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        onResetTour();
+                                        // Close settings to show the tour
+                                        setTimeout(() => {
+                                            const closeBtn = document.querySelector('[aria-label="Close settings"]') as HTMLButtonElement;
+                                            closeBtn?.click();
+                                        }, 100);
+                                    }}
+                                    className="w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] group"
+                                    style={{
+                                        backgroundColor: 'rgba(255,255,255,0.02)',
+                                        borderColor: 'var(--border-light)'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'var(--accent-muted)';
+                                        e.currentTarget.style.borderColor = 'var(--accent)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                                        e.currentTarget.style.borderColor = 'var(--border-light)';
+                                    }}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                            style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+                                            <HelpCircle size={18} style={{ color: 'var(--accent)' }} />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                                Show Tutorial
+                                            </div>
+                                            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                Replay the onboarding walkthrough
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ChevronRight size={18} style={{ color: 'var(--accent)' }} className="opacity-50 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Danger Zone */}
                         <div>

@@ -3,7 +3,7 @@ import { Plus, Settings, PanelLeftClose, Check, X, Snowflake } from 'lucide-reac
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType } from '../../types';
 import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
-import { VirtualSidebarList } from './VirtualSidebarList';
+import { SimpleSidebarList } from './SimpleSidebarList';
 import { CATEGORIES } from '../../constants';
 import { useTaskContext } from '../../context/TaskContext';
 import { MobileActionSheet, ActionSheetAction } from '../features/board/MobileActionSheet';
@@ -316,7 +316,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Main Task Lists + Icebox in shared scroll area */}
             <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-4 pb-6" data-tour="brain-dump">
                 <div className="flex-1 min-h-0">
-                    <VirtualSidebarList
+                    <SimpleSidebarList
                         tasks={visibleTasks}
                         expandedCategories={expandedCategories}
                         toggleCategory={toggleCategory}
@@ -324,7 +324,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onCategoryDragEnter={handleCategoryDragEnter}
                         onCategoryDragLeave={handleCategoryDragLeave}
                         onCategoryDrop={handleCategoryDrop}
-                        isDragging={dragEnabled ? isDragging : false}
                         onDragStart={dragEnabled ? handleDragStart : () => { }}
                         onDragEnd={dragEnabled ? handleDragEnd : () => { }}
                         onUpdateTask={updateTask}

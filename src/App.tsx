@@ -29,6 +29,7 @@ import { supabaseAvailable, supabaseUrl } from './lib/supabase';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { QuickAddModal } from './components/ui/QuickAddModal';
 import { KeyboardShortcutsHelp } from './components/ui/KeyboardShortcutsHelp';
+import { CommandPalette } from './components/ui/CommandPalette';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -85,6 +86,7 @@ const AppContent = ({
     // --- Keyboard Shortcuts State ---
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
+    const [showCommandPalette, setShowCommandPalette] = useState(false);
 
     // --- Onboarding Tour ---
     // Don't show tour for returning (logged-in) users - they obviously know the app
@@ -152,7 +154,8 @@ const AppContent = ({
         onNavigateNext: () => handleWeekChange('next'),
         onShowHelp: () => setShowShortcutsHelp(prev => !prev),
         onToggleSidebar: () => setIsSidebarOpen(prev => !prev),
-    }, !showSettings && !showQuickAdd);
+        onCommandPalette: () => setShowCommandPalette(prev => !prev),
+    }, !showSettings && !showQuickAdd && !showCommandPalette);
 
     // --- App Loader Cleanup ---
     useEffect(() => {
@@ -426,6 +429,27 @@ const AppContent = ({
                 onClose={() => setShowQuickAdd(false)}
                 onAddTask={(title, duration, type) => {
                     taskManager.addTask(title, duration, type);
+                }}
+            />
+
+            {/* Command Palette (Ctrl+K) */}
+            <CommandPalette
+                isOpen={showCommandPalette}
+                onClose={() => setShowCommandPalette(false)}
+                onNewTask={() => {
+                    setShowCommandPalette(false);
+                    setShowQuickAdd(true);
+                }}
+                onOpenSettings={() => {
+                    setShowCommandPalette(false);
+                    setShowSettings(true);
+                }}
+                onGoToToday={() => {
+                    setCurrentDate(getAdjustedDate());
+                    setActiveTab('planner');
+                }}
+                onOpenBrainDump={() => {
+                    setActiveTab('braindump');
                 }}
             />
 

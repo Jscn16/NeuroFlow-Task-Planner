@@ -93,74 +93,20 @@ export const themes: Theme[] = [
   {
     id: 'minimal-dark',
     name: 'Minimal Dark',
-    description: 'Ultra-minimal pure black with subtle accents',
+    description: 'Eye-friendly dark with subtle accents',
     colors: {
-      bgPrimary: '#0a0a0a',
-      bgSecondary: '#121212',
-      bgTertiary: '#21212154', // zinc-900 with opacity
+      bgPrimary: '#0a0a0f',
+      bgSecondary: '#121218',
+      bgTertiary: '#1a1a24',
       bgGlow: 'rgba(255, 255, 255, 0.02)',
-      textPrimary: '#ffffff',
-      textSecondary: '#a8a8a8',
-      textMuted: '#6b6b6b',
-      accent: '#2070c2',
+      textPrimary: 'rgba(255, 255, 255, 0.87)',
+      textSecondary: 'rgba(255, 255, 255, 0.60)',
+      textMuted: 'rgba(255, 255, 255, 0.38)',
+      accent: 'hsl(185, 70%, 55%)',
       accentGlow: 'rgba(82, 167, 255, 0.3)',
       accentMuted: 'rgba(82, 167, 255, 0.08)',
       borderLight: 'rgba(255, 255, 255, 0.04)',
       borderMedium: 'rgba(255, 255, 255, 0.08)',
-      success: '#10b981',
-      warning: '#f59e0b',
-      error: '#ef4444',
-    },
-    fonts: {
-      sans: "'Manrope', sans-serif",
-      display: "'Manrope', sans-serif",
-      mono: "'Manrope', monospace",
-    },
-  },
-  {
-    id: 'mono',
-    name: 'Monochrome',
-    description: 'Pure grayscale minimalism',
-    colors: {
-      bgPrimary: '#0d0d0d',
-      bgSecondary: '#171717',
-      bgTertiary: '#242424',
-      bgGlow: 'rgba(255, 255, 255, 0.03)',
-      textPrimary: '#fafafa',
-      textSecondary: '#b3b3b3',
-      textMuted: '#666666',
-      accent: '#ffffff38',
-      accentGlow: 'rgba(255, 255, 255, 0.4)',
-      accentMuted: 'rgba(255, 255, 255, 0.06)',
-      borderLight: 'rgba(255, 255, 255, 0.06)',
-      borderMedium: 'rgba(255, 255, 255, 0.12)',
-      success: '#d4d4d4',
-      warning: '#e5e5e5',
-      error: '#a3a3a3',
-    },
-    fonts: {
-      sans: "'Manrope', sans-serif",
-      display: "'Manrope', sans-serif",
-      mono: "'Manrope', monospace",
-    },
-  },
-  {
-    id: 'true-neutral',
-    name: 'Industrial Dark',
-    description: 'Strict Industrial Dark (Zinc/Black)',
-    colors: {
-      bgPrimary: '#09090b', // zinc-950
-      bgSecondary: '#000000', // black
-      bgTertiary: '#18181b', // zinc-900
-      bgGlow: 'rgba(255, 255, 255, 0.02)',
-      textPrimary: '#f4f4f5', // zinc-100
-      textSecondary: '#a1a1aa', // zinc-400
-      textMuted: '#52525b', // zinc-600
-      accent: '#8d8d8db8',
-      accentGlow: 'rgba(255, 255, 255, 0.15)',
-      accentMuted: 'rgba(255, 255, 255, 0.05)',
-      borderLight: 'rgba(255, 255, 255, 0.05)',
-      borderMedium: 'rgba(255, 255, 255, 0.1)',
       success: '#10b981',
       warning: '#f59e0b',
       error: '#ef4444',
@@ -209,3 +155,4 @@ export const applyTheme = (theme: Theme): void => {
   // Set theme id as data attribute for potential CSS selectors
   root.setAttribute('data-theme', theme.id);
 };
+

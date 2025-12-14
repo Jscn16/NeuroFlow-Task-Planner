@@ -7,6 +7,7 @@ interface KeyboardShortcutHandlers {
     onNavigateNext?: () => void;
     onShowHelp?: () => void;
     onToggleSidebar?: () => void;
+    onCommandPalette?: () => void;
 }
 
 export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled = true) {
@@ -18,6 +19,13 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
         const isInput = target.tagName === 'INPUT' ||
             target.tagName === 'TEXTAREA' ||
             target.isContentEditable;
+
+        // Ctrl/Cmd + K: Command Palette (works even in inputs)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            handlers.onCommandPalette?.();
+            return;
+        }
 
         // Ctrl/Cmd + N: Quick Add (works even in inputs)
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
@@ -74,6 +82,7 @@ export function useKeyboardShortcuts(handlers: KeyboardShortcutHandlers, enabled
 
 // Keyboard shortcuts configuration for help display
 export const KEYBOARD_SHORTCUTS = [
+    { keys: ['Ctrl', 'K'], description: 'Command palette', mac: ['⌘', 'K'] },
     { keys: ['Ctrl', 'N'], description: 'Quick add new task', mac: ['⌘', 'N'] },
     { keys: ['Ctrl', 'Space'], description: 'Toggle Focus Mode', mac: ['⌘', 'Space'] },
     { keys: ['←'], description: 'Previous week' },

@@ -209,8 +209,8 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                 {task.deadline && !isCompleted && (
                     <div
                         className={`flex items-center gap-1 mt-1 text-[10px] font-medium ${new Date(task.deadline) < new Date(new Date().toISOString().split('T')[0])
-                                ? 'text-red-400'
-                                : 'text-amber-400/70'
+                            ? 'text-red-400'
+                            : 'text-amber-400/70'
                             }`}
                     >
                         <Calendar size={10} />
@@ -223,6 +223,10 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
+                        // Haptic feedback for task completion
+                        if ('vibrate' in navigator) {
+                            navigator.vibrate(10);
+                        }
                         onToggleComplete(task.id);
                     }}
                     className={`

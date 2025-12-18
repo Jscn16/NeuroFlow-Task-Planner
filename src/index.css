@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-sans, 'Manrope', sans-serif);
-  --font-display: var(--font-display, 'Manrope', sans-serif);
+  --font-sans: var(--font-sans, 'Lexend', 'Manrope', sans-serif);
+  --font-display: var(--font-display, 'Lexend', 'Manrope', sans-serif);
   --font-mono: var(--font-mono, 'Manrope', monospace);
 
   --color-neon-pink: #f472b6;
@@ -19,8 +19,8 @@
   --color-theme-border: var(--border-medium, rgba(255, 255, 255, 0.1));
 
   --text-xs: 12px;
-  --text-sm: 13px;
-  --text-base: 13px;
+  --text-sm: 14px;
+  --text-base: 16px;
   --text-lg: 18px;
   --text-xl: 20px;
 
@@ -33,6 +33,8 @@
     linear-gradient(180deg, var(--bg-primary) 0%, color-mix(in srgb, var(--bg-primary), black 20%) 100%);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

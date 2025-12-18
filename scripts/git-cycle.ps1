@@ -62,10 +62,9 @@ if ($LASTEXITCODE -ne 0) {
 git push origin $mainBranch
 
 # 6. New branch
-$newBranch = Read-Host "Name for new branch"
-if ([string]::IsNullOrWhiteSpace($newBranch)) {
-    Write-Host "No new branch name given. Staying on $mainBranch."
-    exit 0
+$newBranch = ""
+while ([string]::IsNullOrWhiteSpace($newBranch)) {
+    $newBranch = Read-Host "Name for new branch (cannot be empty)"
 }
 
 git checkout -b $newBranch

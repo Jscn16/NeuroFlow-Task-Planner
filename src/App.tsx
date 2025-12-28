@@ -82,6 +82,7 @@ const AppContent = ({
     const today = getAdjustedDate();
     const [sampleTasksAdded, setSampleTasksAdded] = useState(false);
     const hasAnyTasks = (taskManager.tasks?.length || 0) > 0;
+    const hasScheduledTask = (taskManager.tasks || []).some(t => t.dueDate !== null && t.dueDate !== undefined);
 
     // --- Keyboard Shortcuts State ---
     const [showQuickAdd, setShowQuickAdd] = useState(false);
@@ -97,6 +98,15 @@ const AppContent = ({
             return localStorage.getItem('neuroflow_tour_completed') !== 'true';
         } catch {
             return true;
+        }
+    });
+
+    // Track first task guide completion for proper onboarding order
+    const [firstGuideComplete, setFirstGuideComplete] = useState(() => {
+        try {
+            return localStorage.getItem('neuroflow_first_task_guide_completed') === 'true';
+        } catch {
+            return false;
         }
     });
 
@@ -264,14 +274,17 @@ const AppContent = ({
                 <SpotlightTour onComplete={handleTourComplete} />
             )}
 
-            {/* Per-tab first-visit tooltips */}
-            {!showTour && <TabOnboarding activeTab={activeTab} />}
+            {/* Per-tab first-visit tooltips - show on mobile regardless of tour (tour is desktop-only) */}
+            {/* Don't show planner tab tip when FirstTaskGuide is active/incomplete */}
+            {(!showTour || isMobile) && (activeTab !== 'planner' || firstGuideComplete) && <TabOnboarding activeTab={activeTab} />}
 
-            {/* First task creation guide - shows after spotlight tour */}
-            {!showTour && !isMobile && activeTab === 'planner' && (
+            {/* First task creation guide - shows after spotlight tour (mobile-responsive) */}
+            {(!showTour || isMobile) && activeTab === 'planner' && (
                 <FirstTaskGuide
-                    onComplete={() => { }}
+                    onComplete={() => setFirstGuideComplete(true)}
                     hasAnyTasks={hasAnyTasks}
+                    hasScheduledTask={hasScheduledTask}
+                    isSidebarOpen={isSidebarOpen}
                 />
             )}
             <MainLayout
@@ -282,6 +295,7 @@ const AppContent = ({
                         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
                         onClose={() => setIsSidebarOpen(false)}
                         isMobile={isMobile}
+                        skipAutoFocus={isMobile && !firstGuideComplete}
                     />
                 }
                 header={

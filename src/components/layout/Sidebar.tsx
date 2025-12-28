@@ -20,6 +20,7 @@ interface SidebarProps {
     onToggle: () => void;
     onClose: () => void;
     isMobile: boolean;
+    skipAutoFocus?: boolean; // Skip auto-focus for onboarding
 }
 
 // 6 buttons for even grid
@@ -30,7 +31,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isOpen,
     onToggle,
     onClose,
-    isMobile
+    isMobile,
+    skipAutoFocus = false
 }) => {
     const {
         tasks,
@@ -60,15 +62,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const dragCounters = useRef<Record<string, number>>({});
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Auto-focus input when sidebar opens on mobile
+    // Auto-focus input when sidebar opens on mobile (skip during onboarding)
     useEffect(() => {
-        if (isOpen && isMobile && inputRef.current) {
+        if (isOpen && isMobile && inputRef.current && !skipAutoFocus) {
             // Small delay to ensure sidebar animation has started
             setTimeout(() => {
                 inputRef.current?.focus();
             }, 100);
         }
-    }, [isOpen, isMobile]);
+    }, [isOpen, isMobile, skipAutoFocus]);
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;

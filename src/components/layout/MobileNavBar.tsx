@@ -20,14 +20,14 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({ activeTab, onChange 
     <nav
       className="md:hidden fixed bottom-0 left-0 right-0 z-50"
       style={{
-        background: 'linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0.85))',
+        background: 'var(--bg-secondary)',
         backdropFilter: 'blur(20px)',
         paddingBottom: 'env(safe-area-inset-bottom, 0px)'
       }}
     >
       <div
         className="h-16 flex items-center justify-around px-1"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}
+        style={{ borderTop: '1px solid var(--border-medium)' }}
       >
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;

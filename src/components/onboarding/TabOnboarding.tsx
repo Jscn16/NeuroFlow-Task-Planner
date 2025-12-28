@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useIsMobile } from '../../hooks/useMediaQuery';
 
 interface TabTip {
     id: string;
@@ -9,6 +10,11 @@ interface TabTip {
 }
 
 const TAB_TIPS: Record<string, TabTip> = {
+    planner: {
+        id: 'planner',
+        title: 'Weekly Planner',
+        description: 'Your command center. Add tasks, drag them to schedule, and stay on top of your week.'
+    },
     focus: {
         id: 'focus',
         title: 'Deep Focus Mode',
@@ -38,6 +44,7 @@ interface TabOnboardingProps {
 }
 
 export const TabOnboarding: React.FC<TabOnboardingProps> = ({ activeTab }) => {
+    const isMobile = useIsMobile();
     const [seenTabs, setSeenTabs] = useState<Set<string>>(() => {
         try {
             const stored = localStorage.getItem(STORAGE_KEY);
@@ -75,29 +82,50 @@ export const TabOnboarding: React.FC<TabOnboardingProps> = ({ activeTab }) => {
 
     if (!currentTip) return null;
 
+    // Mobile: position above the bottom nav bar with slide-up animation
+    // Desktop: position at top-center with slide-down animation
+    const mobileStyles = {
+        initial: { opacity: 0, y: 20, scale: 0.98 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 20, scale: 0.98 }
+    };
+
+    const desktopStyles = {
+        initial: { opacity: 0, y: -10, scale: 0.98 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -10, scale: 0.98 }
+    };
+
+    const animationProps = isMobile ? mobileStyles : desktopStyles;
+
     return (
         <AnimatePresence>
             {visible && (
                 <motion.div
-                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    initial={animationProps.initial}
+                    animate={animationProps.animate}
+                    exit={animationProps.exit}
                     transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1] }}
-                    className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90%]"
+                    className={
+                        isMobile
+                            ? "fixed bottom-24 left-4 right-4 z-[100]"
+                            : "fixed top-20 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[90%]"
+                    }
                 >
                     <div
                         className="rounded-2xl p-5 relative"
                         style={{
-                            background: 'linear-gradient(145deg, rgba(35, 35, 42, 0.98) 0%, rgba(25, 25, 32, 0.98) 100%)',
+                            background: 'var(--bg-secondary)',
                             backdropFilter: 'blur(40px) saturate(180%)',
                             WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                            boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04)'
+                            border: '1px solid var(--border-medium)',
+                            boxShadow: '0 20px 40px -12px rgba(0, 0, 0, 0.25)'
                         }}
                     >
                         <button
                             onClick={handleDismiss}
-                            className="absolute top-3 right-3 p-1.5 rounded-lg text-white/30 hover:text-white/60 hover:bg-white/5 transition-all"
+                            className="absolute top-3 right-3 p-1.5 rounded-lg transition-all"
+                            style={{ color: 'var(--text-muted)' }}
                         >
                             <X size={16} />
                         </button>
@@ -106,17 +134,23 @@ export const TabOnboarding: React.FC<TabOnboardingProps> = ({ activeTab }) => {
                             <div
                                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                                 style={{
-                                    background: 'linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
-                                    border: '1px solid rgba(34, 211, 238, 0.2)'
+                                    background: 'var(--accent-muted)',
+                                    border: '1px solid var(--accent-muted)'
                                 }}
                             >
                                 <span className="text-lg">✨</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h4 className="text-[15px] font-semibold text-white mb-1">
+                                <h4
+                                    className="text-[15px] font-semibold mb-1"
+                                    style={{ color: 'var(--text-primary)' }}
+                                >
                                     {currentTip.title}
                                 </h4>
-                                <p className="text-[13px] text-white/50 leading-relaxed">
+                                <p
+                                    className="text-[13px] leading-relaxed"
+                                    style={{ color: 'var(--text-secondary)' }}
+                                >
                                     {currentTip.description}
                                 </p>
                             </div>
@@ -125,7 +159,11 @@ export const TabOnboarding: React.FC<TabOnboardingProps> = ({ activeTab }) => {
                         <div className="mt-4 flex justify-end">
                             <button
                                 onClick={handleDismiss}
-                                className="px-4 py-2 rounded-lg text-[13px] font-medium text-white/60 hover:text-white hover:bg-white/5 transition-all"
+                                className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all"
+                                style={{
+                                    color: 'var(--text-secondary)',
+                                    background: 'var(--accent-muted)'
+                                }}
                             >
                                 Got it
                             </button>

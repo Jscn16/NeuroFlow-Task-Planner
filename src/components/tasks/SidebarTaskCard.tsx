@@ -220,6 +220,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
 
     return (
         <div
+            data-task-card
             draggable={!isEditing && !isMobileView}
             onDragStart={isMobileView ? undefined : handleDragStart}
             onDragEnd={isMobileView ? undefined : handleDragEnd}

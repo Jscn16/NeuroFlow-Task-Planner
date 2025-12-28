@@ -2,6 +2,7 @@ export interface Theme {
   id: string;
   name: string;
   description: string;
+  isLight?: boolean; // true for light themes, false/undefined for dark
   colors: {
     // Background colors
     bgPrimary: string;
@@ -117,6 +118,34 @@ export const themes: Theme[] = [
       mono: "'Manrope', monospace",
     },
   },
+  {
+    id: 'daylight',
+    name: 'Daylight',
+    description: 'Clean, bright light mode inspired by modern design',
+    isLight: true,
+    colors: {
+      bgPrimary: '#ffffff',
+      bgSecondary: '#f5f5f7',
+      bgTertiary: '#e8e8ed',
+      bgGlow: 'rgba(0, 122, 255, 0.08)',
+      textPrimary: 'rgba(0, 0, 0, 0.87)',
+      textSecondary: 'rgba(0, 0, 0, 0.55)',
+      textMuted: 'rgba(0, 0, 0, 0.35)',
+      accent: '#007aff',
+      accentGlow: 'rgba(0, 122, 255, 0.25)',
+      accentMuted: 'rgba(0, 122, 255, 0.08)',
+      borderLight: 'rgba(0, 0, 0, 0.06)',
+      borderMedium: 'rgba(0, 0, 0, 0.12)',
+      success: '#34c759',
+      warning: '#ff9500',
+      error: '#ff3b30',
+    },
+    fonts: {
+      sans: "'-apple-system', 'SF Pro Text', 'Lexend', system-ui, sans-serif",
+      display: "'-apple-system', 'SF Pro Display', 'Lexend', system-ui, sans-serif",
+      mono: "'SF Mono', 'Menlo', monospace",
+    },
+  },
 ];
 
 export const getThemeById = (id: string): Theme => {
@@ -152,7 +181,8 @@ export const applyTheme = (theme: Theme): void => {
   root.style.setProperty('--font-display', theme.fonts.display);
   root.style.setProperty('--font-mono', theme.fonts.mono);
 
-  // Set theme id as data attribute for potential CSS selectors
-  root.setAttribute('data-theme', theme.id);
+  // Set theme mode as data attribute for CSS selectors (light/dark)
+  root.setAttribute('data-theme', theme.isLight ? 'light' : 'dark');
+  root.setAttribute('data-theme-id', theme.id);
 };
 

@@ -13,6 +13,7 @@ create table if not exists public.tasks (
   status text default 'unscheduled',
   eisenhower_quad text,
   scheduled_date date,
+  deadline date,
   is_completed boolean default false,
   is_frozen boolean default false,
   completed_at timestamptz,

@@ -515,12 +515,11 @@ const App = () => {
             const controller = new AbortController();
             const timer = window.setTimeout(() => controller.abort(), 4000);
             // Use the REST API endpoint with a simple query to check connectivity
-            // The /rest/v1/ endpoint returns a list of tables when accessible
+            // Only use apikey header - the sb_publishable_ key is NOT a JWT and cannot be used as Bearer token
             const res = await fetch(`${supabaseUrl}/rest/v1/`, {
                 signal: controller.signal,
                 headers: {
-                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
-                    'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || ''}`
+                    'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || ''
                 }
             });
             window.clearTimeout(timer);

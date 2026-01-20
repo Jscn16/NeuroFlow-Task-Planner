@@ -30,6 +30,9 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { QuickAddModal } from './components/ui/QuickAddModal';
 import { KeyboardShortcutsHelp } from './components/ui/KeyboardShortcutsHelp';
 import { CommandPalette } from './components/ui/CommandPalette';
+import { VaultUnlockScreen } from './components/auth/VaultUnlockScreen';
+import { useEncryption } from './hooks/useEncryption';
+import { CryptoService } from './services/CryptoService';
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
 const HabitTracker = React.lazy(() => import('./components/features/tools/HabitTracker').then(module => ({ default: module.HabitTracker })));
@@ -55,7 +58,8 @@ const AppContent = ({
     onToggleSupabaseSync,
     isReturningUser = false,
     onOnboardingComplete,
-    onLogout
+    onLogout,
+    onEnableEncryption
 }: {
     userId?: string,
     initialHabitsState: Habit[],
@@ -67,7 +71,8 @@ const AppContent = ({
     onToggleSupabaseSync: (enabled: boolean) => void,
     isReturningUser?: boolean,
     onOnboardingComplete?: () => void,
-    onLogout?: () => void
+    onLogout?: () => void,
+    onEnableEncryption?: () => void
 }) => {
     // --- Context & Hooks ---
     const taskManager = useTaskContext();
@@ -77,7 +82,9 @@ const AppContent = ({
     // UI State for stats reset baseline
     const [statsResetAt, setStatsResetAt] = useState<number>(initialStatsResetAt);
 
-    const persistence = usePersistence(taskManager.tasks, habitManager.habits, brainDumpManager.lists, statsResetAt);
+    // Check if encryption is enabled for the encryptionEnabled prop
+    const encryptionEnabled = StorageService.getInstance().isEncryptionEnabled();
+    const persistence = usePersistence(taskManager.tasks, habitManager.habits, brainDumpManager.lists, statsResetAt, encryptionEnabled);
 
     // --- Responsive ---
     const isMobile = useIsMobile();
@@ -210,7 +217,7 @@ const AppContent = ({
         }
         const timer = setTimeout(() => {
             document.body.classList.add('loaded');
-        }, 1200); // Show splash for 1.2s for smooth transition (new users only)
+        }, 2500); // Show splash for 2.5s for smooth transition (new users only)
         return () => clearTimeout(timer);
     }, [userId]);
 
@@ -349,6 +356,7 @@ const AppContent = ({
                         isMobile={isMobile}
                         skipAutoFocus={isMobile && !firstGuideComplete}
                         dayViewMode={dayViewMode}
+                        onDayViewModeChange={handleDayViewModeChange}
                         selectedDate={currentDate}
                     />
                 }
@@ -493,6 +501,8 @@ const AppContent = ({
                     showSampleTasks={!sampleTasksAdded && !hasAnyTasks}
                     onResetTour={handleResetTour}
                     onLogout={onLogout}
+                    encryptionEnabled={encryptionEnabled}
+                    onEnableEncryption={onEnableEncryption}
                 />
             )}
 
@@ -541,7 +551,83 @@ const AppContent = ({
 
 const App = () => {
     const storage = StorageService.getInstance();
-    const localData = React.useMemo(() => storage.load(), []);
+
+    // --- Encryption State ---
+    const encryption = useEncryption();
+    const [encryptionSkipped, setEncryptionSkipped] = useState(false);
+    const [showVaultSetup, setShowVaultSetup] = useState(false);
+
+    // Check if we need to show vault unlock (existing encrypted data OR user wants to enable)
+    // Only show if encryption is enabled AND vault is locked AND user hasn't skipped
+    const needsVaultUnlock = (storage.isEncryptionEnabled() && !encryption.isUnlocked && !encryptionSkipped) || showVaultSetup;
+    const hasUnencryptedData = storage.hasUnencryptedData();
+
+    // Always load plaintext data as fallback
+    const plaintextData = React.useMemo(() => storage.load(), []);
+
+    const [encryptedDataLoaded, setEncryptedDataLoaded] = useState(false);
+    const [decryptedLocalData, setDecryptedLocalData] = useState<AppData | null>(null);
+
+    // Load encrypted data after vault unlock
+    useEffect(() => {
+        if (encryption.isUnlocked && storage.isEncryptionEnabled() && !encryptedDataLoaded) {
+            storage.loadEncrypted().then(data => {
+                setDecryptedLocalData(data);
+                setEncryptedDataLoaded(true);
+
+                // Self-healing: If we successfully loaded encrypted data, ensure any leftover plaintext is gone
+                // This fixes the "zombie data" issue where plaintext might persist after migration
+                if (storage.hasUnencryptedData()) {
+                    console.log('Cleanup: Removing leftover plaintext data after successful encrypted load');
+                    storage.clearPlaintextData();
+                }
+            }).catch(err => {
+                console.error('Failed to load encrypted data:', err);
+                setEncryptedDataLoaded(true);
+            });
+        }
+    }, [encryption.isUnlocked]);
+
+    // Migrate unencrypted data after vault setup
+    useEffect(() => {
+        if (encryption.isUnlocked && hasUnencryptedData) {
+            storage.migrateToEncrypted().then(success => {
+                if (success) {
+                    console.log('Data migrated to encrypted storage');
+                }
+            });
+        }
+    }, [encryption.isUnlocked, hasUnencryptedData]);
+
+    // Close vault setup screen after successful setup
+    useEffect(() => {
+        if (encryption.isUnlocked && showVaultSetup) {
+            setShowVaultSetup(false);
+        }
+    }, [encryption.isUnlocked, showVaultSetup]);
+
+    // Effective local data:
+    // - If encryption enabled AND vault unlocked -> use decrypted data
+    // - If encryption enabled BUT skipped/locked -> use NULL (empty view) - DO NOT fallback to plaintext
+    // - If encryption NOT enabled -> use plaintext
+    const effectiveLocalData = React.useMemo(() => {
+        // CRITICAL SECURITY: If vault exists (isVaultSetup), we are in Encrypted Mode.
+        // We must ignore the storage flag if it conflicts, to prevents "zombie" plaintext leaks.
+        const isEncryptedMode = encryption.isVaultSetup || storage.isEncryptionEnabled();
+
+        if (isEncryptedMode) {
+            if (encryption.isUnlocked) {
+                // Vault unlocked - use decrypted data
+                return decryptedLocalData;
+            } else {
+                // Vault exists/enabled but locked -> Return NULL (empty)
+                // DO NOT fallback to plaintextData, as that leaks the "zombie" data
+                return null;
+            }
+        }
+        // Only fallback to plaintext data if NO encryption is set up at all
+        return plaintextData;
+    }, [encryption.isUnlocked, encryption.isVaultSetup, decryptedLocalData, plaintextData]);
 
     // Check stored preference: null = first visit, false = chose local, true = chose sync
     const storedPref = React.useMemo(() => storage.loadSyncPreference(), []);
@@ -555,17 +641,31 @@ const App = () => {
     const [authTimeoutReached, setAuthTimeoutReached] = useState(false);
 
     const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth, signOut } = useSupabaseAuth();
-    const [initialTasksState, setInitialTasksState] = useState<Task[]>(localData?.tasks || []);
-    const [initialHabitsState, setInitialHabitsState] = useState<Habit[]>(localData?.habits?.map(h => ({ ...h, goal: h.goal || 7 })) || []);
+    const [initialTasksState, setInitialTasksState] = useState<Task[]>(effectiveLocalData?.tasks || []);
+    const [initialHabitsState, setInitialHabitsState] = useState<Habit[]>(effectiveLocalData?.habits?.map(h => ({ ...h, goal: h.goal || 7 })) || []);
     const [initialBrainDumpState, setInitialBrainDumpState] = useState<BrainDumpList[]>(
-        (localData?.brainDumpLists && localData.brainDumpLists.length > 0)
-            ? localData.brainDumpLists
-            : [{ id: generateId(), title: 'Main List', content: localData?.brainDumpContent || '' }]
+        (effectiveLocalData?.brainDumpLists && effectiveLocalData.brainDumpLists.length > 0)
+            ? effectiveLocalData.brainDumpLists
+            : [{ id: generateId(), title: 'Main List', content: effectiveLocalData?.brainDumpContent || '' }]
     );
     const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
     const [dataError, setDataError] = useState<string | null>(null);
     const [isReturningUser, setIsReturningUser] = useState<boolean>(false);
-    const hasLocalData = (localData?.tasks?.length || 0) > 0 || (localData?.habits?.length || 0) > 0 || (localData?.brainDumpLists?.length || 0) > 0;
+
+    // Sync state when effectiveLocalData changes (handles encryption skip/unlock)
+    useEffect(() => {
+        if (effectiveLocalData) {
+            setInitialTasksState(effectiveLocalData.tasks || []);
+            setInitialHabitsState(effectiveLocalData.habits?.map(h => ({ ...h, goal: h.goal || 7 })) || []);
+            setInitialBrainDumpState(
+                (effectiveLocalData.brainDumpLists && effectiveLocalData.brainDumpLists.length > 0)
+                    ? effectiveLocalData.brainDumpLists
+                    : [{ id: generateId(), title: 'Main List', content: '' }]
+            );
+        }
+    }, [effectiveLocalData]);
+
+    const hasLocalData = (effectiveLocalData?.tasks?.length || 0) > 0 || (effectiveLocalData?.habits?.length || 0) > 0 || (effectiveLocalData?.brainDumpLists?.length || 0) > 0;
     const withTimeout = useCallback(async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
         return Promise.race<T>([
             promise,
@@ -680,6 +780,14 @@ const App = () => {
             // Allow auth fallback effect to handle switching modes
             return;
         }
+
+        // Security: If vault is locked, DO NOT fetch data from Supabase.
+        // This prevents loading encrypted data into the initial state.
+        if (encryption.isVaultSetup && !encryption.isUnlocked) {
+            setIsDataLoading(false);
+            return;
+        }
+
         let active = true;
         const load = async () => {
             setIsDataLoading(true);
@@ -820,7 +928,6 @@ const App = () => {
         }
     }, [user, useSupabaseSync]);
 
-    // Handle logout: sign out and switch to local mode
     const handleLogout = useCallback(async () => {
         await signOut();
         setUseSupabaseSync(false);
@@ -828,7 +935,40 @@ const App = () => {
         setIsReturningUser(false);
     }, [signOut, storage]);
 
+    // Handle enabling encryption - shows vault setup screen
+    const handleEnableEncryption = useCallback(() => {
+        // Show the vault setup screen
+        setShowVaultSetup(true);
+        setEncryptionSkipped(false);
+    }, []);
+
     // HTML loader handles the splash screen - no React SplashScreen needed
+
+    // --- Vault Unlock Gate ---
+    // Show vault unlock screen if encryption is enabled but vault is locked
+    if (needsVaultUnlock) {
+        return (
+            <VaultUnlockScreen
+                isVaultSetup={encryption.isVaultSetup}
+                isLoading={encryption.isLoading}
+                error={encryption.error}
+                onSetup={encryption.setupVault}
+                onUnlock={encryption.unlock}
+                onReset={() => {
+                    encryption.resetVault();
+                    storage.clearEncryptedData();
+                    setShowVaultSetup(false);
+                }}
+                onSkip={() => {
+                    setEncryptionSkipped(true);
+                    setShowVaultSetup(false);
+                }}
+            />
+        );
+    }
+
+    // Show vault setup screen for first-time users who want encryption
+    // (This is optional - encryption is opt-in via settings for now)
 
     if (useSupabaseSync) {
         // Always surface the auth overlay when sync is requested and there is no session,
@@ -859,20 +999,27 @@ const App = () => {
             return <LoadingScreen message="Loading your workspace from Supabase..." />;
         }
 
+        // Security: If encryption is enabled but the vault is locked/skipped, disable Supabase sync
+        // This prevents the app from downloading plaintext data from the cloud into the local view.
+        // User must unlock the vault to sync securely.
+        const isVaultLocked = encryption.isVaultSetup && !encryption.isUnlocked;
+        const safeSupabaseEnabled = isVaultLocked ? false : true;
+
         return (
-            <TaskProvider initialTasks={initialTasksState} userId={user.id} supabaseEnabled={true}>
+            <TaskProvider initialTasks={initialTasksState} userId={user.id} supabaseEnabled={safeSupabaseEnabled}>
                 <AppContent
                     userId={user.id}
                     initialHabitsState={initialHabitsState}
                     initialBrainDump={initialBrainDumpState}
-                    initialStatsResetAt={localData?.statsResetAt || 0}
+                    initialStatsResetAt={effectiveLocalData?.statsResetAt || 0}
                     onDataImported={handleDataImported}
                     onDeleteAllTasks={handleDeleteAllTasks}
-                    supabaseEnabled={true}
+                    supabaseEnabled={safeSupabaseEnabled}
                     onToggleSupabaseSync={handleToggleSupabaseSync}
                     isReturningUser={isReturningUser}
                     onOnboardingComplete={handleOnboardingComplete}
                     onLogout={handleLogout}
+                    onEnableEncryption={handleEnableEncryption}
                 />
             </TaskProvider>
         );
@@ -884,11 +1031,12 @@ const App = () => {
             <AppContent
                 initialHabitsState={initialHabitsState}
                 initialBrainDump={initialBrainDumpState}
-                initialStatsResetAt={localData?.statsResetAt || 0}
+                initialStatsResetAt={effectiveLocalData?.statsResetAt || 0}
                 onDataImported={handleDataImported}
                 onDeleteAllTasks={handleDeleteAllTasks}
                 supabaseEnabled={false}
                 onToggleSupabaseSync={handleToggleSupabaseSync}
+                onEnableEncryption={handleEnableEncryption}
             />
         </TaskProvider>
     );

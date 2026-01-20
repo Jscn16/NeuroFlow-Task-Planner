@@ -64,8 +64,8 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                     >
                         {/* Row Label - Tooltip only on icon hover */}
                         <div
-                            className="w-20 shrink-0 flex flex-col items-center justify-center relative py-3 border-r cursor-default"
-                            style={{ borderColor: 'var(--border-light)' }}
+                            className="shrink-0 flex flex-col items-center justify-center relative py-3 border-r cursor-default"
+                            style={{ borderColor: 'var(--border-light)', width: 'var(--row-label-width, 80px)' }}
                         >
                             <div
                                 className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${style.barColor} transition-all duration-300`}

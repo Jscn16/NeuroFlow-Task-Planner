@@ -1,4 +1,5 @@
 import { AppData } from '../types';
+import { CryptoService, EncryptedPayload } from './CryptoService';
 
 export class StorageService {
     private static instance: StorageService;
@@ -6,6 +7,8 @@ export class StorageService {
     private readonly THEME_KEY = 'neuroflow-theme';
     private readonly SYNC_PREF_KEY = 'neuroflow-sync-enabled';
     private readonly DAY_VIEW_KEY = 'neuroflow-day-view-mode';
+    private readonly ENCRYPTED_DATA_KEY = 'neuroflow-encrypted-data';
+    private readonly ENCRYPTION_ENABLED_KEY = 'neuroflow-encryption-enabled';
 
     private constructor() { }
 
@@ -39,6 +42,113 @@ export class StorageService {
             console.error('Failed to load from localStorage:', error);
         }
         return null;
+    }
+
+    /**
+     * Check if encryption is enabled for this user
+     */
+    isEncryptionEnabled(): boolean {
+        return localStorage.getItem(this.ENCRYPTION_ENABLED_KEY) === 'true';
+    }
+
+    /**
+     * Enable encryption mode
+     */
+    enableEncryption(): void {
+        localStorage.setItem(this.ENCRYPTION_ENABLED_KEY, 'true');
+    }
+
+    /**
+     * Check if there's existing unencrypted data that needs migration
+     */
+    hasUnencryptedData(): boolean {
+        const plainData = localStorage.getItem(this.STORAGE_KEY);
+        return !!plainData && !this.isEncryptionEnabled();
+    }
+
+    /**
+     * Save encrypted data blob
+     */
+    async saveEncrypted(data: AppData): Promise<void> {
+        try {
+            const crypto = CryptoService.getInstance();
+            if (!crypto.getIsUnlocked()) {
+                throw new Error('Vault is locked');
+            }
+            const encrypted = await crypto.encryptData(data);
+            localStorage.setItem(this.ENCRYPTED_DATA_KEY, JSON.stringify(encrypted));
+            // Self-healing: Ensure the encryption flag is set
+            if (localStorage.getItem(this.ENCRYPTION_ENABLED_KEY) !== 'true') {
+                localStorage.setItem(this.ENCRYPTION_ENABLED_KEY, 'true');
+            }
+        } catch (error) {
+            console.error('Failed to save encrypted data:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Load and decrypt data
+     */
+    async loadEncrypted(): Promise<AppData | null> {
+        try {
+            const crypto = CryptoService.getInstance();
+            if (!crypto.getIsUnlocked()) {
+                throw new Error('Vault is locked');
+            }
+            const encryptedJson = localStorage.getItem(this.ENCRYPTED_DATA_KEY);
+            if (!encryptedJson) {
+                return null;
+            }
+            const encrypted: EncryptedPayload = JSON.parse(encryptedJson);
+            const data = await crypto.decryptJSON<AppData>(encrypted);
+            return data;
+        } catch (error) {
+            console.error('Failed to load encrypted data:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Migrate existing plaintext data to encrypted format
+     */
+    async migrateToEncrypted(): Promise<boolean> {
+        try {
+            const plainData = this.load();
+            if (!plainData) {
+                return true; // Nothing to migrate
+            }
+
+            // Save as encrypted
+            await this.saveEncrypted(plainData);
+
+            // Mark encryption as enabled
+            this.enableEncryption();
+
+            // Clear plaintext data
+            localStorage.removeItem(this.STORAGE_KEY);
+
+            console.log('Successfully migrated data to encrypted storage');
+            return true;
+        } catch (error) {
+            console.error('Failed to migrate to encrypted storage:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Clear all encrypted data (for vault reset)
+     */
+    clearEncryptedData(): void {
+        localStorage.removeItem(this.ENCRYPTED_DATA_KEY);
+        localStorage.removeItem(this.ENCRYPTION_ENABLED_KEY);
+    }
+
+    /**
+     * Clear plaintext data (after successful migration)
+     */
+    clearPlaintextData(): void {
+        localStorage.removeItem(this.STORAGE_KEY);
     }
 
     saveTheme(themeId: string): void {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Settings, PanelLeftClose, Check, X, Snowflake, Clock, Calendar, ChevronDown, GripVertical } from 'lucide-react';
+import { Plus, Settings, PanelLeftClose, Check, X, Snowflake, Clock, Calendar, ChevronDown, GripVertical, List } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Task, TaskType, GridRow } from '../../types';
 import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
@@ -20,11 +20,9 @@ interface SidebarProps {
     isMobile: boolean;
     skipAutoFocus?: boolean; // Skip auto-focus for onboarding
     dayViewMode?: 'list' | 'timeline'; // Current view mode
+    onDayViewModeChange?: (mode: 'list' | 'timeline') => void; // Toggle view mode
     selectedDate?: Date; // Currently selected date in timeline view
 }
-
-// 6 buttons for even grid
-const QUICK_DURATIONS = [15, 30, 45, 60, 90, 120];
 
 export const Sidebar: React.FC<SidebarProps> = ({
     onOpenSettings,
@@ -34,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     isMobile,
     skipAutoFocus = false,
     dayViewMode = 'list',
+    onDayViewModeChange,
     selectedDate
 }) => {
     const {
@@ -261,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const sidebarContent = (
-        <div className="w-full max-w-[320px] h-full flex flex-col">
+        <div className="w-full h-full flex flex-col">
             {/* Logo */}
             <div className="p-4 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -297,6 +296,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             title="Collapse Sidebar"
                         >
                             <PanelLeftClose size={18} />
+                        </button>
+                    )}
+                    {onDayViewModeChange && (
+                        <button
+                            onClick={() => onDayViewModeChange(dayViewMode === 'list' ? 'timeline' : 'list')}
+                            className="p-2.5 rounded-xl transition-colors"
+                            style={{ color: 'var(--text-muted)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                            title={dayViewMode === 'list' ? "Switch to Timeline View" : "Switch to List View"}
+                        >
+                            {dayViewMode === 'list' ? <Clock size={18} /> : <List size={18} />}
                         </button>
                     )}
                     <button
@@ -561,10 +572,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         );
     }
 
+    // Get computed CSS variable value for animation
+    const sidebarWidth = typeof window !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim() || '320px'
+        : '320px';
+
     return (
         <motion.div
-            initial={{ width: 320 }}
-            animate={{ width: isOpen ? 320 : 0 }}
+            initial={{ width: sidebarWidth }}
+            animate={{ width: isOpen ? sidebarWidth : 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="h-full flex flex-col border-r relative z-20 overflow-hidden"
             style={{

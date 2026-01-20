@@ -212,42 +212,11 @@ export const WeekView: React.FC<WeekViewProps> = React.memo(({
       data-tour="week-view"
     >
       <div className="flex-grow flex flex-col px-4 pb-4 overflow-hidden relative">
-        {/* View Mode Toggle (top right) */}
-        <div className="absolute top-2 right-0 z-10 flex items-center gap-2">
-          <div
-            className="flex rounded-lg overflow-hidden"
-            style={{ backgroundColor: 'var(--bg-tertiary)' }}
-          >
-            <button
-              onClick={() => onDayViewModeChange('list')}
-              className="p-2 transition-all"
-              style={{
-                backgroundColor: dayViewMode === 'list' ? 'var(--accent)' : 'transparent',
-                color: dayViewMode === 'list' ? 'white' : 'var(--text-muted)'
-              }}
-              aria-label="List view"
-              title="Week Grid View"
-            >
-              <List size={16} />
-            </button>
-            <button
-              onClick={() => onDayViewModeChange('timeline')}
-              className="p-2 transition-all"
-              style={{
-                backgroundColor: dayViewMode === 'timeline' ? 'var(--accent)' : 'transparent',
-                color: dayViewMode === 'timeline' ? 'white' : 'var(--text-muted)'
-              }}
-              aria-label="Timeline view"
-              title="Day Timeline View"
-            >
-              <Clock size={16} />
-            </button>
-          </div>
-        </div>
 
         {/* Days Header Row - clickable in timeline mode */}
         <div
-          className={`flex ${isStacked ? 'pl-0' : 'pl-20'} pb-0 shrink-0 transition-all duration-300 pt-1 gap-2`}
+          className={`flex pb-0 shrink-0 transition-all duration-300 pt-1 gap-2`}
+          style={{ paddingLeft: isStacked ? 0 : 'var(--row-label-width, 80px)' }}
         >
           {currentWeekDays.map((day, i) => {
             const stats = dailyStats[i];

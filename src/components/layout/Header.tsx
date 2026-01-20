@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
             }}
         >
             {/* LEFT: Overview & Date */}
-            <div className="flex items-center gap-4 pointer-events-auto min-w-[200px]">
+            <div className="flex items-center gap-2 lg:gap-4 pointer-events-auto min-w-0 shrink">
                 {!isSidebarOpen && (
                     <button
                         onClick={onToggleSidebar}
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             {/* RIGHT: Week Navigation & Late Night Badge */}
             <div className="pointer-events-auto flex items-center gap-3">
                 <div
-                    className="flex items-center gap-1 rounded-xl p-1 border shadow-inner backdrop-blur-md min-w-[120px] justify-center"
+                    className="flex items-center gap-1 rounded-xl p-1 border shadow-inner backdrop-blur-md justify-center shrink-0"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 70%, transparent)',
                         borderColor: 'var(--border-medium)'

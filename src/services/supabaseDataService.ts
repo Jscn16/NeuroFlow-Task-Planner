@@ -1,7 +1,56 @@
 import { supabase } from '../lib/supabase';
 import { Task, TaskStatus, TaskType, GridRow, Habit, BrainDumpList } from '../types';
 import { generateId } from '../utils/id';
+import { CryptoService } from './CryptoService';
 
+// Encryption marker prefix to identify encrypted strings
+const ENCRYPTED_PREFIX = 'ENC:';
+
+/**
+ * Encrypt a string field if encryption is enabled and vault is unlocked
+ * Returns the original string if encryption is not available
+ */
+const encryptField = async (value: string): Promise<string> => {
+    const crypto = CryptoService.getInstance();
+    if (!crypto.getIsUnlocked()) {
+        return value; // Return plaintext if vault is locked
+    }
+    try {
+        const encrypted = await crypto.encryptData(value);
+        return ENCRYPTED_PREFIX + JSON.stringify(encrypted);
+    } catch (error) {
+        console.error('Failed to encrypt field, storing as plaintext:', error);
+        return value;
+    }
+};
+
+/**
+ * Decrypt a string field if it's encrypted
+ * Returns the original string if not encrypted or decryption fails
+ */
+const decryptField = async (value: string | null): Promise<string> => {
+    if (!value) return '';
+
+    // Check if the value is encrypted
+    if (!value.startsWith(ENCRYPTED_PREFIX)) {
+        return value; // Return as-is if not encrypted
+    }
+
+    const crypto = CryptoService.getInstance();
+    if (!crypto.getIsUnlocked()) {
+        console.warn('Cannot decrypt field - vault is locked');
+        return '[Encrypted - Unlock vault to view]';
+    }
+
+    try {
+        const encryptedJson = value.slice(ENCRYPTED_PREFIX.length);
+        const encrypted = JSON.parse(encryptedJson);
+        return await crypto.decryptData(encrypted);
+    } catch (error) {
+        console.error('Failed to decrypt field:', error);
+        return '[Decryption failed]';
+    }
+};
 export interface DbTaskRow {
     id: string;
     user_id: string;
@@ -76,71 +125,91 @@ const getCompletionStatus = (row: DbTaskRow): TaskStatus => {
     return 'unscheduled';
 };
 
-export const mapTaskFromDb = (row: DbTaskRow): Task => ({
-    id: row.id,
-    title: row.title,
-    duration: row.duration ?? 0,
-    type: (row.priority as TaskType) ?? 'medium',
-    status: getCompletionStatus(row),
-    dueDate: row.scheduled_date,
-    scheduledTime: row.scheduled_time ?? undefined,
-    deadline: row.deadline ?? null,
-    assignedRow: (row.category as GridRow) ?? null,
-    eisenhowerQuad: (row.eisenhower_quad as Task['eisenhowerQuad']) ?? null,
-    createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
-    isFrozen: row.is_frozen ?? false,
-    sortOrder: row.sort_order ?? 0,
-    completedAt: row.completed_at ? new Date(row.completed_at).getTime() : undefined
-});
+export const mapTaskFromDb = async (row: DbTaskRow): Promise<Task> => {
+    const title = await decryptField(row.title);
+    return {
+        id: row.id,
+        title,
+        duration: row.duration ?? 0,
+        type: (row.priority as TaskType) ?? 'medium',
+        status: getCompletionStatus(row),
+        dueDate: row.scheduled_date,
+        scheduledTime: row.scheduled_time ?? undefined,
+        deadline: row.deadline ?? null,
+        assignedRow: (row.category as GridRow) ?? null,
+        eisenhowerQuad: (row.eisenhower_quad as Task['eisenhowerQuad']) ?? null,
+        createdAt: row.created_at ? new Date(row.created_at).getTime() : Date.now(),
+        isFrozen: row.is_frozen ?? false,
+        sortOrder: row.sort_order ?? 0,
+        completedAt: row.completed_at ? new Date(row.completed_at).getTime() : undefined
+    };
+};
 
-const mapTaskToDb = (task: Task, userId: string): Omit<DbTaskRow, 'user_id' | 'id'> & { user_id: string; id: string } => ({
-    id: migrateId(task.id),
-    user_id: userId,
-    title: task.title,
-    duration: task.duration,
-    priority: task.type,
-    category: task.assignedRow,
-    status: task.status,
-    scheduled_date: task.dueDate,
-    scheduled_time: task.scheduledTime ?? null,
-    deadline: task.deadline ?? null,
-    eisenhower_quad: task.eisenhowerQuad,
-    is_completed: task.status === 'completed',
-    is_frozen: task.isFrozen ?? false,
-    sort_order: task.sortOrder ?? 0,
-    created_at: new Date(task.createdAt || Date.now()).toISOString(),
-    completed_at: task.completedAt ? new Date(task.completedAt).toISOString() : (task.status === 'completed' ? new Date().toISOString() : null)
-});
+const mapTaskToDb = async (task: Task, userId: string): Promise<Omit<DbTaskRow, 'user_id' | 'id'> & { user_id: string; id: string }> => {
+    const encryptedTitle = await encryptField(task.title);
+    return {
+        id: migrateId(task.id),
+        user_id: userId,
+        title: encryptedTitle,
+        duration: task.duration,
+        priority: task.type,
+        category: task.assignedRow,
+        status: task.status,
+        scheduled_date: task.dueDate,
+        scheduled_time: task.scheduledTime ?? null,
+        deadline: task.deadline ?? null,
+        eisenhower_quad: task.eisenhowerQuad,
+        is_completed: task.status === 'completed',
+        is_frozen: task.isFrozen ?? false,
+        sort_order: task.sortOrder ?? 0,
+        created_at: new Date(task.createdAt || Date.now()).toISOString(),
+        completed_at: task.completedAt ? new Date(task.completedAt).toISOString() : (task.status === 'completed' ? new Date().toISOString() : null)
+    };
+};
 
-const mapHabitFromDb = (row: DbHabitRow): Habit => ({
-    id: row.id,
-    name: row.name,
-    goal: row.goal ?? 7,
-    checks: Array.isArray(row.daily_history) ? row.daily_history : Array(7).fill(false)
-});
+const mapHabitFromDb = async (row: DbHabitRow): Promise<Habit> => {
+    const name = await decryptField(row.name);
+    return {
+        id: row.id,
+        name,
+        goal: row.goal ?? 7,
+        checks: Array.isArray(row.daily_history) ? row.daily_history : Array(7).fill(false)
+    };
+};
 
-const mapHabitToDb = (habit: Habit, userId: string): Omit<DbHabitRow, 'id' | 'user_id'> & { id: string; user_id: string } => ({
-    id: migrateId(habit.id),
-    user_id: userId,
-    name: habit.name,
-    goal: habit.goal,
-    daily_history: habit.checks
-});
+const mapHabitToDb = async (habit: Habit, userId: string): Promise<Omit<DbHabitRow, 'id' | 'user_id'> & { id: string; user_id: string }> => {
+    const encryptedName = await encryptField(habit.name);
+    return {
+        id: migrateId(habit.id),
+        user_id: userId,
+        name: encryptedName,
+        goal: habit.goal,
+        daily_history: habit.checks
+    };
+};
 
-const mapNoteFromDb = (row: DbNoteRow): BrainDumpList => ({
-    id: row.id,
-    title: row.title || 'Untitled',
-    content: row.content || '',
-    lastEdited: row.updated_at ? new Date(row.updated_at).getTime() : undefined
-});
+const mapNoteFromDb = async (row: DbNoteRow): Promise<BrainDumpList> => {
+    const title = await decryptField(row.title);
+    const content = await decryptField(row.content);
+    return {
+        id: row.id,
+        title: title || 'Untitled',
+        content: content || '',
+        lastEdited: row.updated_at ? new Date(row.updated_at).getTime() : undefined
+    };
+};
 
-const mapNoteToDb = (list: BrainDumpList, userId: string): Omit<DbNoteRow, 'id' | 'user_id'> & { id: string; user_id: string } => ({
-    id: migrateId(list.id),
-    user_id: userId,
-    title: list.title,
-    content: list.content,
-    updated_at: list.lastEdited ? new Date(list.lastEdited).toISOString() : new Date().toISOString()
-});
+const mapNoteToDb = async (list: BrainDumpList, userId: string): Promise<Omit<DbNoteRow, 'id' | 'user_id'> & { id: string; user_id: string }> => {
+    const encryptedTitle = await encryptField(list.title);
+    const encryptedContent = await encryptField(list.content);
+    return {
+        id: migrateId(list.id),
+        user_id: userId,
+        title: encryptedTitle,
+        content: encryptedContent,
+        updated_at: list.lastEdited ? new Date(list.lastEdited).toISOString() : new Date().toISOString()
+    };
+};
 
 export const SupabaseDataService = {
     async fetchTasks(userId: string): Promise<Task[]> {
@@ -156,13 +225,13 @@ export const SupabaseDataService = {
             console.error('Failed to load tasks from Supabase', error);
             return [];
         }
-        return (data || []).map(mapTaskFromDb);
+        return Promise.all((data || []).map(mapTaskFromDb));
     },
 
     async upsertTasks(userId: string, tasks: Task[]): Promise<void> {
         if (!supabase) throw new Error('Supabase unavailable');
         if (!tasks.length) return;
-        const payload = tasks.map(t => mapTaskToDb(t, userId));
+        const payload = await Promise.all(tasks.map(t => mapTaskToDb(t, userId)));
         const { error } = await supabase.from('tasks').upsert(payload);
         if (error) {
             console.error('Failed to upsert tasks', error);
@@ -199,12 +268,12 @@ export const SupabaseDataService = {
             console.error('Failed to load habits', error);
             return [];
         }
-        return (data || []).map(mapHabitFromDb);
+        return Promise.all((data || []).map(mapHabitFromDb));
     },
 
     async upsertHabit(userId: string, habit: Habit): Promise<void> {
         if (!supabase) throw new Error('Supabase unavailable');
-        const payload = mapHabitToDb(habit, userId);
+        const payload = await mapHabitToDb(habit, userId);
         const { error } = await supabase.from('habits').upsert(payload);
         if (error) {
             console.error('Failed to upsert habit', error);
@@ -226,7 +295,7 @@ export const SupabaseDataService = {
             console.error('Failed to clear habits before import', error);
         }
         if (habits.length) {
-            const payload = habits.map(h => mapHabitToDb(h, userId));
+            const payload = await Promise.all(habits.map(h => mapHabitToDb(h, userId)));
             const { error: insertError } = await supabase.from('habits').upsert(payload);
             if (insertError) {
                 console.error('Failed to import habits', insertError);
@@ -245,12 +314,12 @@ export const SupabaseDataService = {
             console.error('Failed to load notes', error);
             return [];
         }
-        return (data || []).map(mapNoteFromDb);
+        return Promise.all((data || []).map(mapNoteFromDb));
     },
 
     async upsertNote(userId: string, list: BrainDumpList): Promise<void> {
         if (!supabase) throw new Error('Supabase unavailable');
-        const payload = mapNoteToDb(list, userId);
+        const payload = await mapNoteToDb(list, userId);
         const { error } = await supabase.from('notes').upsert(payload);
         if (error) {
             console.error('Failed to upsert note', error);
@@ -272,7 +341,7 @@ export const SupabaseDataService = {
             console.error('Failed to clear notes before import', error);
         }
         if (notes.length) {
-            const payload = notes.map(n => mapNoteToDb(n, userId));
+            const payload = await Promise.all(notes.map(n => mapNoteToDb(n, userId)));
             const { error: insertError } = await supabase.from('notes').upsert(payload);
             if (insertError) {
                 console.error('Failed to import notes', insertError);

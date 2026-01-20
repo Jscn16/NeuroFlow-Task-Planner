@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, Palette, Moon, Download, Upload, Cloud, CloudOff, HelpCircle, AlertTriangle, Trash2, RotateCcw, Snowflake, Eye, EyeOff } from 'lucide-react';
+import { X, ChevronDown, Palette, Moon, Download, Upload, Cloud, CloudOff, HelpCircle, AlertTriangle, Trash2, RotateCcw, Eye, EyeOff, List, Clock, LogOut, BarChart3 } from 'lucide-react';
 import { themes } from '../../themes';
 import { modal } from '../../utils/animations';
-import { FrostOverlay } from '../ui/FrostOverlay';
-import { useIceSound } from '../../hooks/useIceSound';
 import { getDayBoundaryHour, setDayBoundaryHour } from '../../constants';
 
 interface SettingsModalProps {
@@ -14,16 +12,20 @@ interface SettingsModalProps {
     onDeleteAllTasks?: () => void;
     onFreezeOverloaded?: () => void;
     onClearRescheduled?: () => void;
+    onResetStats?: () => void;
     currentThemeId: string;
     onThemeChange: (themeId: string) => void;
     viewMode?: 'show' | 'fade' | 'hide';
     onViewModeChange?: (mode: 'show' | 'fade' | 'hide') => void;
+    dayViewMode?: 'list' | 'timeline';
+    onDayViewModeChange?: (mode: 'list' | 'timeline') => void;
     supabaseEnabled: boolean;
     onToggleSupabase: (enabled: boolean) => void;
     onAddSampleTasks?: () => void;
     sampleTasksAdded?: boolean;
     showSampleTasks?: boolean;
     onResetTour?: () => void;
+    onLogout?: () => void;
 }
 
 // Collapsible Section Component
@@ -93,24 +95,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onThemeChange,
     viewMode = 'fade',
     onViewModeChange,
+    dayViewMode = 'list',
+    onDayViewModeChange,
     supabaseEnabled,
     onToggleSupabase,
-    onResetTour
+    onResetTour,
+    onLogout
 }) => {
-    const [freezing, setFreezing] = useState(false);
     const [dayBoundary, setDayBoundaryState] = useState(getDayBoundaryHour);
-    const { play } = useIceSound();
-
-    const handleDoomLoop = () => {
-        if (!onFreezeOverloaded) return;
-        const confirmed = window.confirm('Freeze everything and start fresh? This will move overdue tasks to the Icebox.');
-        if (!confirmed) return;
-
-        play();
-        setFreezing(true);
-        setTimeout(() => onFreezeOverloaded(), 500);
-        setTimeout(() => setFreezing(false), 1500);
-    };
 
     const handleDeleteAll = () => {
         const input = window.prompt('Type SURE to delete ALL data. This cannot be undone.', '');
@@ -208,6 +200,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </div>
                                 </div>
                             )}
+
+                            {/* Day View Mode Toggle */}
+                            {onDayViewModeChange && (
+                                <div className="flex items-center justify-between pt-2 mt-2" style={{ borderTop: '1px solid var(--border-light)' }}>
+                                    <div className="flex items-center gap-2">
+                                        {dayViewMode === 'timeline' ? <Clock size={14} style={{ color: 'var(--text-muted)' }} /> : <List size={14} style={{ color: 'var(--text-muted)' }} />}
+                                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Day view style</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button
+                                            onClick={() => onDayViewModeChange('list')}
+                                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex items-center gap-1"
+                                            style={{
+                                                backgroundColor: dayViewMode === 'list' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                                                color: dayViewMode === 'list' ? 'white' : 'var(--text-muted)'
+                                            }}
+                                        >
+                                            <List size={10} />
+                                            List
+                                        </button>
+                                        <button
+                                            onClick={() => onDayViewModeChange('timeline')}
+                                            className="px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all flex items-center gap-1"
+                                            style={{
+                                                backgroundColor: dayViewMode === 'timeline' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+                                                color: dayViewMode === 'timeline' ? 'white' : 'var(--text-muted)'
+                                            }}
+                                        >
+                                            <Clock size={10} />
+                                            Timeline
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </Section>
 
                         {/* Day Boundary Section */}
@@ -238,8 +264,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             </div>
                         </Section>
 
-                        {/* Data & Sync Section */}
-                        <Section title="Data & Sync" icon={Cloud} defaultOpen={false}>
+                        {/* Data & Sync Section - open by default when logged in */}
+                        <Section title="Data & Sync" icon={Cloud} defaultOpen={supabaseEnabled}>
                             {/* Sync Toggle */}
                             <button
                                 onClick={() => onToggleSupabase(!supabaseEnabled)}
@@ -291,6 +317,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     <input type="file" accept=".json" onChange={onImport} className="hidden" />
                                 </label>
                             </div>
+
+                            {/* Logout Button - only show when logged in with cloud sync */}
+                            {supabaseEnabled && onLogout && (
+                                <button
+                                    onClick={() => {
+                                        if (window.confirm('Sign out of your account? Your data will stay synced.')) {
+                                            onLogout();
+                                            onClose();
+                                        }
+                                    }}
+                                    className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border transition-all hover:bg-rose-500/10"
+                                    style={{ borderColor: 'var(--border-light)' }}
+                                >
+                                    <LogOut size={16} className="text-rose-400" />
+                                    <span className="text-sm text-rose-400">Sign Out</span>
+                                </button>
+                            )}
                         </Section>
 
                         {/* Help Section */}
@@ -328,17 +371,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                                     </button>
                                 )}
 
-                                {onFreezeOverloaded && (
-                                    <button
-                                        onClick={handleDoomLoop}
-                                        className="w-full flex items-center gap-3 p-3 rounded-xl transition-all hover:bg-rose-500/10"
-                                        style={{ border: '1px solid rgba(239,68,68,0.2)' }}
-                                    >
-                                        <Snowflake size={16} className="text-rose-400" />
-                                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Freeze Overdue Tasks</span>
-                                    </button>
-                                )}
-
                                 {onDeleteAllTasks && (
                                     <button
                                         onClick={handleDeleteAll}
@@ -359,8 +391,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             NeuroFlow v1.3
                         </span>
                     </div>
-
-                    <FrostOverlay isVisible={freezing} />
                 </motion.div>
             </div>
         </AnimatePresence>

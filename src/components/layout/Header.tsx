@@ -8,6 +8,7 @@ interface HeaderProps {
     setActiveTab: (tab: string) => void;
     currentDate: Date;
     onWeekChange: (direction: 'prev' | 'next') => void;
+    onJumpToCurrentWeek?: () => void;
     isStacked: boolean;
     setIsStacked: (stacked: boolean) => void;
     isSidebarOpen: boolean;
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
     setActiveTab,
     currentDate,
     onWeekChange,
+    onJumpToCurrentWeek,
     isStacked,
     setIsStacked,
     isSidebarOpen,
@@ -139,7 +141,12 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                         <ChevronLeft size={14} />
                     </button>
-                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>Week</div>
+                    <button
+                        onClick={onJumpToCurrentWeek}
+                        className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-white/[0.05] rounded-md transition-colors cursor-pointer"
+                        style={{ color: 'var(--text-secondary)' }}
+                        title="Jump to current week"
+                    >Week</button>
                     <button
                         onClick={() => onWeekChange('next')}
                         className="px-3 py-1.5 hover:bg-white/[0.05] rounded-lg transition-colors flex items-center justify-center"

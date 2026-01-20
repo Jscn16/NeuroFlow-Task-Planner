@@ -51,7 +51,10 @@ const AppContent = ({
     onDataImported,
     onDeleteAllTasks,
     supabaseEnabled,
-    onToggleSupabaseSync
+    onToggleSupabaseSync,
+    isReturningUser = false,
+    onOnboardingComplete,
+    onLogout
 }: {
     userId?: string,
     initialHabitsState: Habit[],
@@ -59,7 +62,10 @@ const AppContent = ({
     onDataImported: (data: AppData) => void,
     onDeleteAllTasks: () => Promise<void>,
     supabaseEnabled: boolean,
-    onToggleSupabaseSync: (enabled: boolean) => void
+    onToggleSupabaseSync: (enabled: boolean) => void,
+    isReturningUser?: boolean,
+    onOnboardingComplete?: () => void,
+    onLogout?: () => void
 }) => {
     // --- Context & Hooks ---
     const taskManager = useTaskContext();
@@ -78,6 +84,9 @@ const AppContent = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
+    const [dayViewMode, setDayViewMode] = useState<'list' | 'timeline'>(() => {
+        return StorageService.getInstance().loadDayViewMode();
+    });
     // activeTaskId moved to FocusMode
     const today = getAdjustedDate();
     const [sampleTasksAdded, setSampleTasksAdded] = useState(false);
@@ -90,10 +99,10 @@ const AppContent = ({
     const [showCommandPalette, setShowCommandPalette] = useState(false);
 
     // --- Onboarding Tour ---
-    // Don't show tour for returning (logged-in) users - they obviously know the app
+    // Don't show tour for returning users (those who completed onboarding before)
     const [showTour, setShowTour] = useState(() => {
-        // If user is logged in with Supabase, skip tour entirely
-        if (userId) return false;
+        // Skip tour entirely for returning logged-in users
+        if (isReturningUser) return false;
         try {
             return localStorage.getItem('neuroflow_tour_completed') !== 'true';
         } catch {
@@ -103,6 +112,8 @@ const AppContent = ({
 
     // Track first task guide completion for proper onboarding order
     const [firstGuideComplete, setFirstGuideComplete] = useState(() => {
+        // Skip for returning users
+        if (isReturningUser) return true;
         try {
             return localStorage.getItem('neuroflow_first_task_guide_completed') === 'true';
         } catch {
@@ -115,7 +126,9 @@ const AppContent = ({
             localStorage.setItem('neuroflow_tour_completed', 'true');
         } catch { }
         setShowTour(false);
-    }, []);
+        // Persist onboarding completion to Supabase for cross-device sync
+        onOnboardingComplete?.();
+    }, [onOnboardingComplete]);
 
     const handleResetTour = useCallback(() => {
         try {
@@ -186,6 +199,15 @@ const AppContent = ({
         const newDate = new Date(currentDate);
         newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
         setCurrentDate(newDate);
+    };
+
+    const handleJumpToCurrentWeek = () => {
+        setCurrentDate(new Date());
+    };
+
+    const handleDayViewModeChange = (mode: 'list' | 'timeline') => {
+        setDayViewMode(mode);
+        StorageService.getInstance().saveDayViewMode(mode);
     };
 
     const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -276,7 +298,7 @@ const AppContent = ({
 
             {/* Per-tab first-visit tooltips - show on mobile regardless of tour (tour is desktop-only) */}
             {/* Don't show planner tab tip when FirstTaskGuide is active/incomplete */}
-            {(!showTour || isMobile) && (activeTab !== 'planner' || firstGuideComplete) && <TabOnboarding activeTab={activeTab} />}
+            {(!showTour || isMobile) && (activeTab !== 'planner' || firstGuideComplete) && !isReturningUser && <TabOnboarding activeTab={activeTab} />}
 
             {/* First task creation guide - shows after spotlight tour (mobile-responsive) */}
             {(!showTour || isMobile) && activeTab === 'planner' && (
@@ -296,6 +318,8 @@ const AppContent = ({
                         onClose={() => setIsSidebarOpen(false)}
                         isMobile={isMobile}
                         skipAutoFocus={isMobile && !firstGuideComplete}
+                        dayViewMode={dayViewMode}
+                        selectedDate={currentDate}
                     />
                 }
                 header={
@@ -304,6 +328,7 @@ const AppContent = ({
                         setActiveTab={setActiveTab}
                         currentDate={currentDate}
                         onWeekChange={handleWeekChange}
+                        onJumpToCurrentWeek={handleJumpToCurrentWeek}
                         isStacked={isStacked}
                         setIsStacked={setIsStacked}
                         isSidebarOpen={isSidebarOpen}
@@ -325,6 +350,8 @@ const AppContent = ({
                                 <MobilePlanner
                                     currentDate={currentDate}
                                     viewMode={viewMode}
+                                    dayViewMode={dayViewMode}
+                                    onDayViewModeChange={handleDayViewModeChange}
                                     onWeekChange={handleWeekChange}
                                     onOpenSidebar={() => setIsSidebarOpen(true)}
                                 />
@@ -334,6 +361,8 @@ const AppContent = ({
                                     weekDirection={weekDirection}
                                     isStacked={isStacked}
                                     viewMode={viewMode}
+                                    dayViewMode={dayViewMode}
+                                    onDayViewModeChange={handleDayViewModeChange}
                                 />
                             )}
                         </motion.div>
@@ -424,12 +453,15 @@ const AppContent = ({
                     onThemeChange={setCurrentThemeId}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
+                    dayViewMode={dayViewMode}
+                    onDayViewModeChange={handleDayViewModeChange}
                     supabaseEnabled={supabaseEnabled}
                     onToggleSupabase={onToggleSupabaseSync}
                     onAddSampleTasks={handleAddSampleTasks}
                     sampleTasksAdded={sampleTasksAdded}
                     showSampleTasks={!sampleTasksAdded && !hasAnyTasks}
                     onResetTour={handleResetTour}
+                    onLogout={onLogout}
                 />
             )}
 
@@ -491,7 +523,7 @@ const App = () => {
     const [supabaseHealthy, setSupabaseHealthy] = useState<boolean | null>(null);
     const [authTimeoutReached, setAuthTimeoutReached] = useState(false);
 
-    const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth } = useSupabaseAuth();
+    const { user, isAuthReady, authError, magicLinkSent, signInWithEmail, signInWithOAuth, signOut } = useSupabaseAuth();
     const [initialTasksState, setInitialTasksState] = useState<Task[]>(localData?.tasks || []);
     const [initialHabitsState, setInitialHabitsState] = useState<Habit[]>(localData?.habits?.map(h => ({ ...h, goal: h.goal || 7 })) || []);
     const [initialBrainDumpState, setInitialBrainDumpState] = useState<BrainDumpList[]>(
@@ -501,10 +533,12 @@ const App = () => {
     );
     const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
     const [dataError, setDataError] = useState<string | null>(null);
+    const [isReturningUser, setIsReturningUser] = useState<boolean>(false);
     const hasLocalData = (localData?.tasks?.length || 0) > 0 || (localData?.habits?.length || 0) > 0 || (localData?.brainDumpLists?.length || 0) > 0;
     const withTimeout = useCallback(async <T,>(promise: Promise<T>, ms: number): Promise<T> => {
         return Promise.race<T>([
             promise,
+            // Increased timeout to 15s to handle Supabase cold starts on free tier
             new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Supabase fetch timed out')), ms))
         ]);
     }, []);
@@ -624,12 +658,17 @@ const App = () => {
                 if (!healthy) {
                     console.warn('Supabase health check failed; attempting to load anyway.');
                 }
-                const [tasks, habits, notes] = await Promise.all([
-                    withTimeout(SupabaseDataService.fetchTasks(user.id), 4000),
-                    withTimeout(SupabaseDataService.fetchHabits(user.id), 4000),
-                    withTimeout(SupabaseDataService.fetchNotes(user.id), 4000)
+                const [tasks, habits, notes, onboardingDone] = await Promise.all([
+                    withTimeout(SupabaseDataService.fetchTasks(user.id), 15000),
+                    withTimeout(SupabaseDataService.fetchHabits(user.id), 15000),
+                    withTimeout(SupabaseDataService.fetchNotes(user.id), 15000),
+                    withTimeout(SupabaseDataService.fetchOnboardingCompleted(user.id), 15000).catch(() => false)
                 ]);
                 if (!active) return;
+
+                // Mark as returning user if they've completed onboarding before
+                setIsReturningUser(onboardingDone);
+
                 const remoteEmpty = (!tasks.length && !habits.length && !notes.length);
                 if (remoteEmpty) {
                     // Remote is empty - use fresh local data (not stale localData from mount)
@@ -741,6 +780,23 @@ const App = () => {
         }
     };
 
+    // Persist onboarding completion to Supabase
+    const handleOnboardingComplete = useCallback(() => {
+        if (user && useSupabaseSync) {
+            SupabaseDataService.setOnboardingCompleted(user.id).catch(err => {
+                console.error('Failed to save onboarding status', err);
+            });
+        }
+    }, [user, useSupabaseSync]);
+
+    // Handle logout: sign out and switch to local mode
+    const handleLogout = useCallback(async () => {
+        await signOut();
+        setUseSupabaseSync(false);
+        storage.saveSyncPreference(false);
+        setIsReturningUser(false);
+    }, [signOut, storage]);
+
     // HTML loader handles the splash screen - no React SplashScreen needed
 
     if (useSupabaseSync) {
@@ -782,6 +838,9 @@ const App = () => {
                     onDeleteAllTasks={handleDeleteAllTasks}
                     supabaseEnabled={true}
                     onToggleSupabaseSync={handleToggleSupabaseSync}
+                    isReturningUser={isReturningUser}
+                    onOnboardingComplete={handleOnboardingComplete}
+                    onLogout={handleLogout}
                 />
             </TaskProvider>
         );

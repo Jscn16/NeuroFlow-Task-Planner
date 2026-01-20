@@ -6,10 +6,12 @@ import {
   X,
   Calendar,
   CheckCircle2,
-  CalendarCheck
+  CalendarCheck,
+  Clock
 } from 'lucide-react';
 import { Task } from '../../../types';
 import { MobileDatePicker } from '../../ui/MobileDatePicker';
+import { MobileTimePicker } from '../../ui/MobileTimePicker';
 import { formatDate } from '../../../constants';
 
 // ============================================================================
@@ -22,6 +24,7 @@ export type ActionSheetAction =
   | 'move-yesterday'
   | 'reschedule'
   | 'reschedule-to-date'
+  | 'set-time'
   | 'edit'
   | 'delete'
   | 'cancel';
@@ -148,7 +151,8 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
 }) => {
   const isOpen = task !== null;
   const [showDatePicker, setShowDatePicker] = useState(false);
-  // Capture the task when date picker opens to prevent stale closures
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  // Capture the task when picker opens to prevent stale closures
   const [capturedTask, setCapturedTask] = useState<Task | null>(null);
 
   // Handle backdrop click
@@ -164,6 +168,35 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
     if (task) {
       setCapturedTask(task);
       setShowDatePicker(true);
+    }
+  };
+
+  // Handle set time button - open time picker
+  const handleTimeClick = () => {
+    if (task) {
+      setCapturedTask(task);
+      setShowTimePicker(true);
+    }
+  };
+
+  // Handle time selection from picker
+  const handleTimeConfirm = (time: string) => {
+    const taskToUpdate = capturedTask || task;
+    if (taskToUpdate) {
+      setShowTimePicker(false);
+      setCapturedTask(null);
+      // Pass the time via a custom property
+      const taskWithTime = { ...taskToUpdate, _scheduledTime: time } as Task & { _scheduledTime: string };
+      onAction('set-time', taskWithTime as any);
+    }
+  };
+
+  // Handle clearing time
+  const handleTimeClear = () => {
+    const taskToUpdate = capturedTask || task;
+    if (taskToUpdate) {
+      const taskWithTime = { ...taskToUpdate, _scheduledTime: '' } as Task & { _scheduledTime: string };
+      onAction('set-time', taskWithTime as any);
     }
   };
 
@@ -303,6 +336,14 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
                 onClick={handleRescheduleClick}
               />
 
+              {/* Set Time - opens time picker */}
+              <ActionButton
+                icon={<Clock size={20} />}
+                label={task.scheduledTime ? `Time: ${task.scheduledTime}` : 'Set Time'}
+                sublabel={task.scheduledTime ? 'Change or remove time' : 'Add to timeline view'}
+                onClick={handleTimeClick}
+              />
+
               {/* Delete */}
               <ActionButton
                 icon={<Trash2 size={20} />}
@@ -329,8 +370,21 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
           setCapturedTask(null);
         }}
       />
+
+      {/* Time Picker Modal */}
+      <MobileTimePicker
+        isOpen={showTimePicker}
+        initialTime={capturedTask?.scheduledTime || task?.scheduledTime}
+        onConfirm={handleTimeConfirm}
+        onClose={() => {
+          setShowTimePicker(false);
+          setCapturedTask(null);
+        }}
+        onClear={task?.scheduledTime ? handleTimeClear : undefined}
+      />
     </AnimatePresence>
   );
 };
 
 MobileActionSheet.displayName = 'MobileActionSheet';
+

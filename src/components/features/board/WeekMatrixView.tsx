@@ -116,35 +116,37 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                         </div>
 
                         {/* Columns */}
-                        {currentWeekDays.map((day, i) => {
-                            const dayTasks = (tasks || []).filter(t => {
-                                if (t.status === 'unscheduled') return false;
-                                if (t.dueDate !== formatDate(day)) return false;
-                                return true;
-                            });
-                            const isDayEmpty = dayTasks.length === 0;
-                            const isPastDay = formatDate(day) < todayStr;
-                            return (
-                                <GridCell
-                                    key={`${i}-${row}`}
-                                    day={day}
-                                    row={row}
-                                    isToday={formatDate(day) === todayStr}
-                                    tasks={tasks || []}
-                                    onDrop={onDropOnGrid}
-                                    onDragStart={onDragStart}
-                                    onDragEnd={onDragEnd}
-                                    onUpdateTask={onUpdateTask}
-                                    onDeleteTask={onDeleteTask}
-                                    onToggleComplete={onToggleTaskComplete}
-                                    isDayEmpty={isDayEmpty}
-                                    onTaskDrop={onTaskDrop}
-                                    viewMode={viewMode}
-                                    isPastDay={isPastDay}
-                                    isFirstColumn={i === 0}
-                                />
-                            );
-                        })}
+                        <div className="flex-1 flex gap-2 min-w-0">
+                            {currentWeekDays.map((day, i) => {
+                                const dayTasks = (tasks || []).filter(t => {
+                                    if (t.status === 'unscheduled') return false;
+                                    if (t.dueDate !== formatDate(day)) return false;
+                                    return true;
+                                });
+                                const isDayEmpty = dayTasks.length === 0;
+                                const isPastDay = formatDate(day) < todayStr;
+                                return (
+                                    <GridCell
+                                        key={`${i}-${row}`}
+                                        day={day}
+                                        row={row}
+                                        isToday={formatDate(day) === todayStr}
+                                        tasks={tasks || []}
+                                        onDrop={onDropOnGrid}
+                                        onDragStart={onDragStart}
+                                        onDragEnd={onDragEnd}
+                                        onUpdateTask={onUpdateTask}
+                                        onDeleteTask={onDeleteTask}
+                                        onToggleComplete={onToggleTaskComplete}
+                                        isDayEmpty={isDayEmpty}
+                                        onTaskDrop={onTaskDrop}
+                                        viewMode={viewMode}
+                                        isPastDay={isPastDay}
+                                        isFirstColumn={i === 0}
+                                    />
+                                );
+                            })}
+                        </div>
                     </div>
                 );
             })}

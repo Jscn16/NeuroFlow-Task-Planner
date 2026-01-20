@@ -1,18 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Settings, PanelLeftClose, Check, X, Snowflake } from 'lucide-react';
+import { Plus, Settings, PanelLeftClose, Check, X, Snowflake, Clock, Calendar, ChevronDown, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Task, TaskType } from '../../types';
+import { Task, TaskType, GridRow } from '../../types';
 import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
 import { SimpleSidebarList } from './SimpleSidebarList';
-import { CATEGORIES } from '../../constants';
+import { CATEGORIES, QUICK_DURATIONS, formatDate, getAdjustedDate } from '../../constants';
 import { useTaskContext } from '../../context/TaskContext';
 import { MobileActionSheet, ActionSheetAction } from '../features/board/MobileActionSheet';
-import { formatDate, getAdjustedDate } from '../../constants';
 import { FrostOverlay } from '../ui/FrostOverlay';
 import { useIceSound } from '../../hooks/useIceSound';
 import { useDoomLoopDetector } from '../../hooks/useDoomLoopDetector';
 import { getTaskIdFromDragEvent } from '../../utils/drag';
-import { DeadlinePicker } from '../ui/DeadlinePicker';
 
 interface SidebarProps {
     onOpenSettings: () => void;
@@ -21,6 +19,8 @@ interface SidebarProps {
     onClose: () => void;
     isMobile: boolean;
     skipAutoFocus?: boolean; // Skip auto-focus for onboarding
+    dayViewMode?: 'list' | 'timeline'; // Current view mode
+    selectedDate?: Date; // Currently selected date in timeline view
 }
 
 // 6 buttons for even grid
@@ -32,7 +32,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onToggle,
     onClose,
     isMobile,
-    skipAutoFocus = false
+    skipAutoFocus = false,
+    dayViewMode = 'list',
+    selectedDate
 }) => {
     const {
         tasks,
@@ -52,9 +54,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const iceSound = useIceSound();
 
     const [newTaskTitle, setNewTaskTitle] = useState('');
-    const [newTaskDuration, setNewTaskDuration] = useState(30);
+    const [newTaskDuration, setNewTaskDuration] = useState<number | null>(null); // null = not set for timeline mode validation
     const [newTaskType, setNewTaskType] = useState<TaskType>('backlog');
-    const [newTaskDeadline, setNewTaskDeadline] = useState<string>('');
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+    const [newTaskScheduledTime, setNewTaskScheduledTime] = useState<string>('');
+    const [newTaskDate, setNewTaskDate] = useState<string>(''); // For timeline mode date selection
     const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
         'high': true, 'medium': true, 'low': true, 'leisure': false, 'backlog': true, 'chores': false
     });
@@ -74,13 +78,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;
-        const newTask = addTask(newTaskTitle.trim(), newTaskDuration, newTaskType);
-        // If deadline was set, update the task with it
-        if (newTaskDeadline) {
-            updateTask(newTask.id, { deadline: newTaskDeadline });
+
+        // Default duration to 30 if not set
+        const duration = newTaskDuration || 30;
+
+        // Schedule Logic: If time set OR date set (and we are explicit), add as scheduled
+        // Simplification: If scheduledTime is set, it's definitely scheduled. 
+        // If only date is set, it's scheduled for that date (no specific time).
+        const hasSchedule = !!newTaskScheduledTime || (!!newTaskDate && isScheduleOpen);
+
+        if (hasSchedule) {
+            // Use newTaskDate if set, otherwise selectedDate, otherwise today
+            let dateStr: string;
+            if (newTaskDate) {
+                dateStr = newTaskDate;
+            } else if (selectedDate) {
+                dateStr = formatDate(selectedDate);
+            } else {
+                dateStr = formatDate(new Date());
+            }
+
+            // Map priority to assignedRow for sync visibility
+            let assignedRow: GridRow = 'FOCUS'; // Default
+            switch (newTaskType) {
+                case 'high': assignedRow = 'GOAL'; break;
+                case 'medium': assignedRow = 'FOCUS'; break;
+                case 'low': assignedRow = 'WORK'; break;
+                case 'leisure': assignedRow = 'LEISURE'; break;
+                case 'chores': assignedRow = 'CHORES'; break;
+            }
+
+            const newTask = addTask(newTaskTitle.trim(), duration, newTaskType);
+            updateTask(newTask.id, {
+                dueDate: dateStr,
+                scheduledTime: newTaskScheduledTime || undefined,
+                assignedRow: assignedRow,
+                status: 'scheduled'
+            });
+        } else {
+            // Backlog
+            const newTask = addTask(newTaskTitle.trim(), duration, newTaskType);
         }
+
         setNewTaskTitle('');
-        setNewTaskDeadline('');
+        setNewTaskScheduledTime('');
+        setNewTaskDate('');
+        setNewTaskDuration(null);
+        setIsScheduleOpen(false);
         setExpandedCategories(prev => ({ ...prev, [newTaskType]: true }));
     };
 
@@ -166,6 +210,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         scheduleTask(task.id, parsed, null, task.type);
                     }
                 }
+                break;
+            }
+            case 'reschedule-to-date': {
+                const taskWithDate = task as Task & { _rescheduleDate?: string };
+                if (taskWithDate._rescheduleDate) {
+                    updateTask(task.id, { dueDate: taskWithDate._rescheduleDate });
+                }
+                break;
+            }
+            case 'set-time': {
+                const taskWithTime = task as Task & { _scheduledTime?: string };
+                updateTask(task.id, {
+                    scheduledTime: taskWithTime._scheduledTime || undefined
+                });
                 break;
             }
             case 'delete':
@@ -255,9 +313,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Add Task Section */}
             <div className="px-3 pb-4" data-tour="add-task">
-                <div className="rounded-xl p-4 bg-transparent">
-                    {/* Input Row */}
-                    <div className="mb-4">
+                <div className="rounded-xl p-4 bg-transparent border border-white/[0.05]">
+
+                    {/* 1. Title Input (Essential) */}
+                    <div className="mb-3">
                         <input
                             ref={inputRef}
                             type="text"
@@ -265,38 +324,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onChange={(e) => setNewTaskTitle(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                             placeholder="Add new task..."
-                            className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-zinc-500 focus:outline-none border"
+                            className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-zinc-500 focus:outline-none border border-white/10 focus:border-cyan-400/50 transition-colors"
                             style={{
-                                color: 'var(--text-primary)',
-                                borderColor: newTaskTitle ? 'var(--accent)' : 'var(--border-light)'
+                                color: 'var(--text-primary)'
                             }}
                         />
                     </div>
 
-                    {/* Duration Label + Buttons */}
-                    <div className="mb-4">
-                        <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                            Duration
-                        </div>
-                        <div className="grid grid-cols-6 gap-1.5">
-                            {QUICK_DURATIONS.map(d => (
-                                <button
-                                    key={d}
-                                    onClick={() => setNewTaskDuration(d)}
-                                    className="py-2 rounded-lg text-[11px] font-semibold transition-all"
-                                    style={{
-                                        backgroundColor: newTaskDuration === d ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                                        color: newTaskDuration === d ? 'white' : 'var(--text-secondary)'
-                                    }}
-                                >
-                                    {d < 60 ? `${d}m` : `${d / 60}h`}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Type Label + Grid */}
-                    <div className="mb-4">
+                    {/* 2. Priority (Restored to full grid) */}
+                    <div className="mb-3">
                         <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
                             Priority
                         </div>
@@ -305,7 +341,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 <button
                                     key={cat.id}
                                     onClick={() => setNewTaskType(cat.id as TaskType)}
-                                    className="py-2.5 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all"
+                                    className="py-2 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all border"
                                     style={{
                                         backgroundColor: newTaskType === cat.id ? `${cat.color}20` : 'rgba(255,255,255,0.03)',
                                         color: newTaskType === cat.id ? cat.color : 'var(--text-muted)',
@@ -318,30 +354,126 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
                     </div>
 
-                    {/* Deadline (Optional) */}
-                    <div className="mb-4">
+                    {/* 3. Duration (Moved after Priority) */}
+                    <div className="mb-3">
                         <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                            Deadline (optional)
+                            Duration
                         </div>
-                        <DeadlinePicker
-                            value={newTaskDeadline}
-                            onChange={setNewTaskDeadline}
-                            placeholder="Add deadline"
-                        />
+                        <div className="grid grid-cols-4 gap-1">
+                            {[15, 30, 45, 60].map(d => (
+                                <button
+                                    key={d}
+                                    onClick={() => setNewTaskDuration(d)}
+                                    className="py-1.5 rounded-md text-[10px] font-semibold transition-all border"
+                                    style={{
+                                        backgroundColor: newTaskDuration === d ? 'var(--accent)' : 'transparent',
+                                        borderColor: newTaskDuration === d ? 'var(--accent)' : 'var(--border-light)',
+                                        color: newTaskDuration === d ? 'white' : 'var(--text-muted)'
+                                    }}
+                                >
+                                    {d}m
+                                </button>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Add Button */}
+                    {/* 3. Schedule Toggle */}
+                    <button
+                        onClick={() => setIsScheduleOpen(!isScheduleOpen)}
+                        className="w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-wider px-1 py-2 mb-2 transition-colors"
+                        style={{ color: (newTaskScheduledTime || isScheduleOpen) ? 'var(--accent)' : 'var(--text-muted)' }}
+                    >
+                        <span className="flex items-center gap-1.5">
+                            <Clock size={12} />
+                            {newTaskScheduledTime ? `Scheduled at ${newTaskScheduledTime}` : 'Schedule (Optional)'}
+                        </span>
+                        <ChevronDown
+                            size={12}
+                            className={`transition-transform duration-200 ${isScheduleOpen ? 'rotate-180' : ''}`}
+                        />
+                    </button>
+
+                    {/* 4. Collapsible Schedule Section */}
+                    <AnimatePresence>
+                        {isScheduleOpen && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="space-y-3 pb-2">
+                                    {/* Date */}
+                                    <div>
+                                        <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</div>
+                                        <input
+                                            type="date"
+                                            value={newTaskDate || (selectedDate ? formatDate(selectedDate) : formatDate(new Date()))}
+                                            onChange={(e) => setNewTaskDate(e.target.value)}
+                                            className="w-full bg-black/20 text-xs px-2 py-1.5 rounded-lg focus:outline-none border border-white/10"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        />
+                                    </div>
+
+                                    {/* Time */}
+                                    <div>
+                                        <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Time</div>
+                                        <input
+                                            type="time"
+                                            value={newTaskScheduledTime}
+                                            onChange={(e) => setNewTaskScheduledTime(e.target.value)}
+                                            className="w-full bg-black/20 text-xs px-2 py-1.5 rounded-lg focus:outline-none border border-white/10"
+                                            style={{ color: 'var(--text-primary)' }}
+                                        />
+                                        {/* Quick Times */}
+                                        <div className="flex gap-1 mt-1.5">
+                                            {['09:00', '13:00', '17:00'].map(time => (
+                                                <button
+                                                    key={time}
+                                                    onClick={() => setNewTaskScheduledTime(time)}
+                                                    className="flex-1 py-1 rounded text-[9px] font-mono border transition-colors"
+                                                    style={{
+                                                        borderColor: newTaskScheduledTime === time ? 'var(--accent)' : 'transparent',
+                                                        backgroundColor: newTaskScheduledTime === time ? 'rgba(34,211,238,0.1)' : 'rgba(255,255,255,0.03)',
+                                                        color: newTaskScheduledTime === time ? 'var(--accent)' : 'var(--text-muted)'
+                                                    }}
+                                                >
+                                                    {time}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Custom Duration REMOVED as per user request */}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* 5. Add Button */}
                     <button
                         onClick={handleAddTask}
                         disabled={!newTaskTitle.trim()}
-                        className="w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-30"
+                        className="w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all mt-2"
                         style={{
-                            backgroundColor: newTaskTitle.trim() ? selectedCategory?.color : 'rgba(255,255,255,0.05)',
-                            color: newTaskTitle.trim() ? 'white' : 'var(--text-muted)'
+                            backgroundColor: newTaskTitle.trim()
+                                ? (newTaskScheduledTime ? 'var(--accent)' : selectedCategory?.color)
+                                : 'rgba(255,255,255,0.05)',
+                            color: newTaskTitle.trim() ? 'white' : 'var(--text-muted)',
+                            opacity: newTaskTitle.trim() ? 1 : 0.5
                         }}
                     >
-                        <Plus size={16} />
-                        Add Task
+                        {newTaskScheduledTime ? (
+                            <>
+                                <Clock size={14} />
+                                Schedule Task
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={14} />
+                                Add
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
@@ -368,47 +500,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         onLongPressTask={isMobile ? setSheetTask : undefined}
                     />
                 </div>
-
-                {iceboxTasks.length > 0 && (
-                    <div className="px-3 pb-3 mt-auto">
-                        <button
-                            onClick={() => setIceboxOpen(!iceboxOpen)}
-                            className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-white/[0.06] bg-white/[0.02] text-left"
-                        >
-                            <span className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
-                                <Snowflake size={16} /> Icebox ({iceboxTasks.length})
-                            </span>
-                            <span className="text-xs text-zinc-500">{iceboxOpen ? 'Hide' : 'Show'}</span>
-                        </button>
-                        <AnimatePresence initial={false}>
-                            {iceboxOpen && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -6 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -6 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="mt-3 space-y-2"
-                                >
-                                    {iceboxTasks.map(t => (
-                                        <SidebarTaskCard
-                                            key={t.id}
-                                            task={t}
-                                            onDragStart={handleDragStart}
-                                            onDragEnd={handleDragEnd}
-                                            onUpdateTask={updateTask}
-                                            onDeleteTask={deleteTask}
-                                            onToggleComplete={toggleTaskComplete}
-                                            onScheduleTask={scheduleTask}
-                                            isMobile={isMobile}
-                                            onCloseSidebar={isMobile ? onClose : undefined}
-                                            onLongPress={isMobile ? setSheetTask : undefined}
-                                        />
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-                )}
             </div>
 
             {/* Footer */}
@@ -429,32 +520,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                     DEV
                 </div>
-                <motion.button
-                    onClick={handleFreeze}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
-                    style={{ color: 'var(--text-secondary)' }}
-                    animate={doom.state === 'critical' ? { scale: [1, 1.05, 1] } : undefined}
-                    transition={{ repeat: doom.state === 'critical' ? Infinity : 0, duration: 2, ease: 'easeInOut' }}
-                    title={doom.state === 'critical' ? 'Schedule overloaded. Freeze tasks?' : 'Freeze backlog'}
-                >
-                    <Snowflake
-                        size={18}
-                        className={doom.state === 'critical' ? 'drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}
-                        style={{
-                            color: doom.state === 'critical' ? '#22d3ee' : doom.state === 'risk' ? '#cbd5e1' : 'rgba(148,163,184,0.2)',
-                            opacity: doom.state === 'safe' ? 0.2 : 1
-                        }}
-                    />
-                    <span
-                        className="text-xs font-semibold uppercase tracking-wider"
-                        style={{
-                            color: doom.state === 'critical' ? '#22d3ee' : doom.state === 'risk' ? '#cbd5e1' : 'rgba(148,163,184,0.6)',
-                            opacity: doom.state === 'safe' ? 0.4 : 1
-                        }}
-                    >
-                        Ice Box
-                    </span>
-                </motion.button>
             </div>
         </div>
     );

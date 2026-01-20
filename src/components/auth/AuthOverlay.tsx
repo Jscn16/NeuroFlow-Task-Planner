@@ -178,13 +178,6 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                             transition={{ delay: 0.2 }}
                         >
                             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">🧠</div>
-                                <div className="text-left">
-                                    <div className="text-white font-medium">Brain Dump</div>
-                                    <div className="text-white/50 text-sm">Capture thoughts, organize later</div>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                                 <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">📊</div>
                                 <div className="text-left">
                                     <div className="text-white font-medium">Visual Weekly Planner</div>
@@ -192,10 +185,31 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">🔥</div>
+                                <div className="text-left">
+                                    <div className="text-white font-medium">Deep Focus</div>
+                                    <div className="text-white/50 text-sm">Stay in the flow with built-in timer</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center text-cyan-400">🧠</div>
+                                <div className="text-left">
+                                    <div className="text-white font-medium">Brain Dump</div>
+                                    <div className="text-white/50 text-sm">Capture thoughts, organize later</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">✨</div>
                                 <div className="text-left">
                                     <div className="text-white font-medium">Habit Tracking</div>
                                     <div className="text-white/50 text-sm">Build routines with visual streaks</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">📈</div>
+                                <div className="text-left">
+                                    <div className="text-white font-medium">Statistics</div>
+                                    <div className="text-white/50 text-sm">Visualize your productivity trends</div>
                                 </div>
                             </div>
                         </motion.div>

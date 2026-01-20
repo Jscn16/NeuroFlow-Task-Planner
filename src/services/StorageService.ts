@@ -5,6 +5,7 @@ export class StorageService {
     private readonly STORAGE_KEY = 'neuroflow-app-data';
     private readonly THEME_KEY = 'neuroflow-theme';
     private readonly SYNC_PREF_KEY = 'neuroflow-sync-enabled';
+    private readonly DAY_VIEW_KEY = 'neuroflow-day-view-mode';
 
     private constructor() { }
 
@@ -71,6 +72,24 @@ export class StorageService {
             return val === 'true';
         } catch {
             return null;
+        }
+    }
+
+    saveDayViewMode(mode: 'list' | 'timeline'): void {
+        try {
+            localStorage.setItem(this.DAY_VIEW_KEY, mode);
+        } catch (error) {
+            console.error('Failed to save day view mode:', error);
+        }
+    }
+
+    loadDayViewMode(): 'list' | 'timeline' {
+        try {
+            const val = localStorage.getItem(this.DAY_VIEW_KEY);
+            if (val === 'timeline') return 'timeline';
+            return 'list'; // default
+        } catch {
+            return 'list';
         }
     }
 

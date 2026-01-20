@@ -1,10 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, List, Clock } from 'lucide-react';
 import { usePlannerController } from '../../../hooks/usePlannerController';
 import { MobileWeekStrip } from './MobileWeekStrip';
 import { MobileDayView } from './MobileDayView';
+import DayTimelineView from './DayTimelineView';
+import { MobileActionSheet } from './MobileActionSheet';
 import { MobileFAB } from '../../ui/MobileFAB';
 import { formatDate } from '../../../constants';
+import { Task } from '../../../types';
 
 // ============================================================================
 // Types
@@ -15,6 +18,10 @@ interface MobilePlannerProps {
   currentDate: Date;
   /** How to handle completed tasks */
   viewMode: 'show' | 'fade' | 'hide';
+  /** Day view display mode: list or timeline */
+  dayViewMode: 'list' | 'timeline';
+  /** Callback when day view mode changes */
+  onDayViewModeChange: (mode: 'list' | 'timeline') => void;
   /** Callback when week changes (optional, for sync with desktop) */
   onWeekChange?: (direction: 'prev' | 'next') => void;
   /** Opens the global sidebar (drawer on mobile) */
@@ -38,6 +45,8 @@ interface MobilePlannerProps {
 export const MobilePlanner: React.FC<MobilePlannerProps> = ({
   currentDate,
   viewMode,
+  dayViewMode,
+  onDayViewModeChange,
   onWeekChange,
   onOpenSidebar
 }) => {
@@ -49,6 +58,9 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
     dailyStats,
     actions
   } = usePlannerController({ currentDate });
+
+  // State for action sheet
+  const [actionSheetTask, setActionSheetTask] = useState<Task | null>(null);
 
   // Mobile-specific state: selected day within the week
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
@@ -154,7 +166,7 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
             >
               <Menu size={20} />
             </button>
-            <div>
+            <div className="flex-1">
               <h2
                 className="text-xl font-display font-bold"
                 style={{ color: 'var(--text-primary)' }}
@@ -169,6 +181,35 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
                   Today
                 </span>
               )}
+            </div>
+
+            {/* View Mode Toggle */}
+            <div
+              className="flex rounded-lg overflow-hidden"
+              style={{ backgroundColor: 'var(--bg-tertiary)' }}
+            >
+              <button
+                onClick={() => onDayViewModeChange('list')}
+                className="p-2 transition-all"
+                style={{
+                  backgroundColor: dayViewMode === 'list' ? 'var(--accent)' : 'transparent',
+                  color: dayViewMode === 'list' ? 'white' : 'var(--text-muted)'
+                }}
+                aria-label="List view"
+              >
+                <List size={16} />
+              </button>
+              <button
+                onClick={() => onDayViewModeChange('timeline')}
+                className="p-2 transition-all"
+                style={{
+                  backgroundColor: dayViewMode === 'timeline' ? 'var(--accent)' : 'transparent',
+                  color: dayViewMode === 'timeline' ? 'white' : 'var(--text-muted)'
+                }}
+                aria-label="Timeline view"
+              >
+                <Clock size={16} />
+              </button>
             </div>
           </div>
         </div>
@@ -186,25 +227,83 @@ export const MobilePlanner: React.FC<MobilePlannerProps> = ({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto overscroll-y-contain relative z-0 no-scrollbar">
         <div className="pb-32 px-4 pt-4">
-          <MobileDayView
-            tasks={tasks}
-            selectedDate={selectedDate}
-            todayStr={todayStr}
-            direction={direction}
-            viewMode={viewMode}
-            onNextDay={handleNextDay}
-            onPrevDay={handlePrevDay}
-            onToggleComplete={actions.onToggleTaskComplete}
-            onUpdateTask={actions.onUpdateTask}
-            onDeleteTask={actions.onDeleteTask}
-          />
+          {dayViewMode === 'timeline' ? (
+            <DayTimelineView
+              tasks={tasks}
+              selectedDate={selectedDate}
+              todayStr={todayStr}
+              viewMode={viewMode}
+              onToggleComplete={actions.onToggleTaskComplete}
+              onUpdateTask={actions.onUpdateTask}
+              onOpenActionSheet={setActionSheetTask}
+              isMobile={true}
+            />
+          ) : (
+            <MobileDayView
+              tasks={tasks}
+              selectedDate={selectedDate}
+              todayStr={todayStr}
+              direction={direction}
+              viewMode={viewMode}
+              onNextDay={handleNextDay}
+              onPrevDay={handlePrevDay}
+              onToggleComplete={actions.onToggleTaskComplete}
+              onUpdateTask={actions.onUpdateTask}
+              onDeleteTask={actions.onDeleteTask}
+            />
+          )}
         </div>
       </div>
 
       {/* Floating Action Button */}
       <MobileFAB onClick={() => onOpenSidebar?.()} />
+
+      {/* Action Sheet for Timeline view task interactions */}
+      <MobileActionSheet
+        task={actionSheetTask}
+        onClose={() => setActionSheetTask(null)}
+        onAction={(action, task) => {
+          switch (action) {
+            case 'complete':
+              actions.onToggleTaskComplete(task.id);
+              break;
+            case 'move-tomorrow': {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const tomorrowStr = tomorrow.toISOString().split('T')[0];
+              actions.onUpdateTask(task.id, { dueDate: tomorrowStr });
+              break;
+            }
+            case 'move-yesterday': {
+              const today = new Date().toISOString().split('T')[0];
+              actions.onUpdateTask(task.id, { dueDate: today });
+              break;
+            }
+            case 'reschedule-to-date': {
+              const taskWithDate = task as Task & { _rescheduleDate?: string };
+              if (taskWithDate._rescheduleDate) {
+                actions.onUpdateTask(task.id, { dueDate: taskWithDate._rescheduleDate });
+              }
+              break;
+            }
+            case 'set-time': {
+              const taskWithTime = task as Task & { _scheduledTime?: string };
+              actions.onUpdateTask(task.id, {
+                scheduledTime: taskWithTime._scheduledTime || undefined
+              });
+              break;
+            }
+            case 'delete':
+              actions.onDeleteTask(task.id);
+              break;
+          }
+          setActionSheetTask(null);
+        }}
+      />
     </div>
   );
 };
 
 MobilePlanner.displayName = 'MobilePlanner';
+
+

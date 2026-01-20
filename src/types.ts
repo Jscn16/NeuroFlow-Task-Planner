@@ -12,6 +12,7 @@ export interface Task {
   status: TaskStatus;
   dueDate: string | null; // ISO Date string YYYY-MM-DD (when scheduled on board)
   deadline: string | null; // ISO Date string YYYY-MM-DD (must be done by this date)
+  scheduledTime?: string; // HH:MM format for timeline view (e.g., "09:00")
   assignedRow: GridRow | null;
   eisenhowerQuad: 'do' | 'decide' | 'delegate' | 'delete' | null;
   createdAt: number;

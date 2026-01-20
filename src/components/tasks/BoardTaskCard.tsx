@@ -182,7 +182,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
             }}
             className={`
                 hover:scale-[1.01] active:scale-[0.98] transition-all duration-150
-                relative flex flex-row items-center justify-between gap-3 py-3 px-3 rounded-lg border min-h-[70px]
+                relative flex flex-row items-center justify-between gap-2 py-2 px-2 rounded-lg border h-full
                 cursor-grab active:cursor-grabbing
                 ${isDragging ? 'opacity-50 scale-[0.98]' : ''}
                 ${isOverdue && !isCompleted
@@ -201,7 +201,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
 
             <div className="flex-1 flex flex-col justify-center min-w-0">
                 <h3
-                    className={`font-medium text-base leading-tight whitespace-normal break-words pr-2`}
+                    className={`font-medium text-sm leading-tight whitespace-normal break-words pr-1 line-clamp-2`}
                     style={{ color: isCompleted ? '#f1f5f9' : 'var(--text-primary)' }}
                 >
                     {task.title}
@@ -219,7 +219,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                 )}
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-1 flex-shrink-0 w-12">
+            <div className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0 w-10">
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
@@ -256,6 +256,6 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                     {formatDuration(task.duration)}
                 </span>
             </div>
-        </div>
+        </div >
     );
 });

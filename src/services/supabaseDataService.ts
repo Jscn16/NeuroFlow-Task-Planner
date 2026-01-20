@@ -13,6 +13,7 @@ export interface DbTaskRow {
     is_completed: boolean | null;
     is_frozen: boolean | null;
     scheduled_date: string | null;
+    scheduled_time?: string | null;
     deadline: string | null;
     completed_at: string | null;
     status?: string | null;
@@ -82,6 +83,7 @@ export const mapTaskFromDb = (row: DbTaskRow): Task => ({
     type: (row.priority as TaskType) ?? 'medium',
     status: getCompletionStatus(row),
     dueDate: row.scheduled_date,
+    scheduledTime: row.scheduled_time ?? undefined,
     deadline: row.deadline ?? null,
     assignedRow: (row.category as GridRow) ?? null,
     eisenhowerQuad: (row.eisenhower_quad as Task['eisenhowerQuad']) ?? null,
@@ -99,6 +101,7 @@ const mapTaskToDb = (task: Task, userId: string): Omit<DbTaskRow, 'user_id' | 'i
     category: task.assignedRow,
     status: task.status,
     scheduled_date: task.dueDate,
+    scheduled_time: task.scheduledTime ?? null,
     deadline: task.deadline ?? null,
     eisenhower_quad: task.eisenhowerQuad,
     is_completed: task.status === 'completed',
@@ -273,6 +276,39 @@ export const SupabaseDataService = {
             if (insertError) {
                 console.error('Failed to import notes', insertError);
             }
+        }
+    },
+
+    // User Preferences - Onboarding Status
+    async fetchOnboardingCompleted(userId: string): Promise<boolean> {
+        if (!supabase) throw new Error('Supabase unavailable');
+        const { data, error } = await supabase
+            .from('user_preferences')
+            .select('onboarding_completed')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) {
+            // No row means new user - not an error
+            if (error.code === 'PGRST116') return false;
+            console.error('Failed to fetch onboarding status', error);
+            return false;
+        }
+        return data?.onboarding_completed ?? false;
+    },
+
+    async setOnboardingCompleted(userId: string): Promise<void> {
+        if (!supabase) throw new Error('Supabase unavailable');
+        const { error } = await supabase
+            .from('user_preferences')
+            .upsert({
+                user_id: userId,
+                onboarding_completed: true,
+                updated_at: new Date().toISOString()
+            });
+
+        if (error) {
+            console.error('Failed to set onboarding completed', error);
         }
     }
 };

@@ -16,6 +16,7 @@ export interface EncryptedPayload {
     iv: string; // Base64 encoded
     salt: string; // Base64 encoded (for key derivation verification)
     version: number; // Schema version for future migrations
+    context?: string; // Optional context identifier (not signed itself, but used as AAD)
 }
 
 /**
@@ -93,18 +94,27 @@ export async function deriveKey(passphrase: string, salt: Uint8Array): Promise<C
 export async function encrypt(
     plaintext: string | object,
     key: CryptoKey,
-    salt: Uint8Array
+    salt: Uint8Array,
+    context?: string
 ): Promise<EncryptedPayload> {
     const encoder = new TextEncoder();
     const data = typeof plaintext === 'string' ? plaintext : JSON.stringify(plaintext);
     const plaintextBytes = encoder.encode(data);
 
+    // Prepare Additional Authenticated Data (AAD) if context is provided
+    const additionalData = context ? encoder.encode(context) : undefined;
+
     // Generate fresh IV for each encryption (critical for GCM security)
     const iv = generateRandomBytes(IV_LENGTH);
 
     // Encrypt using AES-GCM
+    const algorithm: AesGcmParams = { name: 'AES-GCM', iv: iv };
+    if (additionalData) {
+        algorithm.additionalData = additionalData;
+    }
+
     const ciphertextBuffer = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv },
+        algorithm,
         key,
         plaintextBytes
     );
@@ -113,7 +123,8 @@ export async function encrypt(
         ciphertext: arrayToBase64(new Uint8Array(ciphertextBuffer)),
         iv: arrayToBase64(iv),
         salt: arrayToBase64(salt),
-        version: 1
+        version: 2,
+        context: context
     };
 }
 
@@ -121,16 +132,34 @@ export async function encrypt(
  * Decrypt data using AES-256-GCM
  * @param payload - EncryptedPayload from encrypt()
  * @param key - CryptoKey derived from passphrase
+ * @param context - Optional context to bind decryption to (required if payload version >= 2)
  * @returns Decrypted string (parse as JSON if needed)
  * @throws Error if decryption fails (wrong key or tampered data)
  */
-export async function decrypt(payload: EncryptedPayload, key: CryptoKey): Promise<string> {
+export async function decrypt(
+    payload: EncryptedPayload,
+    key: CryptoKey,
+    context?: string
+): Promise<string> {
     const ciphertext = base64ToArray(payload.ciphertext);
     const iv = base64ToArray(payload.iv);
 
+    // Version 2+ requires context binding if created with context
+    // We enforce context check if payload.version >= 2
+    let additionalData: Uint8Array | undefined;
+    if (payload.version >= 2 && context) {
+        const encoder = new TextEncoder();
+        additionalData = encoder.encode(context);
+    }
+
     try {
+        const algorithm: AesGcmParams = { name: 'AES-GCM', iv: iv };
+        if (additionalData) {
+            algorithm.additionalData = additionalData;
+        }
+
         const plaintextBuffer = await crypto.subtle.decrypt(
-            { name: 'AES-GCM', iv: iv },
+            algorithm,
             key,
             ciphertext
         );
@@ -138,8 +167,8 @@ export async function decrypt(payload: EncryptedPayload, key: CryptoKey): Promis
         const decoder = new TextDecoder();
         return decoder.decode(plaintextBuffer);
     } catch (error) {
-        // GCM authentication failed - wrong key or tampered data
-        throw new Error('Decryption failed: Invalid passphrase or corrupted data');
+        // GCM authentication failed - wrong key or tampered data/context
+        throw new Error('Decryption failed: Invalid passphrase, corrupted data, or context mismatch');
     }
 }
 
@@ -235,21 +264,21 @@ export class CryptoService {
     /**
      * Encrypt data using current key
      */
-    async encryptData(data: object | string): Promise<EncryptedPayload> {
+    async encryptData(data: object | string, context?: string): Promise<EncryptedPayload> {
         if (!this.encryptionKey || !this.salt) {
             throw new Error('Vault is locked. Unlock with passphrase first.');
         }
-        return encrypt(data, this.encryptionKey, this.salt);
+        return encrypt(data, this.encryptionKey, this.salt, context);
     }
 
     /**
      * Decrypt data using current key
      */
-    async decryptData(payload: EncryptedPayload): Promise<string> {
+    async decryptData(payload: EncryptedPayload, context?: string): Promise<string> {
         if (!this.encryptionKey) {
             throw new Error('Vault is locked. Unlock with passphrase first.');
         }
-        return decrypt(payload, this.encryptionKey);
+        return decrypt(payload, this.encryptionKey, context);
     }
 
     /**

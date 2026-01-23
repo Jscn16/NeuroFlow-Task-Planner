@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Task, TaskStatus, TaskType, GridRow, Habit, BrainDumpList } from '../types';
 import { generateId } from '../utils/id';
 import { CryptoService } from './CryptoService';
+import { logger } from '../utils/logger';
 
 // Encryption marker prefix to identify encrypted strings
 const ENCRYPTED_PREFIX = 'ENC:';
@@ -10,16 +11,20 @@ const ENCRYPTED_PREFIX = 'ENC:';
  * Encrypt a string field if encryption is enabled and vault is unlocked
  * Returns the original string if encryption is not available
  */
-const encryptField = async (value: string): Promise<string> => {
+/**
+ * Encrypt a string field if encryption is enabled and vault is unlocked
+ * Returns the original string if encryption is not available
+ */
+const encryptField = async (value: string, context?: string): Promise<string> => {
     const crypto = CryptoService.getInstance();
     if (!crypto.getIsUnlocked()) {
         return value; // Return plaintext if vault is locked
     }
     try {
-        const encrypted = await crypto.encryptData(value);
+        const encrypted = await crypto.encryptData(value, context);
         return ENCRYPTED_PREFIX + JSON.stringify(encrypted);
     } catch (error) {
-        console.error('Failed to encrypt field, storing as plaintext:', error);
+        logger.error('Failed to encrypt field, storing as plaintext:', error);
         return value;
     }
 };
@@ -28,7 +33,11 @@ const encryptField = async (value: string): Promise<string> => {
  * Decrypt a string field if it's encrypted
  * Returns the original string if not encrypted or decryption fails
  */
-const decryptField = async (value: string | null): Promise<string> => {
+/**
+ * Decrypt a string field if it's encrypted
+ * Returns the original string if not encrypted or decryption fails
+ */
+const decryptField = async (value: string | null, context?: string): Promise<string> => {
     if (!value) return '';
 
     // Check if the value is encrypted
@@ -38,16 +47,16 @@ const decryptField = async (value: string | null): Promise<string> => {
 
     const crypto = CryptoService.getInstance();
     if (!crypto.getIsUnlocked()) {
-        console.warn('Cannot decrypt field - vault is locked');
+        logger.warn('Cannot decrypt field - vault is locked');
         return '[Encrypted - Unlock vault to view]';
     }
 
     try {
         const encryptedJson = value.slice(ENCRYPTED_PREFIX.length);
         const encrypted = JSON.parse(encryptedJson);
-        return await crypto.decryptData(encrypted);
+        return await crypto.decryptData(encrypted, context);
     } catch (error) {
-        console.error('Failed to decrypt field:', error);
+        logger.error('Failed to decrypt field:', error);
         return '[Decryption failed]';
     }
 };
@@ -125,8 +134,9 @@ const getCompletionStatus = (row: DbTaskRow): TaskStatus => {
     return 'unscheduled';
 };
 
+
 export const mapTaskFromDb = async (row: DbTaskRow): Promise<Task> => {
-    const title = await decryptField(row.title);
+    const title = await decryptField(row.title, row.id);
     return {
         id: row.id,
         title,
@@ -146,9 +156,11 @@ export const mapTaskFromDb = async (row: DbTaskRow): Promise<Task> => {
 };
 
 const mapTaskToDb = async (task: Task, userId: string): Promise<Omit<DbTaskRow, 'user_id' | 'id'> & { user_id: string; id: string }> => {
-    const encryptedTitle = await encryptField(task.title);
+    // Generate/Migrate ID first so we can use it as context
+    const id = migrateId(task.id);
+    const encryptedTitle = await encryptField(task.title, id);
     return {
-        id: migrateId(task.id),
+        id,
         user_id: userId,
         title: encryptedTitle,
         duration: task.duration,
@@ -168,7 +180,7 @@ const mapTaskToDb = async (task: Task, userId: string): Promise<Omit<DbTaskRow, 
 };
 
 const mapHabitFromDb = async (row: DbHabitRow): Promise<Habit> => {
-    const name = await decryptField(row.name);
+    const name = await decryptField(row.name, row.id);
     return {
         id: row.id,
         name,
@@ -178,9 +190,10 @@ const mapHabitFromDb = async (row: DbHabitRow): Promise<Habit> => {
 };
 
 const mapHabitToDb = async (habit: Habit, userId: string): Promise<Omit<DbHabitRow, 'id' | 'user_id'> & { id: string; user_id: string }> => {
-    const encryptedName = await encryptField(habit.name);
+    const id = migrateId(habit.id);
+    const encryptedName = await encryptField(habit.name, id);
     return {
-        id: migrateId(habit.id),
+        id,
         user_id: userId,
         name: encryptedName,
         goal: habit.goal,
@@ -189,8 +202,8 @@ const mapHabitToDb = async (habit: Habit, userId: string): Promise<Omit<DbHabitR
 };
 
 const mapNoteFromDb = async (row: DbNoteRow): Promise<BrainDumpList> => {
-    const title = await decryptField(row.title);
-    const content = await decryptField(row.content);
+    const title = await decryptField(row.title, row.id);
+    const content = await decryptField(row.content, row.id);
     return {
         id: row.id,
         title: title || 'Untitled',
@@ -200,8 +213,9 @@ const mapNoteFromDb = async (row: DbNoteRow): Promise<BrainDumpList> => {
 };
 
 const mapNoteToDb = async (list: BrainDumpList, userId: string): Promise<Omit<DbNoteRow, 'id' | 'user_id'> & { id: string; user_id: string }> => {
-    const encryptedTitle = await encryptField(list.title);
-    const encryptedContent = await encryptField(list.content);
+    const id = migrateId(list.id);
+    const encryptedTitle = await encryptField(list.title, id);
+    const encryptedContent = await encryptField(list.content, id);
     return {
         id: migrateId(list.id),
         user_id: userId,
@@ -222,7 +236,7 @@ export const SupabaseDataService = {
             .order('created_at', { ascending: true });
 
         if (error) {
-            console.error('Failed to load tasks from Supabase', error);
+            logger.error('Failed to load tasks from Supabase', error);
             return [];
         }
         return Promise.all((data || []).map(mapTaskFromDb));
@@ -234,7 +248,7 @@ export const SupabaseDataService = {
         const payload = await Promise.all(tasks.map(t => mapTaskToDb(t, userId)));
         const { error } = await supabase.from('tasks').upsert(payload);
         if (error) {
-            console.error('Failed to upsert tasks', error);
+            logger.error('Failed to upsert tasks', error);
         }
     },
 
@@ -242,7 +256,7 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('tasks').delete().eq('user_id', userId).eq('id', taskId);
         if (error) {
-            console.error('Failed to delete task', error);
+            logger.error('Failed to delete task', error);
         }
     },
 
@@ -250,7 +264,7 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('tasks').delete().eq('user_id', userId);
         if (error) {
-            console.error('Failed to clear tasks before import', error);
+            logger.error('Failed to clear tasks before import', error);
         }
         if (tasks.length) {
             await this.upsertTasks(userId, tasks);
@@ -265,7 +279,7 @@ export const SupabaseDataService = {
             .eq('user_id', userId)
             .order('name', { ascending: true });
         if (error) {
-            console.error('Failed to load habits', error);
+            logger.error('Failed to load habits', error);
             return [];
         }
         return Promise.all((data || []).map(mapHabitFromDb));
@@ -276,7 +290,7 @@ export const SupabaseDataService = {
         const payload = await mapHabitToDb(habit, userId);
         const { error } = await supabase.from('habits').upsert(payload);
         if (error) {
-            console.error('Failed to upsert habit', error);
+            logger.error('Failed to upsert habit', error);
         }
     },
 
@@ -284,7 +298,7 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('habits').delete().eq('user_id', userId).eq('id', habitId);
         if (error) {
-            console.error('Failed to delete habit', error);
+            logger.error('Failed to delete habit', error);
         }
     },
 
@@ -292,13 +306,13 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('habits').delete().eq('user_id', userId);
         if (error) {
-            console.error('Failed to clear habits before import', error);
+            logger.error('Failed to clear habits before import', error);
         }
         if (habits.length) {
             const payload = await Promise.all(habits.map(h => mapHabitToDb(h, userId)));
             const { error: insertError } = await supabase.from('habits').upsert(payload);
             if (insertError) {
-                console.error('Failed to import habits', insertError);
+                logger.error('Failed to import habits', insertError);
             }
         }
     },
@@ -311,7 +325,7 @@ export const SupabaseDataService = {
             .eq('user_id', userId)
             .order('updated_at', { ascending: false });
         if (error) {
-            console.error('Failed to load notes', error);
+            logger.error('Failed to load notes', error);
             return [];
         }
         return Promise.all((data || []).map(mapNoteFromDb));
@@ -322,7 +336,7 @@ export const SupabaseDataService = {
         const payload = await mapNoteToDb(list, userId);
         const { error } = await supabase.from('notes').upsert(payload);
         if (error) {
-            console.error('Failed to upsert note', error);
+            logger.error('Failed to upsert note', error);
         }
     },
 
@@ -330,7 +344,7 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('notes').delete().eq('user_id', userId).eq('id', noteId);
         if (error) {
-            console.error('Failed to delete note', error);
+            logger.error('Failed to delete note', error);
         }
     },
 
@@ -338,13 +352,13 @@ export const SupabaseDataService = {
         if (!supabase) throw new Error('Supabase unavailable');
         const { error } = await supabase.from('notes').delete().eq('user_id', userId);
         if (error) {
-            console.error('Failed to clear notes before import', error);
+            logger.error('Failed to clear notes before import', error);
         }
         if (notes.length) {
             const payload = await Promise.all(notes.map(n => mapNoteToDb(n, userId)));
             const { error: insertError } = await supabase.from('notes').upsert(payload);
             if (insertError) {
-                console.error('Failed to import notes', insertError);
+                logger.error('Failed to import notes', insertError);
             }
         }
     },
@@ -361,7 +375,7 @@ export const SupabaseDataService = {
         if (error) {
             // No row means new user - not an error
             if (error.code === 'PGRST116') return false;
-            console.error('Failed to fetch onboarding status', error);
+            logger.error('Failed to fetch onboarding status', error);
             return false;
         }
         return data?.onboarding_completed ?? false;
@@ -378,7 +392,7 @@ export const SupabaseDataService = {
             });
 
         if (error) {
-            console.error('Failed to set onboarding completed', error);
+            logger.error('Failed to set onboarding completed', error);
         }
     },
 
@@ -392,7 +406,7 @@ export const SupabaseDataService = {
 
         if (error) {
             if (error.code === 'PGRST116') return undefined;
-            console.error('Failed to fetch stats reset preference', error);
+            logger.error('Failed to fetch stats reset preference', error);
             return undefined;
         }
         return data?.stats_reset_at ? new Date(data.stats_reset_at).getTime() : undefined;
@@ -409,7 +423,7 @@ export const SupabaseDataService = {
             });
 
         if (error) {
-            console.error('Failed to update stats reset preference', error);
+            logger.error('Failed to update stats reset preference', error);
         }
     }
 };

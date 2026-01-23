@@ -66,8 +66,7 @@ export default defineConfig(({ mode }) => {
       include: ['react-window', 'react-virtualized-auto-sizer'],
     },
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      // Removed unused GEMINI_API_KEY for security hardening
     },
     resolve: {
       alias: {

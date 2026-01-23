@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="pointer-events-auto flex items-center gap-3 relative">
                 {/* Main Menu */}
                 <div
-                    className="flex items-center gap-1 p-1 rounded-2xl backdrop-blur-xl border shadow-2xl"
+                    className="flex items-center gap-1 p-1 rounded-2xl backdrop-blur-md border shadow-2xl"
                     style={{
                         backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 70%, transparent)',
                         borderColor: 'var(--border-medium)'

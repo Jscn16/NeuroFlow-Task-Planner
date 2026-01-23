@@ -178,7 +178,10 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                 WebkitUserSelect: 'none',
                 touchAction: 'none',
                 cursor: isEditing ? 'default' : 'grab',
-                opacity: isOverdue ? 1 : baseOpacity
+                opacity: isOverdue ? 1 : baseOpacity,
+                // GPU acceleration for smooth 60fps dragging
+                willChange: 'transform',
+                transform: 'translateZ(0)',
             }}
             className={`
                 hover:scale-[1.01] active:scale-[0.98] transition-all duration-150

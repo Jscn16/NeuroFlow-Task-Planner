@@ -229,7 +229,10 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
                 touchAction: isMobileView ? 'auto' : 'none',
-                cursor: isEditing || isMobileView ? 'default' : 'grab'
+                cursor: isEditing || isMobileView ? 'default' : 'grab',
+                // GPU acceleration for smooth 60fps dragging
+                willChange: 'transform',
+                transform: 'translateZ(0)',
             }}
             className={`
                 relative flex flex-col gap-2 p-3 rounded-xl border

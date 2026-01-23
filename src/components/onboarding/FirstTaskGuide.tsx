@@ -291,7 +291,7 @@ export const FirstTaskGuide: React.FC<FirstTaskGuideProps> = ({ onComplete, hasA
         // Desktop positioning
         if (!targetRect) {
             return {
-                top: '50%',
+                top: '40%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)'
             };
@@ -314,14 +314,14 @@ export const FirstTaskGuide: React.FC<FirstTaskGuideProps> = ({ onComplete, hasA
         } else if (step === 'done') {
             // Center the done modal strictly in the viewport
             return {
-                top: '50%',
+                top: '40%',
                 left: '50%',
                 transform: 'translate(-50%, -50%)'
             };
         }
 
         return {
-            top: '50%',
+            top: '40%',
             left: '50%',
             transform: 'translate(-50%, -50%)'
         };

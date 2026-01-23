@@ -117,7 +117,9 @@ export const GridCell = React.memo<GridCellProps>(({
                 borderRight: isToday ? '1px solid rgba(255,255,255,0.05)' : (isPastDay ? '1px solid color-mix(in srgb, var(--border-light), transparent 20%)' : '1px solid var(--border-light)'),
                 backgroundColor: isDragOver
                     ? 'var(--accent-muted)'
-                    : (isToday ? 'rgba(255,255,255,0.02)' : 'transparent')
+                    : (isToday ? 'rgba(255,255,255,0.02)' : 'transparent'),
+                // CSS containment for isolated repaints - improves grid performance
+                contain: 'layout style',
             }}
         >
             {/* Tasks */}

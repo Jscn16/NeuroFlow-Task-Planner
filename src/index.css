@@ -48,10 +48,16 @@
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Smooth transitions for theme changes */
-*,
-*::before,
-*::after {
+/* Smooth transitions for theme changes - SCOPED to interactive elements only for 60fps */
+button,
+a,
+input,
+select,
+textarea,
+[role="button"],
+[draggable="true"],
+.transition-colors,
+.transition-all {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
 }
 
@@ -235,6 +241,43 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     GPU ACCELERATION UTILITIES - For 60fps smooth animations
+  ═══════════════════════════════════════════════════════════════════ */
+
+  /* Force GPU layer for smoother transforms */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* Hint browser about upcoming transform changes */
+  .will-change-transform {
+    will-change: transform;
+  }
+
+  /* Hint browser about upcoming opacity changes */
+  .will-change-opacity {
+    will-change: opacity;
+  }
+
+  /* Combined for animated elements */
+  .will-change-all {
+    will-change: transform, opacity;
+  }
+
+  /* CSS containment for grid cells - isolates layout/paint */
+  .contain-layout {
+    contain: layout style;
+  }
+
+  /* Optimized backdrop blur with GPU hint */
+  .backdrop-blur-optimized {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    will-change: backdrop-filter;
   }
 }
 

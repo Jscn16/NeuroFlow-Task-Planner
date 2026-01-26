@@ -1235,6 +1235,9 @@ const App = () => {
                     onOAuth={(provider) => signInWithOAuth(provider)}
                     onCancel={() => {
                         markFeatureOverviewSeen();
+                        setUseSupabaseSync(false);
+                        setIsDataLoading(false); // Force stop loading
+                        storage.saveSyncPreference(false);
                     }}
                     showFeatureOverview={true}
                     magicLinkSent={false}

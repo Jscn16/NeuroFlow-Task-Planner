@@ -166,7 +166,7 @@ export async function decrypt(
 
         const decoder = new TextDecoder();
         return decoder.decode(plaintextBuffer);
-    } catch (error) {
+    } catch {
         // GCM authentication failed - wrong key or tampered data/context
         throw new Error('Decryption failed: Invalid passphrase, corrupted data, or context mismatch');
     }

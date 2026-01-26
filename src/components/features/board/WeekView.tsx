@@ -262,7 +262,6 @@ export const WeekView: React.FC<WeekViewProps> = React.memo(({
                 viewMode={viewMode}
                 onToggleComplete={onToggleTaskComplete}
                 onUpdateTask={onUpdateTask}
-                onDeleteTask={onDeleteTask}
               />
             </motion.div>
           ) : isStacked ? (

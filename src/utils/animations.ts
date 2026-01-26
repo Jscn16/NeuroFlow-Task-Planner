@@ -1,4 +1,4 @@
-import { Variants, Transition } from 'framer-motion';
+import { Variants } from 'framer-motion';
 
 /**
  * Shared spring configuration for subtle, professional animations
@@ -13,9 +13,9 @@ export const springConfig = {
  * Shared easing tokens for consistent animations
  */
 export const easingTokens = {
-    easeOut: [0.0, 0.0, 0.2, 1.0],
-    easeInOut: [0.4, 0.0, 0.2, 1.0],
-    easeIn: [0.4, 0.0, 1.0, 1.0],
+    easeOut: [0.0, 0.0, 0.2, 1.0] as const,
+    easeInOut: [0.4, 0.0, 0.2, 1.0] as const,
+    easeIn: [0.4, 0.0, 1.0, 1.0] as const,
 };
 
 /**

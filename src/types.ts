@@ -47,6 +47,6 @@ export interface AppData {
   brainDumpLists: BrainDumpList[];
   brainDumpContent?: string; // Legacy
   notes?: Note[]; // Legacy
-  dayHistory?: Record<string, any>;
+  dayHistory?: Record<string, unknown>;
   statsResetAt?: number; // millisecond timestamp
 }

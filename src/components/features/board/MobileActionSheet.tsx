@@ -64,7 +64,7 @@ const sheetVariants = {
     y: 0,
     transition: { type: 'spring', damping: 30, stiffness: 300 }
   }
-};
+} as const;
 
 // ============================================================================
 // Sub-Components

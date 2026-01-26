@@ -76,7 +76,7 @@ export const TimelineBlock = React.memo<TimelineBlockProps>(({
                 boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                 zIndex: 10
             }}
-            onDragStart={(e) => onDragStart(e, task.id)}
+            onDragStart={(e: any) => onDragStart(e, task.id)}
             draggable
         >
             <div className="flex items-center h-full px-3 gap-2">

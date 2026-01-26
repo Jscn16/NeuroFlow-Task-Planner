@@ -1,21 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { HabitManager } from '../services/HabitManager';
 import { Habit } from '../types';
 import { SupabaseDataService } from '../services/supabaseDataService';
 
 export function useHabitManager(initialHabits: Habit[], userId?: string, supabaseEnabled: boolean = true) {
-    const managerRef = useRef<HabitManager>();
     const [habits, setHabits] = useState<Habit[]>(initialHabits);
 
-    if (!managerRef.current) {
-        managerRef.current = new HabitManager(initialHabits);
-    }
-
-    const manager = managerRef.current;
+    // Initialize manager once
+    const manager = useMemo(() => new HabitManager(initialHabits), []);
 
     useEffect(() => {
         return manager.subscribe(setHabits);
-    }, []);
+    }, [manager]);
 
     // Sync incoming remote or imported habits
     useEffect(() => {

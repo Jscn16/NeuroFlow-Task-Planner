@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { StorageService } from './StorageService';
 import { AppData } from '../types';
 
@@ -18,7 +18,7 @@ describe('StorageService', () => {
     });
 
     it('should save data to localStorage', () => {
-        const data: AppData = { tasks: [], habits: [] };
+        const data: AppData = { tasks: [], habits: [], brainDumpLists: [] };
         storageService.save(data);
 
         const stored = localStorage.getItem('neuroflow-app-data');
@@ -27,7 +27,7 @@ describe('StorageService', () => {
     });
 
     it('should load data from localStorage', () => {
-        const data: AppData = { tasks: [], habits: [] };
+        const data: AppData = { tasks: [], habits: [], brainDumpLists: [] };
         localStorage.setItem('neuroflow-app-data', JSON.stringify(data));
 
         const loaded = storageService.load();

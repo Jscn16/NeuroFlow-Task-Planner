@@ -100,17 +100,7 @@ export interface DbNoteRow {
 // UUID validation regex
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-/**
- * Ensure an ID is a valid UUID. If not, generate a new one.
- * This handles migration from legacy IDs like "1", "h3", etc.
- */
-const ensureUUID = (id: string): string => {
-    if (UUID_REGEX.test(id)) {
-        return id;
-    }
-    // Legacy ID detected - generate a proper UUID
-    return generateId();
-};
+
 
 // Track legacy ID -> UUID mappings for consistency within a session
 const idMigrationMap = new Map<string, string>();
@@ -365,43 +355,7 @@ export const SupabaseDataService = {
         }
     },
 
-    // Vault Metadata Sync
-    async fetchVaultMetadata(userId: string): Promise<{ salt: string | null; isSetup: boolean }> {
-        if (!supabase) throw new Error('Supabase unavailable');
-        const { data, error } = await supabase
-            .from('user_preferences')
-            .select('vault_salt, vault_initialized')
-            .eq('user_id', userId)
-            .single();
 
-        if (error) {
-            if (error.code === 'PGRST116') return { salt: null, isSetup: false };
-            logger.error('Failed to fetch vault metadata', error);
-            return { salt: null, isSetup: false };
-        }
-        return {
-            salt: data?.vault_salt ?? null,
-            isSetup: data?.vault_initialized ?? false
-        };
-    },
-
-    async upsertVaultMetadata(userId: string, salt: string): Promise<void> {
-        if (!supabase) throw new Error('Supabase unavailable');
-        const { error } = await supabase
-            .from('user_preferences')
-            .upsert({
-                user_id: userId,
-                vault_salt: salt,
-                vault_initialized: true,
-                encryption_enabled: true,
-                onboarding_completed: true, // Restoring/enabling encryption implies onboarding is done
-                updated_at: new Date().toISOString()
-            });
-
-        if (error) {
-            logger.error('Failed to sync vault metadata', error);
-        }
-    },
 
     /**
      * Fetch a raw sample of encrypted data (task or habit) to extract salt

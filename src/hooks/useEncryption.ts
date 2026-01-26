@@ -298,7 +298,7 @@ export function useEncryption(userId?: string): UseEncryptionResult {
             throw new Error('Vault is locked');
         }
         return crypto.encryptData(data);
-    }, []);
+    }, [crypto]);
 
     /**
      * Decrypt data to string
@@ -308,7 +308,7 @@ export function useEncryption(userId?: string): UseEncryptionResult {
             throw new Error('Vault is locked');
         }
         return crypto.decryptData(payload);
-    }, []);
+    }, [crypto]);
 
     /**
      * Decrypt and parse JSON
@@ -318,7 +318,7 @@ export function useEncryption(userId?: string): UseEncryptionResult {
             throw new Error('Vault is locked');
         }
         return crypto.decryptJSON<T>(payload);
-    }, []);
+    }, [crypto]);
 
     return React.useMemo(() => ({
         isVaultSetup,

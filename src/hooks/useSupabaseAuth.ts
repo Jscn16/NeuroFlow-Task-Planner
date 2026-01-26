@@ -15,16 +15,9 @@ interface UseSupabaseAuthResult {
 
 export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     const [session, setSession] = useState<Session | null>(null);
-    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [isAuthReady, setIsAuthReady] = useState(!supabaseAvailable);
     const [authError, setAuthError] = useState<string | null>(null);
     const [magicLinkSent, setMagicLinkSent] = useState(false);
-
-    // If Supabase is not configured, mark auth as ready and stay unsigned.
-    useEffect(() => {
-        if (!supabaseAvailable) {
-            setIsAuthReady(true);
-        }
-    }, []);
 
     useEffect(() => {
         if (!supabaseAvailable || !supabase) return;

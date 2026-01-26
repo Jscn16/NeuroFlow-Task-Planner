@@ -42,7 +42,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
     };
 
     const focusTasks = (tasks || []).filter(t =>
-        t.status === 'scheduled' &&
+        (t.status === 'scheduled' || t.status === 'completed') &&
         t.dueDate === todayStr &&
         (showCompleted || t.status !== 'completed')
     ).sort((a, b) => {

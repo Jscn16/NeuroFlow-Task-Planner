@@ -146,7 +146,7 @@ export const TimerProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         if (!activeTaskId || segments.length === 0) return null;
 
         let timePointer = 0; // in minutes
-        let currentElapsedMinutes = elapsedTime / 60;
+        const currentElapsedMinutes = elapsedTime / 60;
 
         for (let i = 0; i < segments.length; i++) {
             const seg = segments[i];

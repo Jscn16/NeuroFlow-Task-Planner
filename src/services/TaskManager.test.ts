@@ -5,7 +5,7 @@ import { Task } from '../types';
 describe('TaskManager', () => {
     let taskManager: TaskManager;
     const initialTasks: Task[] = [
-        { id: '1', title: 'Test Task', duration: 60, type: 'high', status: 'unscheduled', dueDate: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() }
+        { id: '1', title: 'Test Task', duration: 60, type: 'high', status: 'unscheduled', dueDate: null, deadline: null, assignedRow: null, eisenhowerQuad: null, createdAt: Date.now() }
     ];
 
     beforeEach(() => {

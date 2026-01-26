@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TaskManager } from '../services/TaskManager';
 import { Task, TaskType, GridRow } from '../types';
 import { playSuccessSound } from '../constants';
@@ -7,7 +7,6 @@ import { generateId } from '../utils/id';
 import { getTaskIdFromDragEvent, setTaskDragData } from '../utils/drag';
 
 export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEnabled: boolean = true) {
-    const managerRef = useRef<TaskManager>();
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [isLoading, setIsLoading] = useState<boolean>(() => {
         if (!userId || !supabaseEnabled) return false;
@@ -15,16 +14,12 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
     });
 
     // Initialize manager once
-    if (!managerRef.current) {
-        managerRef.current = new TaskManager(initialTasks);
-    }
-
-    const manager = managerRef.current;
+    const manager = useMemo(() => new TaskManager(initialTasks), []);
 
     // Subscribe to changes
     useEffect(() => {
         return manager.subscribe(setTasks);
-    }, []);
+    }, [manager]);
 
     // Sync initial tasks if they change (e.g. after remote fetch/import)
     useEffect(() => {
@@ -205,7 +200,7 @@ export function useTaskManager(initialTasks: Task[], userId?: string, supabaseEn
         setIsDragging(true);
     }, []);
 
-    const handleDragEnd = useCallback((e: React.DragEvent) => {
+    const handleDragEnd = useCallback(() => {
         setIsDragging(false);
     }, []);
 

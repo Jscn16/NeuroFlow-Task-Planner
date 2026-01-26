@@ -8,19 +8,19 @@
 const isDev = import.meta.env.DEV;
 
 export const logger = {
-    info: (...args: any[]) => {
+    info: (...args: unknown[]) => {
         if (isDev) {
             console.log(...args);
         }
     },
 
-    warn: (...args: any[]) => {
+    warn: (...args: unknown[]) => {
         if (isDev) {
             console.warn(...args);
         }
     },
 
-    error: (message: string, error?: any) => {
+    error: (message: string, error?: unknown) => {
         if (isDev) {
             console.error(message, error);
         } else {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   getProgressColor,
   computeDayStats,
-  computeWeekStats,
+
   selectTasksForDay,
   selectTasksForCell,
   isTaskFaded
@@ -20,6 +20,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   type: 'medium',
   status: 'scheduled',
   dueDate: '2024-01-15',
+  deadline: null,
   assignedRow: 'FOCUS',
   eisenhowerQuad: null,
   createdAt: Date.now(),
@@ -72,7 +73,7 @@ describe('computeDayStats', () => {
 
   it('returns zero stats for empty task list', () => {
     const stats = computeDayStats([], '2024-01-15', targetMinutes);
-    
+
     expect(stats.dateStr).toBe('2024-01-15');
     expect(stats.totalMinutes).toBe(0);
     expect(stats.completionPercent).toBe(0);
@@ -85,9 +86,9 @@ describe('computeDayStats', () => {
       createTask({ duration: 60, status: 'scheduled' }),
       createTask({ duration: 30, status: 'scheduled' })
     ];
-    
+
     const stats = computeDayStats(tasks, '2024-01-15', targetMinutes);
-    
+
     expect(stats.totalMinutes).toBe(90);
     expect(stats.plannedHours).toBe('1.5');
   });
@@ -97,9 +98,9 @@ describe('computeDayStats', () => {
       createTask({ duration: 60, status: 'scheduled' }),
       createTask({ duration: 120, status: 'unscheduled' })
     ];
-    
+
     const stats = computeDayStats(tasks, '2024-01-15', targetMinutes);
-    
+
     expect(stats.totalMinutes).toBe(60);
   });
 
@@ -108,9 +109,9 @@ describe('computeDayStats', () => {
       createTask({ duration: 60, status: 'completed' }),
       createTask({ duration: 60, status: 'scheduled' })
     ];
-    
+
     const stats = computeDayStats(tasks, '2024-01-15', targetMinutes);
-    
+
     expect(stats.completionPercent).toBe(50);
   });
 
@@ -118,9 +119,9 @@ describe('computeDayStats', () => {
     const tasks = [
       createTask({ duration: 300, status: 'scheduled' }) // 5 hours = 83%
     ];
-    
+
     const stats = computeDayStats(tasks, '2024-01-15', targetMinutes);
-    
+
     expect(stats.isNearCapacity).toBe(true);
     expect(stats.isOverCapacity).toBe(false);
   });
@@ -129,9 +130,9 @@ describe('computeDayStats', () => {
     const tasks = [
       createTask({ duration: 420, status: 'scheduled' }) // 7 hours = 117%
     ];
-    
+
     const stats = computeDayStats(tasks, '2024-01-15', targetMinutes);
-    
+
     expect(stats.isOverCapacity).toBe(true);
   });
 });
@@ -147,9 +148,9 @@ describe('selectTasksForDay', () => {
       createTask({ dueDate: '2024-01-16', status: 'scheduled' }),
       createTask({ dueDate: '2024-01-15', status: 'completed' })
     ];
-    
+
     const result = selectTasksForDay(tasks, '2024-01-15');
-    
+
     expect(result).toHaveLength(2);
     expect(result.every(t => t.dueDate === '2024-01-15')).toBe(true);
   });
@@ -159,9 +160,9 @@ describe('selectTasksForDay', () => {
       createTask({ dueDate: '2024-01-15', status: 'scheduled' }),
       createTask({ dueDate: '2024-01-15', status: 'unscheduled' })
     ];
-    
+
     const result = selectTasksForDay(tasks, '2024-01-15');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].status).toBe('scheduled');
   });
@@ -178,9 +179,9 @@ describe('selectTasksForCell', () => {
       createTask({ dueDate: '2024-01-15', assignedRow: 'WORK', status: 'scheduled' }),
       createTask({ dueDate: '2024-01-16', assignedRow: 'FOCUS', status: 'scheduled' })
     ];
-    
+
     const result = selectTasksForCell(tasks, '2024-01-15', 'FOCUS', 'show');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].assignedRow).toBe('FOCUS');
   });
@@ -190,9 +191,9 @@ describe('selectTasksForCell', () => {
       createTask({ dueDate: '2024-01-15', assignedRow: 'FOCUS', status: 'completed' }),
       createTask({ dueDate: '2024-01-15', assignedRow: 'FOCUS', status: 'scheduled' })
     ];
-    
+
     const result = selectTasksForCell(tasks, '2024-01-15', 'FOCUS', 'hide');
-    
+
     expect(result).toHaveLength(1);
     expect(result[0].status).toBe('scheduled');
   });
@@ -201,9 +202,9 @@ describe('selectTasksForCell', () => {
     const tasks = [
       createTask({ dueDate: '2024-01-15', assignedRow: 'FOCUS', status: 'completed' })
     ];
-    
+
     const result = selectTasksForCell(tasks, '2024-01-15', 'FOCUS', 'show');
-    
+
     expect(result).toHaveLength(1);
   });
 });

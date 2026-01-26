@@ -45,12 +45,12 @@ export function usePersistence(
         // Small debounce to batch rapid changes
         const timer = setTimeout(saveData, 100);
         return () => clearTimeout(timer);
-    }, [tasks, habits, brainDumpLists, statsResetAt, encryptionEnabled]);
+    }, [tasks, habits, brainDumpLists, statsResetAt, encryptionEnabled, crypto, storage]);
 
     const exportData = useCallback(() => {
         const data: AppData = { tasks, habits, brainDumpLists, statsResetAt };
         storage.exportData(data);
-    }, [tasks, habits, brainDumpLists, statsResetAt]);
+    }, [tasks, habits, brainDumpLists, statsResetAt, storage]);
 
     const importData = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -67,7 +67,7 @@ export function usePersistence(
             alert('Failed to import data.');
             return null;
         }
-    }, []);
+    }, [storage]);
 
     return {
         exportData,

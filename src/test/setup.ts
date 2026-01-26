@@ -1,6 +1,25 @@
-import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+import { cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import crypto from 'node:crypto';
+import util from 'node:util';
+
+// Polyfill Web Crypto API
+Object.defineProperty(global, 'crypto', {
+    value: {
+        getRandomValues: (arr: any) => crypto.randomFillSync(arr),
+        subtle: crypto.webcrypto.subtle,
+    },
+});
+
+Object.defineProperty(global, 'TextEncoder', {
+    value: util.TextEncoder,
+});
+
+Object.defineProperty(global, 'TextDecoder', {
+    value: util.TextDecoder,
+});
+
 
 // Runs a cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {

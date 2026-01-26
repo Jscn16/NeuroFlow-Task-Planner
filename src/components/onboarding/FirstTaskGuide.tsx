@@ -32,15 +32,17 @@ export const FirstTaskGuide: React.FC<FirstTaskGuideProps> = ({ onComplete, hasA
     const [step, setStep] = useState<GuideStep>('type');
     const [visible, setVisible] = useState(false);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-    const [taskCreatedDuringSession, setTaskCreatedDuringSession] = useState(false);
+    const taskCreatedDuringSession = React.useRef(false);
     const [initialized, setInitialized] = useState(false);
     const [taskClicked, setTaskClicked] = useState(false); // Hide highlight when task is clicked
 
     // Sync step with device type - isMobile might be false initially then become true
     useEffect(() => {
         if (!initialized && !hasAnyTasks) {
-            setStep(isMobile ? 'tap-fab' : 'type');
-            setInitialized(true);
+            setTimeout(() => {
+                setStep(isMobile ? 'tap-fab' : 'type');
+                setInitialized(true);
+            }, 0);
         }
     }, [isMobile, hasAnyTasks, initialized]);
 
@@ -55,27 +57,27 @@ export const FirstTaskGuide: React.FC<FirstTaskGuideProps> = ({ onComplete, hasA
     // Mobile: When sidebar opens, move to add-form step
     useEffect(() => {
         if (isMobile && step === 'tap-fab' && isSidebarOpen) {
-            setStep('add-form');
+            setTimeout(() => setStep('add-form'), 0);
         }
     }, [isMobile, step, isSidebarOpen]);
 
     // Track task creation - transition to tap-task step on mobile
     useEffect(() => {
-        if (hasAnyTasks && !taskCreatedDuringSession) {
-            setTaskCreatedDuringSession(true);
+        if (hasAnyTasks && !taskCreatedDuringSession.current) {
+            taskCreatedDuringSession.current = true;
             if (isMobile) {
                 // When task is created, move to tap-task step
                 if (step === 'add-form' || step === 'tap-fab') {
-                    setStep('tap-task');
+                    setTimeout(() => setStep('tap-task'), 0);
                 }
             } else {
                 // Desktop: move to drag step
                 if (step === 'type') {
-                    setStep('drag');
+                    setTimeout(() => setStep('drag'), 0);
                 }
             }
         }
-    }, [hasAnyTasks, step, isMobile, taskCreatedDuringSession]);
+    }, [hasAnyTasks, step, isMobile]);
 
     // Find target element for current step
     useEffect(() => {

@@ -23,9 +23,8 @@ export function useMediaQuery(query: string): boolean {
     if (typeof window === 'undefined') return;
 
     const mediaQuery = window.matchMedia(query);
-    
-    // Set initial value
-    setMatches(mediaQuery.matches);
+
+
 
     // Create listener
     const handler = (event: MediaQueryListEvent) => {
@@ -36,7 +35,7 @@ export function useMediaQuery(query: string): boolean {
     if (mediaQuery.addEventListener) {
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
-    } 
+    }
     // Legacy browsers (Safari < 14)
     else {
       mediaQuery.addListener(handler);

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo } from 'react';
 import { useTaskContext } from '../context/TaskContext';
 import { Task, GridRow } from '../types';
 import { getWeekDays, formatDate, TARGET_HOURS_PER_DAY, getAdjustedDate } from '../constants';
@@ -121,6 +121,12 @@ export function computeDayStats(
     isNearCapacity: rawPlannedPercent > 80
   };
 }
+
+/**
+ * Compute stats for all days in a week
+ * Pure function - can be unit tested independently
+ */
+
 
 /**
  * Compute stats for all days in a week

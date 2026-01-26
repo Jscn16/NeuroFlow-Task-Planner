@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo, Variants } from 'framer-motion';
 import { CheckCircle2, Clock, GripVertical } from 'lucide-react';
 import { Task, GridRow } from '../../../types';
 import { formatDate, ROW_CONFIG } from '../../../constants';
@@ -45,7 +45,7 @@ interface MobileTaskCardProps {
 // Animation Variants
 // ============================================================================
 
-const listVariants = {
+const listVariants: Variants = {
   enter: (direction: number) => ({
     x: direction > 0 ? 300 : -300,
     opacity: 0
@@ -150,7 +150,7 @@ const MobileTaskCard: React.FC<MobileTaskCardProps> = React.memo(({
   }, [isCompleted, play, onToggleComplete, task.id]);
 
   // Handle tap (only if not swiping and not on a button)
-  const handleTap = useCallback((event: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
+  const handleTap = useCallback((event: any, info: any) => {
     // Don't open action sheet if tapped on checkbox button
     const target = event.target as HTMLElement;
     if (target.closest('button')) {
@@ -433,8 +433,8 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
 
   // Swipe gesture handler
   const handleDragEnd = useCallback((
-    _event: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
+    _event: any,
+    info: any
   ) => {
     const threshold = 50;
     const velocity = 500;

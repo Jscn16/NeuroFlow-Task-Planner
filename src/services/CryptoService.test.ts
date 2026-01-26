@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { CryptoService, generateSalt, EncryptedPayload } from './CryptoService';
+import { CryptoService, EncryptedPayload } from './CryptoService';
 
 describe('CryptoService Security Hardening', () => {
     const PASSPHRASE = 'correct-horse-battery-staple';

@@ -1,0 +1,239 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Plus, Clock, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TaskType } from '../../../types';
+import { CATEGORIES, formatDate } from '../../../constants';
+
+interface AddTaskFormProps {
+    onAdd: (task: {
+        title: string;
+        duration: number;
+        type: TaskType;
+        scheduledTime?: string;
+        date?: string;
+    }) => void;
+    selectedDate?: Date;
+    autoFocus?: boolean;
+    isMobile?: boolean; // Used to refine auto-focus behavior if needed
+}
+
+export const AddTaskForm: React.FC<AddTaskFormProps> = ({
+    onAdd,
+    selectedDate,
+    autoFocus = false,
+    isMobile = false
+}) => {
+    const [title, setTitle] = useState('');
+    const [duration, setDuration] = useState<number | null>(null);
+    const [type, setType] = useState<TaskType>('backlog');
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+    const [scheduledTime, setScheduledTime] = useState<string>('');
+    const [date, setDate] = useState<string>('');
+
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Auto-focus logic
+    useEffect(() => {
+        if (autoFocus && inputRef.current) {
+            // Small delay to ensure animation has started/completed
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
+    }, [autoFocus]);
+
+    const handleAdd = () => {
+        if (!title.trim()) return;
+
+        onAdd({
+            title: title.trim(),
+            duration: duration || 30, // Default to 30 if not set
+            type,
+            scheduledTime: scheduledTime || undefined,
+            date: date || undefined
+        });
+
+        // Reset form
+        setTitle('');
+        setDuration(null);
+        setScheduledTime('');
+        setDate('');
+        setIsScheduleOpen(false);
+    };
+
+    const selectedCategory = CATEGORIES.find(c => c.id === type);
+
+    return (
+        <div className="px-3 pb-4" data-tour="add-task">
+            <div className="rounded-xl p-4 bg-transparent border" style={{ borderColor: 'var(--border-light)' }}>
+                {/* 1. Title Input */}
+                <div className="mb-3">
+                    <input
+                        ref={inputRef}
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+                        placeholder="Add new task..."
+                        className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-zinc-500 focus:outline-none border focus:border-cyan-400/50 transition-colors"
+                        style={{
+                            color: 'var(--text-primary)',
+                            borderColor: 'var(--border-light)'
+                        }}
+                    />
+                </div>
+
+                {/* 2. Priority */}
+                <div className="mb-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                        Priority
+                    </div>
+                    <div className="grid grid-cols-3 gap-1.5">
+                        {CATEGORIES.map(cat => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setType(cat.id as TaskType)}
+                                className="py-2 px-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-all border"
+                                style={{
+                                    backgroundColor: type === cat.id ? `${cat.color}20` : 'var(--bg-surface-subtle)',
+                                    color: type === cat.id ? cat.color : 'var(--text-muted)',
+                                    border: type === cat.id ? `1px solid ${cat.color}40` : '1px solid transparent'
+                                }}
+                            >
+                                {cat.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 3. Duration */}
+                <div className="mb-3">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
+                        Duration
+                    </div>
+                    <div className="grid grid-cols-4 gap-1">
+                        {[15, 30, 45, 60].map(d => (
+                            <button
+                                key={d}
+                                onClick={() => setDuration(d)}
+                                className="py-1.5 rounded-md text-[10px] font-semibold transition-all border"
+                                style={{
+                                    backgroundColor: duration === d ? 'var(--accent)' : 'transparent',
+                                    borderColor: duration === d ? 'var(--accent)' : 'var(--border-light)',
+                                    color: duration === d ? 'white' : 'var(--text-muted)'
+                                }}
+                            >
+                                {d}m
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 4. Schedule Toggle */}
+                <button
+                    onClick={() => setIsScheduleOpen(!isScheduleOpen)}
+                    className="w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-wider px-1 py-2 mb-2 transition-colors"
+                    style={{ color: (scheduledTime || isScheduleOpen) ? 'var(--accent)' : 'var(--text-muted)' }}
+                >
+                    <span className="flex items-center gap-1.5">
+                        <Clock size={12} />
+                        {scheduledTime ? `Scheduled at ${scheduledTime}` : 'Schedule (Optional)'}
+                    </span>
+                    <ChevronDown
+                        size={12}
+                        className={`transition-transform duration-200 ${isScheduleOpen ? 'rotate-180' : ''}`}
+                    />
+                </button>
+
+                {/* 5. Collapsible Schedule Section */}
+                <AnimatePresence>
+                    {isScheduleOpen && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="space-y-3 pb-2">
+                                {/* Date */}
+                                <div>
+                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</div>
+                                    <input
+                                        type="date"
+                                        value={date || (selectedDate ? formatDate(selectedDate) : formatDate(new Date()))}
+                                        onChange={(e) => setDate(e.target.value)}
+                                        className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
+                                        style={{
+                                            color: 'var(--text-primary)',
+                                            backgroundColor: 'var(--bg-surface-strong)',
+                                            borderColor: 'var(--border-light)'
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Time */}
+                                <div>
+                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Time</div>
+                                    <input
+                                        type="time"
+                                        value={scheduledTime}
+                                        onChange={(e) => setScheduledTime(e.target.value)}
+                                        className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
+                                        style={{
+                                            color: 'var(--text-primary)',
+                                            backgroundColor: 'var(--bg-surface-strong)',
+                                            borderColor: 'var(--border-light)'
+                                        }}
+                                    />
+                                    {/* Quick Times */}
+                                    <div className="flex gap-1 mt-1.5">
+                                        {['09:00', '13:00', '17:00'].map(time => (
+                                            <button
+                                                key={time}
+                                                onClick={() => setScheduledTime(time)}
+                                                className="flex-1 py-1 rounded text-[9px] font-mono border transition-colors"
+                                                style={{
+                                                    borderColor: scheduledTime === time ? 'var(--accent)' : 'transparent',
+                                                    backgroundColor: scheduledTime === time ? 'rgba(34,211,238,0.1)' : 'var(--bg-surface-subtle)',
+                                                    color: scheduledTime === time ? 'var(--accent)' : 'var(--text-muted)'
+                                                }}
+                                            >
+                                                {time}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* 6. Add Button */}
+                <button
+                    onClick={handleAdd}
+                    disabled={!title.trim()}
+                    className="w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all mt-2"
+                    style={{
+                        backgroundColor: title.trim()
+                            ? (scheduledTime ? 'var(--accent)' : selectedCategory?.color)
+                            : 'var(--bg-surface-subtle)',
+                        color: title.trim() ? 'white' : 'var(--text-muted)',
+                        opacity: title.trim() ? 1 : 0.5
+                    }}
+                >
+                    {scheduledTime ? (
+                        <>
+                            <Clock size={14} />
+                            Schedule Task
+                        </>
+                    ) : (
+                        <>
+                            <Plus size={14} />
+                            Add
+                        </>
+                    )}
+                </button>
+            </div>
+        </div>
+    );
+};

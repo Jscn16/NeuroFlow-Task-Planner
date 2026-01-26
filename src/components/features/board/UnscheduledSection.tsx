@@ -71,12 +71,12 @@ export const UnscheduledSection: React.FC<UnscheduledSectionProps> = ({
                             onClick={() => onTap(task)}
                             whileTap={{ scale: 0.98 }}
                             draggable
-                            onDragStart={(e) => {
+                            onDragStart={(e: any) => {
                                 // Add visible style for dragging
                                 e.currentTarget.style.opacity = '0.5';
                                 onDragStart(e, task.id);
                             }}
-                            onDragEnd={(e) => {
+                            onDragEnd={(e: any) => {
                                 e.currentTarget.style.opacity = '1';
                             }}
                         >

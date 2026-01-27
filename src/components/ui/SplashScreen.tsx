@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle } from 'lucide-react';
+import { WeekFluxLogo } from '../../brand/WeekFluxLogo';
 
 interface SplashScreenProps {
     isLoggedIn: boolean;
@@ -71,69 +71,39 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ isLoggedIn, onComple
                         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                     >
                         {/* Logo Icon with Glow */}
-                        <motion.div
-                            className="relative"
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.5, ease: [0, 0.71, 0.2, 1.01] }}
+                        <WeekFluxLogo size="5xl" showIcon={true} layout="vertical" />
+                        <motion.p
+                            className="text-white/50 text-sm mt-2 tracking-widest uppercase"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3, delay: 0.4 }}
                         >
-                            <motion.div
-                                className="absolute inset-0 rounded-3xl bg-cyan-500/30 blur-2xl"
-                                animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                    scale: [1, 1.2, 1]
-                                }}
-                                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <div className="relative p-5 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 backdrop-blur-xl">
-                                <CheckCircle className="text-cyan-400" size={48} strokeWidth={1.5} />
-                            </div>
-                        </motion.div>
-
-                        {/* Brand Name */}
-                        <motion.div
-                            className="text-center"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.2 }}
-                        >
-                            <h1 className="text-5xl font-display font-extrabold tracking-tight">
-                                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                                    Neuro
-                                </span>
-                                <span className="text-white">Flow</span>
-                            </h1>
-                            <motion.p
-                                className="text-white/50 text-sm mt-2 tracking-widest uppercase"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3, delay: 0.4 }}
-                            >
-                                {isLoggedIn ? 'Welcome back' : 'ADHD Task Planner'}
-                            </motion.p>
-                        </motion.div>
-
-                        {/* Loading dots - only for non-logged-in users */}
-                        {!isLoggedIn && (
-                            <motion.div
-                                className="flex gap-1.5 mt-4"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.5 }}
-                            >
-                                {[0, 1, 2].map((i) => (
-                                    <motion.div
-                                        key={i}
-                                        className="w-2 h-2 rounded-full bg-cyan-400/60"
-                                        animate={{ opacity: [0.3, 1, 0.3] }}
-                                        transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
-                                    />
-                                ))}
-                            </motion.div>
-                        )}
+                            {isLoggedIn ? 'Welcome back' : ''}
+                        </motion.p>
                     </motion.div>
+
+                    {/* Loading dots - only for non-logged-in users */}
+                    {!isLoggedIn && (
+                        <motion.div
+                            className="flex gap-1.5 mt-4"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.5 }}
+                        >
+                            {[0, 1, 2].map((i) => (
+                                <motion.div
+                                    key={i}
+                                    className="w-2 h-2 rounded-full bg-cyan-400/60"
+                                    animate={{ opacity: [0.3, 1, 0.3] }}
+                                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                                />
+                            ))}
+                        </motion.div>
+                    )}
                 </motion.div>
-            )}
-        </AnimatePresence>
+                </motion.div>
+    )
+}
+        </AnimatePresence >
     );
 };

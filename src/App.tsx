@@ -40,6 +40,7 @@ import { LoadingScreen } from './components/ui/LoadingScreen';
 import { useEntryRouting } from './hooks/useEntryRouting';
 import { TaskDetailView } from './components/tasks/TaskDetailView';
 import { GlobalFocusBar } from './components/features/dashboard/GlobalFocusBar';
+import { EncryptionOnboardingModal } from './components/features/dashboard/EncryptionOnboardingModal';
 
 // Lazy load components
 const AnalyticsDashboard = React.lazy(() => import('./components/features/dashboard/AnalyticsDashboard').then(module => ({ default: module.AnalyticsDashboard })));
@@ -145,9 +146,35 @@ const AppContent = ({
 
     // UI State for stats reset baseline
     const [statsResetAt, setStatsResetAt] = useState<number>(initialStatsResetAt);
+    const [showEncryptionOnboarding, setShowEncryptionOnboarding] = useState(false);
 
     // Check if encryption is enabled for the encryptionEnabled prop
     const encryptionEnabled = StorageService.getInstance().isEncryptionEnabled();
+
+    // Check if we should show encryption onboarding
+    useEffect(() => {
+        if (userId) { // Only show when user is logged in
+            const isEnabled = StorageService.getInstance().isEncryptionEnabled();
+            const hasSkipped = localStorage.getItem('encryption_onboarding_skipped') === 'true';
+
+            if (!isEnabled && !hasSkipped) {
+                // Small delay to let other UI settle (welcome modal etc)
+                const timer = setTimeout(() => setShowEncryptionOnboarding(true), 1500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [userId]);
+
+    const handleEnableEncryptionOnboarding = () => {
+        // Close modal and trigger the existing enable flow
+        setShowEncryptionOnboarding(false);
+        onEnableEncryption?.();
+    };
+
+    const handleSkipEncryptionOnboarding = () => {
+        localStorage.setItem('encryption_onboarding_skipped', 'true');
+        setShowEncryptionOnboarding(false);
+    };
     const persistence = usePersistence(taskManager.tasks, habitManager.habits, brainDumpManager.lists, statsResetAt, encryptionEnabled);
 
     // --- Responsive ---
@@ -586,6 +613,8 @@ const AppContent = ({
                                         toggleHabit={habitManager.toggleHabit}
                                         onDeleteHabit={habitManager.deleteHabit}
                                         onAddHabit={habitManager.addHabit}
+                                        onAddTask={taskManager.addTask}
+                                        onScheduleTask={taskManager.scheduleTask}
                                     />
                                 </Suspense>
                             </motion.div>
@@ -659,6 +688,13 @@ const AppContent = ({
             {isMobile && (
                 <MobileNavBar activeTab={activeTab} onChange={setActiveTab} />
             )}
+
+            {/* Encryption Onboarding Modal */}
+            <EncryptionOnboardingModal
+                isOpen={showEncryptionOnboarding}
+                onEnable={handleEnableEncryptionOnboarding}
+                onSkip={handleSkipEncryptionOnboarding}
+            />
 
             {/* Quick Add Modal (Ctrl+N) */}
             <QuickAddModal
@@ -761,7 +797,7 @@ const App = () => {
     const { currentRoute, markFeatureOverviewSeen } = useEntryRouting({
         isAuthReady,
         user,
-        isVaultSetup: encryption.isVaultSetup || storage.isEncryptionEnabled() || showRestorePrompt,
+        isVaultSetup: encryption.isVaultSetup || storage.isEncryptionEnabled() || showRestorePrompt || showVaultSetup,
         isUnlocked: encryption.isUnlocked,
         isReturningUser,
         syncEnabled: useSupabaseSync

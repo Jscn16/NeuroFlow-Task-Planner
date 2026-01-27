@@ -1,5 +1,6 @@
 import React from 'react';
-import { Settings, PanelLeftClose, Check, X, Clock, List } from 'lucide-react';
+import { Settings, PanelLeftClose, X, Clock, List } from 'lucide-react';
+import { WeekFluxLogo } from '../../../brand/WeekFluxLogo';
 
 interface SidebarHeaderProps {
     onOpenSettings: () => void;
@@ -20,17 +21,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
 }) => {
     return (
         <div className="p-4 pb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Check size={32} strokeWidth={4} style={{ color: 'var(--accent)' }} />
-                <div className="flex flex-col">
-                    <h1 className="text-2xl font-display font-bold leading-none tracking-tight" style={{ color: 'var(--text-primary)' }}>
-                        Neuro<span style={{ color: 'var(--accent)' }}>Flow</span>
-                    </h1>
-                    <p className="text-[9px] font-medium tracking-[0.2em] uppercase leading-none mt-1" style={{ color: 'var(--text-primary)', opacity: 0.8 }}>
-                        Task Planner
-                    </p>
-                </div>
-            </div>
+            <WeekFluxLogo size="lg" showIcon={true} />
             <div className="flex items-center gap-1">
                 {isMobile ? (
                     <button

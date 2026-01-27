@@ -5,8 +5,8 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 const pwaManifest = {
-  name: 'NeuroFlow',
-  short_name: 'NeuroFlow',
+  name: 'WeekFlux',
+  short_name: 'WeekFlux',
   theme_color: '#09090b',
   background_color: '#09090b',
   display: 'standalone',

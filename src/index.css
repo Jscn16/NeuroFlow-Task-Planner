@@ -22,6 +22,7 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display: 'Inter', -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: var(--font-mono, 'Manrope', monospace);
+  --font-brand: 'ManropeBrand', 'ui-sans-serif', 'system-ui';
 
   --color-neon-pink: #f472b6;
   --color-neon-cyan: #22d3ee;

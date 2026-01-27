@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className="relative flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300 outline-none"
+                                    className="relative flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 outline-none"
                                     style={{
                                         color: isActive ? '#fff' : 'rgba(255,255,255,0.4)',
                                     }}

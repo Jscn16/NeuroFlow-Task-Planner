@@ -141,7 +141,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     {/* Footer */}
                     <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
                         <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                            NeuroFlow v1.3
+                            WeekFlux v1.3
                         </span>
                     </div>
                 </motion.div>

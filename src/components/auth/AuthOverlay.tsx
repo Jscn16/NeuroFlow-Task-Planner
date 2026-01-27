@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, LogIn, ShieldCheck, ArrowRight, CheckCircle } from 'lucide-react';
+import { WeekFluxLogo } from '../../brand/WeekFluxLogo';
 
 interface AuthOverlayProps {
     onMagicLink: (email: string) => Promise<void>;
@@ -103,47 +104,16 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                         transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                     >
                         {/* Logo Icon with Glow */}
-                        <motion.div
-                            className="relative"
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: 1 }}
-                            transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-                        >
-                            <motion.div
-                                className="absolute inset-0 rounded-3xl bg-cyan-500/30 blur-2xl"
-                                animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                    scale: [1, 1.2, 1]
-                                }}
-                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            />
-                            <div className="relative p-5 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-400/30 backdrop-blur-xl">
-                                <CheckCircle className="text-cyan-400" size={48} strokeWidth={1.5} />
-                            </div>
-                        </motion.div>
+                        <WeekFluxLogo size="5xl" showIcon={true} layout="vertical" />
 
-                        {/* Brand Name */}
-                        <motion.div
-                            className="text-center"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.3 }}
+                        <motion.p
+                            className="text-white/50 text-sm mt-2 tracking-widest uppercase"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5, delay: 0.6 }}
                         >
-                            <h1 className="text-5xl font-display font-extrabold tracking-tight">
-                                <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                                    Neuro
-                                </span>
-                                <span className="text-white">Flow</span>
-                            </h1>
-                            <motion.p
-                                className="text-white/50 text-sm mt-2 tracking-widest uppercase"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.5, delay: 0.6 }}
-                            >
-                                ADHD Task Planner
-                            </motion.p>
-                        </motion.div>
+
+                        </motion.p>
 
                         {/* Loading dots */}
                         <motion.div
@@ -180,11 +150,12 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                             >
                                 <CheckCircle className="mx-auto text-cyan-400 mb-4" size={48} strokeWidth={1.5} />
                             </motion.div>
-                            <h1 className="text-3xl font-bold text-white mb-2">
-                                Welcome to <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">NeuroFlow</span>
+                            <h1 className="text-3xl font-bold text-white mb-2 flex flex-col items-center">
+                                <span>Welcome to</span>
+                                <WeekFluxLogo size="2xl" showIcon={false} className="mt-2" />
                             </h1>
                             <p className="text-white/60">
-                                A task planner designed for ADHD minds
+                                A powerful weekly planning tool
                             </p>
                         </div>
 
@@ -299,7 +270,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                     onClick={() => setAuthMode('magic')}
                                     className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${authMode === 'magic' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80'}`}
                                 >
-                                    Magic Link
+                                    Login Link
                                 </button>
                                 <button
                                     onClick={() => setAuthMode('password')}
@@ -361,7 +332,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                     className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/40 hover:bg-cyan-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <LogIn size={18} />
-                                    {submitting ? 'Processing…' : (authMode === 'magic' ? 'Send Magic Link' : (isSignUp ? 'Create Account' : 'Sign In'))}
+                                    {submitting ? 'Processing…' : (authMode === 'magic' ? 'Send Login Link' : (isSignUp ? 'Create Account' : 'Sign In'))}
                                 </button>
 
                                 {authMode === 'password' && (

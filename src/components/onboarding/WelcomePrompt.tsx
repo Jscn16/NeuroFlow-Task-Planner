@@ -112,7 +112,7 @@ export const WelcomePrompt: React.FC<WelcomePromptProps> = ({ onAccept, onDeclin
 
                                 {/* Title */}
                                 <h2 className="text-2xl font-bold text-white mb-2 tracking-tight">
-                                    Welcome to NeuroFlow! 👋
+                                    Welcome to WeekFlux! 👋
                                 </h2>
 
                                 {/* Description */}

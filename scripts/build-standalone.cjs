@@ -51,7 +51,7 @@ try {
 
 // 3. Rename Output File - SKIPPED (User requested index.html)
 // const indexHtml = path.join(DIST_DIR, 'index.html');
-// const targetHtml = path.join(DIST_DIR, 'neuroflow-standalone-V2.html');
+// const targetHtml = path.join(DIST_DIR, 'weekflux-standalone-V2.html');
 
 // if (fs.existsSync(indexHtml)) {
 //     try {

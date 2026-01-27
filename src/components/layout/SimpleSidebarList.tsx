@@ -3,6 +3,7 @@ import { Task, TaskType, GridRow } from '../../types';
 import { CATEGORIES } from '../../constants';
 import { SidebarTaskCard } from '../tasks/SidebarTaskCard';
 import { ChevronDown } from 'lucide-react';
+import { useSpaceCategories } from '../../hooks/useSpaceCategories';
 
 interface SimpleSidebarListProps {
     tasks: Task[];
@@ -43,9 +44,11 @@ export const SimpleSidebarList: React.FC<SimpleSidebarListProps> = ({
     onLongPressTask,
     onSelectTask
 }) => {
+    const categories = useSpaceCategories();
+
     return (
         <div className="flex-1 min-h-0 h-full overflow-y-auto scrollbar-hide">
-            {CATEGORIES.map((cat, index) => {
+            {categories.map((cat, index) => {
                 const catTasks = tasks.filter(t => t.type === cat.id && t.status === 'unscheduled' && !t.isFrozen);
                 const isExpanded = expandedCategories[cat.id];
                 const isDraggedOver = dragOverCategory === cat.id;

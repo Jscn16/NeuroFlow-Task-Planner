@@ -21,12 +21,12 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     return (
         <div className="rounded-2xl overflow-hidden" style={{
-            backgroundColor: variant === 'danger' ? 'rgba(239,68,68,0.03)' : 'rgba(255,255,255,0.02)',
+            backgroundColor: variant === 'danger' ? 'rgba(239,68,68,0.03)' : 'var(--bg-surface-subtle)',
             border: `1px solid ${variant === 'danger' ? 'rgba(239,68,68,0.15)' : 'var(--border-light)'}`
         }}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-4 transition-colors hover:bg-white/[0.02]"
+                className="w-full flex items-center justify-between p-4 transition-colors hover:bg-[var(--bg-surface-strong)]"
             >
                 <div className="flex items-center gap-3">
                     <Icon size={18} style={{ color: variant === 'danger' ? 'var(--error)' : 'var(--accent)' }} />

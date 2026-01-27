@@ -4,6 +4,7 @@ import { Task, GridRow } from '../../../types';
 import { ROW_CONFIG, formatDate } from '../../../constants';
 import { GridCell } from './GridCell';
 import { weekSwitch } from '../../../utils/animations';
+import { useSpaceRows } from '../../../hooks/useSpaceRows';
 
 interface WeekMatrixViewProps {
     weekKey: string;
@@ -39,7 +40,7 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
     onSelectTask
 }) => {
     const [hoveredIcon, setHoveredIcon] = useState<GridRow | null>(null);
-    const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
+    const { rows, rowConfig } = useSpaceRows();
 
     return (
         <motion.div
@@ -50,9 +51,9 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
             exit="exit"
             className="flex-grow flex flex-col relative mt-0 overflow-y-auto no-scrollbar pr-1"
         >
-            {ROW_LABELS.map(row => {
-                const rowConfig = ROW_CONFIG[row];
-                const style = rowConfig;
+            {rows.map(row => {
+                const config = rowConfig[row];
+                const style = config;
                 const isIconHovered = hoveredIcon === row;
 
                 return (
@@ -80,7 +81,7 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                                 onMouseEnter={() => setHoveredIcon(row)}
                                 onMouseLeave={() => setHoveredIcon(null)}
                             >
-                                <rowConfig.icon
+                                <config.icon
                                     size={20}
                                     className={`mb-1.5 ${style.color} transition-all duration-200 cursor-help`}
                                     style={{ transform: isIconHovered ? 'scale(1.2)' : 'scale(1)' }}
@@ -96,14 +97,14 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                                             color: 'var(--text-muted)'
                                         }}
                                     >
-                                        <div className="font-bold mb-0.5" style={{ color: 'var(--text)' }}>{rowConfig.label}</div>
-                                        {rowConfig.description}
+                                        <div className="font-bold mb-0.5" style={{ color: 'var(--text)' }}>{config.label}</div>
+                                        {config.description}
                                     </div>
                                 )}
                             </div>
 
                             <div className={`text-[10px] font-black tracking-widest uppercase ${style.color}`}>
-                                {rowConfig.label}
+                                {config.label}
                             </div>
 
                             <div
@@ -113,7 +114,7 @@ export const WeekMatrixView: React.FC<WeekMatrixViewProps> = ({
                                     opacity: 0.9
                                 }}
                             >
-                                {rowConfig.sub}
+                                {config.sub}
                             </div>
                         </div>
 

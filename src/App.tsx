@@ -212,9 +212,7 @@ const AppContent = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
-    const [dayViewMode, setDayViewMode] = useState<'list' | 'timeline'>(() => {
-        return StorageService.getInstance().loadDayViewMode();
-    });
+    const [dayViewMode, setDayViewMode] = useState<'list' | 'timeline'>('list');
     // activeTaskId moved to FocusMode
     const today = getAdjustedDate();
     const [sampleTasksAdded, setSampleTasksAdded] = useState(false);

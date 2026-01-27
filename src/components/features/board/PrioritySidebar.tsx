@@ -4,6 +4,7 @@ import { Task, GridRow } from '../../../types';
 import { ROW_CONFIG, ROW_LABELS } from '../../../constants';
 import { BoardTaskCard } from '../../tasks/BoardTaskCard';
 import { useTaskContext } from '../../../context/TaskContext';
+import { useSpaceRows } from '../../../hooks/useSpaceRows';
 
 interface PrioritySidebarProps {
     tasks: Task[];
@@ -27,6 +28,7 @@ export const PrioritySidebar: React.FC<PrioritySidebarProps> = ({
     onDeleteTask
 }) => {
     const { handleDragStart } = useTaskContext();
+    const { rows, rowConfig } = useSpaceRows();
 
     const handleDropOnRow = (e: React.DragEvent, row: GridRow) => {
         e.preventDefault();
@@ -65,8 +67,8 @@ export const PrioritySidebar: React.FC<PrioritySidebarProps> = ({
             </div>
 
             <div className="flex-1 flex flex-col gap-4 p-2">
-                {ROW_LABELS.map(row => {
-                    const config = ROW_CONFIG[row];
+                {rows.map(row => {
+                    const config = rowConfig[row];
                     const rowTasks = tasks.filter(t =>
                         t.assignedRow === row &&
                         !t.scheduledTime && // Only show unscheduled (time-wise) tasks

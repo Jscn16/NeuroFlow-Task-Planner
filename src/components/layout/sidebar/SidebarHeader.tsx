@@ -40,15 +40,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
                         <PanelLeftClose size={18} />
                     </button>
                 )}
-                {onDayViewModeChange && (
-                    <button
-                        onClick={() => onDayViewModeChange(dayViewMode === 'list' ? 'timeline' : 'list')}
-                        className="btn-icon"
-                        title={dayViewMode === 'list' ? "Switch to Timeline View" : "Switch to List View"}
-                    >
-                        {dayViewMode === 'list' ? <Clock size={18} /> : <List size={18} />}
-                    </button>
-                )}
+
                 <button
                     onClick={onOpenSettings}
                     className="btn-icon"

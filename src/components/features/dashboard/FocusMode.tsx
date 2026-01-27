@@ -74,23 +74,38 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                     const isPast = idx < (currentPhaseInfo?.index ?? -1);
                     const isFuture = idx > (currentPhaseInfo?.index ?? -1);
 
+                    // Calculate progress for active segment
+                    let progress = 100;
+                    if (isActive && currentPhaseInfo) {
+                        const totalSeconds = seg.duration * 60;
+                        const elapsed = totalSeconds - currentPhaseInfo.remainingSeconds;
+                        progress = Math.min(100, Math.max(0, (elapsed / totalSeconds) * 100));
+                    }
+
                     return (
                         <div
                             key={idx}
                             style={{ flexGrow: seg.duration, flexBasis: 0 }}
                             className={`
-                                h-4 rounded-full relative transition-all duration-500
+                                h-4 rounded-full relative transition-all duration-500 overflow-hidden
                                 ${seg.type === 'break' ? 'mx-1' : ''}
-                                ${isActive ? (seg.type === 'work' ? 'bg-emerald-500' : 'bg-blue-400') : ''}
-                                ${isPast ? (seg.type === 'work' ? 'bg-emerald-900/40' : 'bg-blue-900/40') : ''}
-                                ${isFuture ? (seg.type === 'work' ? 'bg-slate-700/30' : 'bg-slate-700/30') : ''}
-                                ${isActive ? 'ring-2 ring-white/20 scale-y-125' : ''}
+                                ${isActive ? 'bg-slate-700/50 ring-2 ring-white/20 scale-y-125' : ''}
+                                ${isPast ? (seg.type === 'work' ? 'bg-emerald-500' : 'bg-blue-400') : ''}
+                                ${isFuture ? (seg.type === 'work' ? 'bg-emerald-900/20' : 'bg-blue-900/20') : ''}
                             `}
                             title={`${seg.type.toUpperCase()}: ${seg.duration}m`}
                         >
+                            {/* Active Segment Progress Fill */}
+                            {isActive && (
+                                <div
+                                    className={`h-full transition-all duration-1000 ease-linear ${seg.type === 'work' ? 'bg-emerald-500' : 'bg-blue-400'}`}
+                                    style={{ width: `${progress}%` }}
+                                />
+                            )}
+
                             {/* Marker lines for work blocks */}
                             {seg.type === 'work' && isActive && (
-                                <div className="absolute inset-0 bg-white/10 animate-pulse rounded-full" />
+                                <div className="absolute inset-0 bg-white/5 data-[active=true]:animate-pulse rounded-full pointer-events-none" />
                             )}
                         </div>
                     );

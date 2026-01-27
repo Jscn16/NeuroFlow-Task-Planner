@@ -363,8 +363,13 @@ MobileTaskCard.displayName = 'MobileTaskCard';
 // Row Section Component
 // ============================================================================
 
+import { useSpaceRows } from '../../../hooks/useSpaceRows';
+
+// ... (existing helper components)
+
 interface RowSectionProps {
   row: GridRow;
+  config: typeof ROW_CONFIG[GridRow]; // Pass config directly
   tasks: Task[];
   isPastDay: boolean;
   viewMode: 'show' | 'fade' | 'hide';
@@ -375,6 +380,7 @@ interface RowSectionProps {
 
 const RowSection: React.FC<RowSectionProps> = React.memo(({
   row,
+  config,
   tasks,
   isPastDay,
   viewMode,
@@ -382,7 +388,6 @@ const RowSection: React.FC<RowSectionProps> = React.memo(({
   onLongPress,
   onSelectTask
 }) => {
-  const config = ROW_CONFIG[row];
   const Icon = config.icon;
 
   if (tasks.length === 0) return null;
@@ -438,13 +443,6 @@ RowSection.displayName = 'RowSection';
 // Main Component
 // ============================================================================
 
-/**
- * MobileDayView - Swipeable day task list
- * 
- * Displays tasks grouped by row (GOAL, FOCUS, WORK, etc.)
- * Supports swipe gestures to navigate between days.
- * Long-press on cards triggers action sheet.
- */
 export const MobileDayView: React.FC<MobileDayViewProps> = ({
   tasks,
   selectedDate,
@@ -459,6 +457,7 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
   onSelectTask
 }) => {
   const [actionSheetTask, setActionSheetTask] = useState<Task | null>(null);
+  const { rows, rowConfig } = useSpaceRows(); // Use Hook
 
   const selectedDateStr = formatDate(selectedDate);
   const isPastDay = selectedDateStr < todayStr;
@@ -476,7 +475,6 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
   });
 
   // Group tasks by row
-  const rows: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
   const tasksByRow = rows.reduce((acc, row) => {
     acc[row] = dayTasks.filter(t => t.assignedRow === row);
     return acc;
@@ -590,6 +588,7 @@ export const MobileDayView: React.FC<MobileDayViewProps> = ({
                   <RowSection
                     key={row}
                     row={row}
+                    config={rowConfig[row]}
                     tasks={tasksByRow[row]}
                     isPastDay={isPastDay}
                     viewMode={viewMode}

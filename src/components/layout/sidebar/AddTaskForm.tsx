@@ -3,6 +3,7 @@ import { Plus, Clock, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TaskType } from '../../../types';
 import { CATEGORIES, formatDate } from '../../../constants';
+import { useSpaceCategories } from '../../../hooks/useSpaceCategories';
 
 interface AddTaskFormProps {
     onAdd: (task: {
@@ -42,6 +43,8 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
         }
     }, [autoFocus]);
 
+    const categories = useSpaceCategories();
+
     const handleAdd = () => {
         if (!title.trim()) return;
 
@@ -61,7 +64,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
         setIsScheduleOpen(false);
     };
 
-    const selectedCategory = CATEGORIES.find(c => c.id === type);
+    const selectedCategory = categories.find(c => c.id === type);
 
     return (
         <div className="px-3 pb-4" data-tour="add-task">
@@ -90,7 +93,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                         Priority
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
-                        {CATEGORIES.map(cat => (
+                        {categories.map(cat => (
                             <button
                                 key={cat.id}
                                 onClick={() => setType(cat.id as TaskType)}
@@ -98,7 +101,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                                 style={{
                                     backgroundColor: type === cat.id ? `${cat.color}20` : 'var(--surface2)',
                                     color: type === cat.id ? cat.color : 'var(--text-muted)',
-                                    border: type === cat.id ? `1px solid ${cat.color}40` : '1px solid transparent'
+                                    border: type === cat.id ? `1px solid ${cat.color}` : '1px solid transparent'
                                 }}
                             >
                                 {cat.label}
@@ -113,7 +116,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                         Duration
                     </div>
                     <div className="grid grid-cols-4 gap-1">
-                        {[15, 30, 45, 60].map(d => (
+                        {[15, 30, 45].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setDuration(d)}
@@ -127,6 +130,46 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                                 {d}m
                             </button>
                         ))}
+                        <div className="relative">
+                            <button
+                                onClick={() => {
+                                    if (duration && ![15, 30, 45].includes(duration)) {
+                                        // If already custom, clear it to toggle input focus or reset?
+                                        // For now, just keep it as selecting "custom" mode visual
+                                    }
+                                    // Focus input if exists
+                                    const input = document.getElementById('custom-duration-input');
+                                    if (input) input.focus();
+                                }}
+                                className="w-full h-full py-1.5 rounded-md text-[10px] font-semibold transition-all border flex items-center justify-center p-0"
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    borderColor: (duration && ![15, 30, 45].includes(duration)) ? 'var(--accent)' : 'var(--border)',
+                                    color: (duration && ![15, 30, 45].includes(duration)) ? 'var(--accent)' : 'var(--text-muted)'
+                                }}
+                            >
+                                {(duration && ![15, 30, 45].includes(duration)) ? (
+                                    <input
+                                        id="custom-duration-input"
+                                        type="number"
+                                        min="1"
+                                        max="999"
+                                        value={duration}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            if (!isNaN(val) && val > 0) setDuration(val);
+                                            else setDuration(null);
+                                        }}
+                                        className="w-full h-full bg-transparent text-center focus:outline-none"
+                                        style={{ color: 'inherit' }}
+                                        placeholder="Set"
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                ) : (
+                                    <span onClick={() => setDuration(60)}>Set</span>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
 

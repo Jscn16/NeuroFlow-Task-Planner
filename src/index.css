@@ -504,6 +504,9 @@ textarea,
   --surface3: #FFFFFF;
   /* Popovers, Modals (Elevated) */
 
+  /* Panel Background (Fixed) */
+  --panel: #FFFFFF;
+
   /* Header Token */
   --header-bg: rgba(255, 255, 255, 0.85);
 

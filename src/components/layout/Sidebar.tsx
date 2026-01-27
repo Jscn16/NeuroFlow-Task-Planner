@@ -308,13 +308,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     />,
                     <motion.div
                         key="sidebar-panel"
-                        className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-[300px] bg-zinc-900 shadow-2xl border-r border-zinc-800 overflow-hidden"
+                        className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-[300px] shadow-2xl border-r overflow-hidden"
+                        style={{
+                            backgroundColor: 'var(--surface)',
+                            borderColor: 'var(--border)'
+                        }}
                         initial={{ x: '-100%' }}
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'spring', stiffness: 260, damping: 30 }}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleSidebarDrop}
+                        data-sidebar="true"
                     >
                         <div className="h-full overflow-y-auto pb-24">
                             {sidebarContent}
@@ -349,6 +354,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleSidebarDrop}
+            data-sidebar="true"
         >
             {sidebarContent}
             <FrostOverlay isVisible={freezing} />

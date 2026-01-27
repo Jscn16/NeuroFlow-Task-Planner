@@ -7,6 +7,8 @@ import { StorageService } from '../../../services/StorageService';
 import { SupabaseDataService } from '../../../services/supabaseDataService';
 import { logger } from '../../../utils/logger';
 
+import { SettingsSection } from './SettingsSection';
+
 interface SettingsSpacesProps {
     supabaseEnabled: boolean;
 }
@@ -36,11 +38,6 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
                 if (appData) {
                     const migrated = migrateDataToSpaces(appData);
                     storage.save(migrated);
-
-                    // If we are using Supabase, we might need to handle that too, 
-                    // but for now, the migration util handles the local data structure modification.
-                    // For Supabase, the next sync/save should theoretically propagate the field 
-                    // if the column exists or if we map it correctly.
                 }
 
                 // 3. Set flag
@@ -63,11 +60,11 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
     };
 
     return (
-        <section className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
-                Work / Private Mode
-            </h3>
-
+        <SettingsSection
+            title="Work / Private Mode"
+            icon={Briefcase}
+            defaultOpen={false}
+        >
             <div
                 className="p-4 rounded-xl border transition-all duration-200"
                 style={{
@@ -77,7 +74,10 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
             >
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
+                        <div
+                            className="p-2 rounded-lg"
+                            style={{ backgroundColor: 'var(--accent-muted)', color: 'var(--accent)' }}
+                        >
                             <Briefcase size={20} />
                         </div>
                         <div>
@@ -99,7 +99,14 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
                 </div>
 
                 {enabled && (
-                    <div className="mt-3 p-3 text-xs rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300">
+                    <div
+                        className="mt-3 p-3 text-xs rounded-lg border"
+                        style={{
+                            backgroundColor: 'var(--accent-muted)',
+                            borderColor: 'var(--accent-glow)',
+                            color: 'var(--accent)'
+                        }}
+                    >
                         <p>
                             You are currently in <strong>{getSpace() === 'work' ? 'Work' : 'Private'}</strong> mode.
                             Use the switcher in the header to toggle between spaces.
@@ -107,6 +114,6 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
                     </div>
                 )}
             </div>
-        </section>
+        </SettingsSection>
     );
 };

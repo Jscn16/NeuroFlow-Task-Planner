@@ -46,7 +46,7 @@ export const themes: Theme[] = [
     name: 'Dark Mode',
     description: 'The ultimate dark experience. Deep contrasts, refined functionality.',
     colors: {
-      bgPrimary: '#000000', // Pure OLED Black
+      bgPrimary: '#12141a', // Restored Dark Blue/Grey (User Preference)
       bgSecondary: '#1C1C1E', // Apple Card Dark Gray
       bgTertiary: '#2C2C2E', // Lighter Gray for hover
       bgGlow: 'rgba(56, 189, 248, 0.05)', // Very subtle cyan glow

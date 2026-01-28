@@ -37,6 +37,7 @@ import { VaultUnlockScreen } from './components/auth/VaultUnlockScreen';
 import { useEncryption } from './hooks/useEncryption';
 import { CryptoService } from './services/CryptoService';
 import { LoadingScreen } from './components/ui/LoadingScreen';
+import { useCalendarEnabled } from './hooks/useCalendarEnabled';
 
 import { useEntryRouting } from './hooks/useEntryRouting';
 import { TaskDetailView } from './components/tasks/TaskDetailView';
@@ -215,7 +216,6 @@ const AppContent = ({
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showSettings, setShowSettings] = useState(false);
     const [viewMode, setViewMode] = useState<'show' | 'fade' | 'hide'>('fade');
-    const [dayViewMode, setDayViewMode] = useState<'list' | 'timeline'>('list');
     // activeTaskId moved to FocusMode
     const today = getAdjustedDate();
     const [sampleTasksAdded, setSampleTasksAdded] = useState(false);
@@ -344,6 +344,27 @@ const AppContent = ({
         applyTheme(theme);
         persistence.saveTheme(currentThemeId);
     }, [currentThemeId]);
+
+    // --- View Mode Persistence ---
+    const [dayViewMode, setDayViewMode] = useState<'list' | 'timeline'>(() => {
+        // Load persisted view mode
+        return persistence.loadDayViewMode();
+    });
+
+    useEffect(() => {
+        // Save view mode on change
+        persistence.saveDayViewMode(dayViewMode);
+    }, [dayViewMode]);
+
+    // --- Calendar Feature Flag ---
+    const { isCalendarEnabled, isTimelineOnly, isPriorityOnly } = useCalendarEnabled();
+    useEffect(() => {
+        if (isPriorityOnly && dayViewMode === 'timeline') {
+            setDayViewMode('list');
+        } else if (isTimelineOnly && dayViewMode === 'list') {
+            setDayViewMode('timeline');
+        }
+    }, [isPriorityOnly, isTimelineOnly, dayViewMode]);
 
     // --- Global Hotkeys ---
     useEffect(() => {
@@ -1289,10 +1310,7 @@ const App = () => {
         setShowVaultSetup(false);
     }, [encryption, storage]);
 
-    const handleSkipVault = useCallback(() => {
-        setEncryptionSkipped(true);
-        setShowVaultSetup(false);
-    }, []);
+
 
     const handleDisableEncryption = useCallback(() => {
         encryption.resetVault();
@@ -1323,6 +1341,8 @@ const App = () => {
                     isLoading={false}
                     authError={null}
                     onMagicLink={(email) => signInWithEmail(email)}
+                    onSignInWithPassword={(email, password) => signInWithPassword(email, password)}
+                    onSignUpWithPassword={(email, password) => signUpWithPassword(email, password)}
                     onOAuth={(provider) => signInWithOAuth(provider)}
                     onCancel={() => {
                         markFeatureOverviewSeen();
@@ -1374,7 +1394,6 @@ const App = () => {
                     }}
                     onUnlock={encryption.unlock}
                     onReset={handleResetVault}
-                    onSkip={handleSkipVault}
                 />
             );
 

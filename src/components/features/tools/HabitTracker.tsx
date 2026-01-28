@@ -157,7 +157,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
 };
 
 export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit, onDeleteHabit, onAddHabit, onAddTask, onScheduleTask }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [newHabitName, setNewHabitName] = useState('');
     const [newHabitGoal, setNewHabitGoal] = useState(7);
     const [schedulingHabit, setSchedulingHabit] = useState<Habit | null>(null);

@@ -6,7 +6,7 @@ import { WeekFluxLogo } from '../../brand/WeekFluxLogo';
 interface AuthOverlayProps {
     onMagicLink: (email: string) => Promise<void>;
     onSignInWithPassword?: (email: string, password: string) => Promise<void>;
-    onSignUpWithPassword?: (email: string, password: string) => Promise<void>;
+    onSignUpWithPassword?: (email: string, password: string) => Promise<any>;
     onOAuth: (provider: 'google' | 'github') => Promise<void>;
     magicLinkSent: boolean;
     authError?: string | null;
@@ -30,10 +30,11 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
 }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [authMode, setAuthMode] = useState<'magic' | 'password'>('magic');
+
     const [isSignUp, setIsSignUp] = useState(false);
 
     const [submitting, setSubmitting] = useState(false);
+    const [verificationSent, setVerificationSent] = useState(false);
     // Start directly with Welcome screen (no long splash)
     const [showSplash, setShowSplash] = useState(false);
     const [showWelcome, setShowWelcome] = useState(showFeatureOverview);
@@ -65,20 +66,21 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
 
         setSubmitting(true);
         try {
-            if (authMode === 'magic') {
-                await onMagicLink(email);
+            if (!password) {
+                throw new Error('Password is required');
+            }
+            if (isSignUp) {
+                const result = await onSignUpWithPassword?.(email, password);
+                if (result) {
+                    const { user, session } = result;
+                    if (user && !session) {
+                        setVerificationSent(true);
+                    }
+                }
             } else {
-                if (!password) {
-                    throw new Error('Password is required');
-                }
-                if (isSignUp) {
-                    await onSignUpWithPassword?.(email, password);
-                } else {
-                    await onSignInWithPassword?.(email, password);
-                }
+                await onSignInWithPassword?.(email, password);
             }
         } catch (err: any) {
-            // Error is handled by parent usually, but if local error:
             console.error(err);
         } finally {
             setSubmitting(false);
@@ -216,13 +218,6 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                             >
                                 Get Started
                             </button>
-                            <button
-                                onClick={handleCancel}
-                                disabled={isExiting}
-                                className="w-full px-6 py-3 rounded-2xl border border-white/20 bg-white/5 text-white/80 font-medium hover:bg-white/10 transition-colors disabled:opacity-50"
-                            >
-                                {isExiting ? 'Loading...' : 'Skip — Use locally without account'}
-                            </button>
                         </motion.div>
                     </motion.div>
                 ) : (
@@ -251,7 +246,9 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                 </div>
                                 <div>
                                     <p className="uppercase tracking-[0.2em] text-xs text-white/60 font-semibold">Secure Workspace</p>
-                                    <h2 className="text-3xl font-display font-bold text-white leading-tight">Sign in to sync</h2>
+                                    <h2 className="text-3xl font-display font-bold text-white leading-tight">
+                                        {isSignUp ? 'Create Account' : 'Login'}
+                                    </h2>
                                 </div>
                             </motion.div>
 
@@ -264,21 +261,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                 Sync your tasks across devices. Choose how you want to sign in.
                             </motion.p>
 
-                            {/* Auth Mode Toggle */}
-                            <div className="flex p-1 bg-white/5 rounded-xl border border-white/10">
-                                <button
-                                    onClick={() => setAuthMode('magic')}
-                                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${authMode === 'magic' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80'}`}
-                                >
-                                    Login Link
-                                </button>
-                                <button
-                                    onClick={() => setAuthMode('password')}
-                                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${authMode === 'password' ? 'bg-white/10 text-white shadow-sm' : 'text-white/50 hover:text-white/80'}`}
-                                >
-                                    Password
-                                </button>
-                            </div>
+                            {/* Auth Mode Toggle Removed - Defaulting to Email/Password */}
 
                             <motion.form
                                 onSubmit={handleSubmit}
@@ -287,7 +270,7 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                {isSignUp && authMode === 'password' && (
+                                {isSignUp && (
                                     <div className="text-xs text-cyan-300 font-medium text-center pb-1">
                                         Creating a new account
                                     </div>
@@ -308,22 +291,20 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                         />
                                     </div>
 
-                                    {authMode === 'password' && (
-                                        <div className="relative">
-                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                                <ShieldCheck size={18} className="text-white/40" />
-                                            </div>
-                                            <input
-                                                type="password"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                placeholder={isSignUp ? "Choose a strong password" : "Your password"}
-                                                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 focus:border-cyan-400/60 focus:bg-white/10 transition-colors outline-none text-white placeholder:text-white/30"
-                                                required
-                                                minLength={6}
-                                            />
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <ShieldCheck size={18} className="text-white/40" />
                                         </div>
-                                    )}
+                                        <input
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder={isSignUp ? "Choose a strong password" : "Your password"}
+                                            className="w-full pl-11 pr-4 py-3 rounded-2xl border border-white/10 bg-white/5 focus:border-cyan-400/60 focus:bg-white/10 transition-colors outline-none text-white placeholder:text-white/30"
+                                            required
+                                            minLength={6}
+                                        />
+                                    </div>
                                 </div>
 
                                 <button
@@ -332,20 +313,18 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                     className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-semibold bg-cyan-500 text-slate-950 shadow-lg shadow-cyan-500/40 hover:bg-cyan-400 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     <LogIn size={18} />
-                                    {submitting ? 'Processing…' : (authMode === 'magic' ? 'Send Login Link' : (isSignUp ? 'Create Account' : 'Sign In'))}
+                                    {submitting ? 'Processing…' : (isSignUp ? 'Create Account' : 'Sign In')}
                                 </button>
 
-                                {authMode === 'password' && (
-                                    <div className="text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsSignUp(!isSignUp)}
-                                            className="text-xs text-white/50 hover:text-cyan-300 transition-colors underline decoration-dotted underline-offset-4"
-                                        >
-                                            {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
-                                        </button>
-                                    </div>
-                                )}
+                                <div className="text-center">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsSignUp(!isSignUp)}
+                                        className="text-xs text-white/50 hover:text-cyan-300 transition-colors underline decoration-dotted underline-offset-4"
+                                    >
+                                        {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Sign Up"}
+                                    </button>
+                                </div>
                             </motion.form>
 
                             <motion.div
@@ -378,6 +357,19 @@ export const AuthOverlay: React.FC<AuthOverlayProps> = ({
                                         className="text-sm text-emerald-300 font-semibold bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3"
                                     >
                                         Magic link sent! Check your inbox.
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <AnimatePresence>
+                                {verificationSent && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="text-sm text-emerald-300 font-semibold bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-3"
+                                    >
+                                        Account created! Please check your email to verify.
                                     </motion.div>
                                 )}
                             </AnimatePresence>

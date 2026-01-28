@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TaskType } from '../../../types';
 import { CATEGORIES, formatDate } from '../../../constants';
 import { useSpaceCategories } from '../../../hooks/useSpaceCategories';
+
 import { useLanguage } from '../../../context/LanguageContext';
+import { useCalendarEnabled } from '../../../hooks/useCalendarEnabled';
 
 interface AddTaskFormProps {
     onAdd: (task: {
@@ -32,6 +34,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
     const [scheduledTime, setScheduledTime] = useState<string>('');
     const [date, setDate] = useState<string>('');
     const { t } = useLanguage();
+    const { isCalendarEnabled, isTimelineOnly } = useCalendarEnabled();
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -176,84 +179,93 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                     </div>
                 </div>
 
-                {/* 4. Schedule Toggle */}
-                <button
-                    onClick={() => setIsScheduleOpen(!isScheduleOpen)}
-                    className="w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-wider px-1 py-2 mb-2 transition-colors"
-                    style={{ color: (scheduledTime || isScheduleOpen) ? 'var(--accent)' : 'var(--text-muted)' }}
-                >
-                    <span className="flex items-center gap-1.5">
-                        <Clock size={12} />
-                        {scheduledTime ? `${t.sidebar.schedule} ${scheduledTime}` : t.sidebar.schedule}
-                    </span>
-                    <ChevronDown
-                        size={12}
-                        className={`transition-transform duration-200 ${isScheduleOpen ? 'rotate-180' : ''}`}
-                    />
-                </button>
-
-                {/* 5. Collapsible Schedule Section */}
-                <AnimatePresence>
-                    {isScheduleOpen && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
+                {/* 4. Schedule Toggle - Gated by Feature Flag */}
+                {isCalendarEnabled && (
+                    <>
+                        <button
+                            onClick={() => !isTimelineOnly && setIsScheduleOpen(!isScheduleOpen)}
+                            className={`w-full flex items-center justify-between text-[10px] font-bold uppercase tracking-wider px-1 py-2 mb-2 transition-colors ${isTimelineOnly ? 'cursor-default' : 'cursor-pointer hover:bg-white/[0.02] rounded'}`}
+                            style={{ color: (scheduledTime || isScheduleOpen || isTimelineOnly) ? 'var(--accent)' : 'var(--text-muted)' }}
                         >
-                            <div className="space-y-3 pb-2">
-                                {/* Date */}
-                                <div>
-                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.date}</div>
-                                    <input
-                                        type="date"
-                                        value={date || (selectedDate ? formatDate(selectedDate) : formatDate(new Date()))}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
-                                        style={{
-                                            color: 'var(--text)',
-                                            backgroundColor: 'var(--surface2)',
-                                            borderColor: 'var(--border)'
-                                        }}
-                                    />
-                                </div>
+                            <span className="flex items-center gap-1.5">
+                                <Clock size={12} />
+                                {isTimelineOnly
+                                    ? t.sidebar.scheduleBtn
+                                    : (scheduledTime ? `${t.sidebar.schedule} ${scheduledTime}` : t.sidebar.schedule)
+                                }
+                            </span>
+                            {!isTimelineOnly && (
+                                <ChevronDown
+                                    size={12}
+                                    className={`transition-transform duration-200 ${isScheduleOpen ? 'rotate-180' : ''}`}
+                                />
+                            )}
+                        </button>
 
-                                {/* Time */}
-                                <div>
-                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.time}</div>
-                                    <input
-                                        type="time"
-                                        value={scheduledTime}
-                                        onChange={(e) => setScheduledTime(e.target.value)}
-                                        className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
-                                        style={{
-                                            color: 'var(--text)',
-                                            backgroundColor: 'var(--surface2)',
-                                            borderColor: 'var(--border)'
-                                        }}
-                                    />
-                                    {/* Quick Times */}
-                                    <div className="flex gap-1 mt-1.5">
-                                        {['09:00', '13:00', '17:00'].map(time => (
-                                            <button
-                                                key={time}
-                                                onClick={() => setScheduledTime(time)}
-                                                className="flex-1 py-1 rounded text-[9px] font-mono border transition-colors"
+                        {/* 5. Collapsible Schedule Section */}
+                        <AnimatePresence>
+                            {(isScheduleOpen || isTimelineOnly) && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="space-y-3 pb-2">
+                                        {/* Date */}
+                                        <div>
+                                            <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.date}</div>
+                                            <input
+                                                type="date"
+                                                value={date || (selectedDate ? formatDate(selectedDate) : formatDate(new Date()))}
+                                                onChange={(e) => setDate(e.target.value)}
+                                                className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
                                                 style={{
-                                                    borderColor: scheduledTime === time ? 'var(--accent)' : 'transparent',
-                                                    backgroundColor: scheduledTime === time ? 'rgba(34,211,238,0.1)' : 'var(--surface2)',
-                                                    color: scheduledTime === time ? 'var(--accent)' : 'var(--text-muted)'
+                                                    color: 'var(--text)',
+                                                    backgroundColor: 'var(--surface2)',
+                                                    borderColor: 'var(--border)'
                                                 }}
-                                            >
-                                                {time}
-                                            </button>
-                                        ))}
+                                            />
+                                        </div>
+
+                                        {/* Time */}
+                                        <div>
+                                            <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.time}</div>
+                                            <input
+                                                type="time"
+                                                value={scheduledTime}
+                                                onChange={(e) => setScheduledTime(e.target.value)}
+                                                className="w-full text-xs px-2 py-1.5 rounded-lg focus:outline-none border"
+                                                style={{
+                                                    color: 'var(--text)',
+                                                    backgroundColor: 'var(--surface2)',
+                                                    borderColor: 'var(--border)'
+                                                }}
+                                            />
+                                            {/* Quick Times */}
+                                            <div className="flex gap-1 mt-1.5">
+                                                {['09:00', '13:00', '17:00'].map(time => (
+                                                    <button
+                                                        key={time}
+                                                        onClick={() => setScheduledTime(time)}
+                                                        className="flex-1 py-1 rounded text-[9px] font-mono border transition-colors"
+                                                        style={{
+                                                            borderColor: scheduledTime === time ? 'var(--accent)' : 'transparent',
+                                                            backgroundColor: scheduledTime === time ? 'rgba(34,211,238,0.1)' : 'var(--surface2)',
+                                                            color: scheduledTime === time ? 'var(--accent)' : 'var(--text-muted)'
+                                                        }}
+                                                    >
+                                                        {time}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </>
+                )}
 
                 {/* 6. Add Button */}
                 <button
@@ -268,7 +280,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                         opacity: title.trim() ? 1 : 0.5
                     }}
                 >
-                    {scheduledTime ? (
+                    {isCalendarEnabled && scheduledTime ? (
                         <>
                             <Clock size={14} />
                             {t.sidebar.schedule}

@@ -79,7 +79,9 @@ export function usePersistence(
         exportData,
         importData,
         saveTheme: (id: string) => storage.saveTheme(id),
-        loadTheme: () => storage.loadTheme()
+        loadTheme: () => storage.loadTheme(),
+        saveDayViewMode: (mode: 'list' | 'timeline') => storage.saveDayViewMode(mode),
+        loadDayViewMode: () => storage.loadDayViewMode()
     };
 }
 

@@ -9,6 +9,7 @@ import { SettingsDisplay } from './settings/SettingsDisplay';
 import { SettingsData } from './settings/SettingsData';
 import { SettingsSecurity } from './settings/SettingsSecurity';
 import { SettingsHelp } from './settings/SettingsHelp';
+import { SettingsFeatures } from './settings/SettingsFeatures';
 import { SettingsAdvanced } from './settings/SettingsAdvanced';
 import { SettingsSpaces } from './settings/SettingsSpaces';
 import { SettingsLanguage } from './settings/SettingsLanguage';
@@ -97,6 +98,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                     {/* Content */}
                     <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] md:max-h-[calc(85vh-120px)] scrollbar-hide">
+
+                        <SettingsFeatures />
 
                         <SettingsLanguage />
 

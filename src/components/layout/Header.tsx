@@ -5,7 +5,9 @@ import { formatDate, getWeekDays, isLateNight } from '../../constants';
 import { pulseScale } from '../../utils/animations';
 import { getSpacesEnabled } from '../../state/features';
 import { getSpace, setSpace } from '../../state/space';
+
 import { useLanguage } from '../../context/LanguageContext';
+import { useCalendarEnabled } from '../../hooks/useCalendarEnabled';
 
 interface HeaderProps {
     activeTab: string;
@@ -46,6 +48,7 @@ export const Header: React.FC<HeaderProps> = ({
     const [spaceState, setSpaceState] = useState(currentSpace);
     const [spacesEnabledState, setSpacesEnabledState] = useState(spacesEnabled);
     const { t, language } = useLanguage();
+    const { isCalendarEnabled, isPriorityOnly, isTimelineOnly } = useCalendarEnabled();
 
     useEffect(() => {
         const handleStorage = () => {
@@ -222,29 +225,36 @@ export const Header: React.FC<HeaderProps> = ({
                                 borderColor: 'var(--border-medium)'
                             }}
                         >
-                            <button
-                                onClick={() => {
-                                    setIsStacked(false);
-                                    setDayViewMode('list');
-                                }}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'list' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
-                            >
-                                <ListChecks size={14} />
-                                <span>{t.header.priority}</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setDayViewMode('timeline');
-                                }}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'timeline' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
-                            >
-                                <CalendarDays size={14} />
-                                <span>{t.header.calendar}</span>
-                            </button>
+                            {/* Priority View Button: Show if NOT Timeline Only */}
+                            {!isTimelineOnly && (
+                                <button
+                                    onClick={() => {
+                                        setIsStacked(false);
+                                        setDayViewMode('list');
+                                    }}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'list' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'} ${isPriorityOnly ? 'cursor-default pointer-events-none' : ''}`}
+                                >
+                                    <ListChecks size={14} />
+                                    <span>{t.header.priority}</span>
+                                </button>
+                            )}
+
+                            {/* Calendar View Button: Show if NOT Priority Only */}
+                            {!isPriorityOnly && (
+                                <button
+                                    onClick={() => {
+                                        setDayViewMode('timeline');
+                                    }}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'timeline' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'} ${isTimelineOnly ? 'cursor-default pointer-events-none' : ''}`}
+                                >
+                                    <CalendarDays size={14} />
+                                    <span>{t.header.calendar}</span>
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

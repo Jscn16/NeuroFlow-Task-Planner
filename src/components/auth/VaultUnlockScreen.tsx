@@ -9,7 +9,7 @@ interface VaultUnlockScreenProps {
     onSetup: (passphrase: string) => Promise<boolean>;
     onUnlock: (passphrase: string) => Promise<boolean>;
     onReset: () => void;
-    onSkip?: () => void; // Allow skipping encryption (local-only mode)
+    onReset: () => void;
     isRestoreMode?: boolean;
 }
 
@@ -20,7 +20,6 @@ export const VaultUnlockScreen: React.FC<VaultUnlockScreenProps> = React.memo(({
     onSetup,
     onUnlock,
     onReset,
-    onSkip,
     isRestoreMode = false
 }) => {
     const [passphrase, setPassphrase] = useState('');
@@ -324,15 +323,7 @@ export const VaultUnlockScreen: React.FC<VaultUnlockScreenProps> = React.memo(({
                                         </button>
                                     )}
 
-                                    {onSkip && (
-                                        <button
-                                            type="button"
-                                            onClick={onSkip}
-                                            className="w-full px-5 py-2 rounded-xl text-white/50 text-sm hover:text-white/70 transition-colors"
-                                        >
-                                            Skip encryption (not recommended)
-                                        </button>
-                                    )}
+
                                 </motion.div>
                             </motion.div>
                         )}

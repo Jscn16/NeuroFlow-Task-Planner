@@ -10,7 +10,7 @@ interface UseSupabaseAuthResult {
     magicLinkSent: boolean;
     signInWithEmail: (email: string) => Promise<void>;
     signInWithPassword: (email: string, password: string) => Promise<void>;
-    signUpWithPassword: (email: string, password: string) => Promise<void>;
+    signUpWithPassword: (email: string, password: string) => Promise<{ user: User | null; session: Session | null } | undefined>;
     signInWithOAuth: (provider: 'google' | 'github') => Promise<void>;
     signOut: () => Promise<void>;
 }
@@ -74,7 +74,10 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     }, []);
 
     const signInWithPassword = useCallback(async (email: string, password: string) => {
-        if (!supabaseAvailable || !supabase) return;
+        if (!supabaseAvailable || !supabase) {
+            console.error('Supabase not available for sign in');
+            return;
+        }
         setAuthError(null);
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
@@ -85,9 +88,12 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
     }, []);
 
     const signUpWithPassword = useCallback(async (email: string, password: string) => {
-        if (!supabaseAvailable || !supabase) return;
+        if (!supabaseAvailable || !supabase) {
+            console.error('Supabase not available for sign up');
+            return { user: null, session: null };
+        }
         setAuthError(null);
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
         });
@@ -96,6 +102,7 @@ export const useSupabaseAuth = (): UseSupabaseAuthResult => {
             console.error('Sign-up failed', error);
             throw error;
         }
+        return data;
     }, []);
 
     const signInWithOAuth = useCallback(async (provider: 'google' | 'github') => {

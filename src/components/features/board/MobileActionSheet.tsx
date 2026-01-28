@@ -12,7 +12,9 @@ import {
 import { Task } from '../../../types';
 import { MobileDatePicker } from '../../ui/MobileDatePicker';
 import { MobileTimePicker } from '../../ui/MobileTimePicker';
+
 import { formatDate } from '../../../constants';
+import { useCalendarEnabled } from '../../../hooks/useCalendarEnabled';
 
 // ============================================================================
 // Types
@@ -150,6 +152,7 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
   onClose
 }) => {
   const isOpen = task !== null;
+  const { isCalendarEnabled } = useCalendarEnabled();
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   // Capture the task when picker opens to prevent stale closures
@@ -338,12 +341,14 @@ export const MobileActionSheet: React.FC<MobileActionSheetProps> = ({
             />
 
             {/* Set Time - opens time picker */}
-            <ActionButton
-              icon={<Clock size={20} />}
-              label={task.scheduledTime ? `Time: ${task.scheduledTime}` : 'Set Time'}
-              sublabel={task.scheduledTime ? 'Change or remove time' : 'Add to timeline view'}
-              onClick={handleTimeClick}
-            />
+            {isCalendarEnabled && (
+              <ActionButton
+                icon={<Clock size={20} />}
+                label={task.scheduledTime ? `Time: ${task.scheduledTime}` : 'Set Time'}
+                sublabel={task.scheduledTime ? 'Change or remove time' : 'Add to timeline view'}
+                onClick={handleTimeClick}
+              />
+            )}
 
             {/* Delete */}
             <ActionButton

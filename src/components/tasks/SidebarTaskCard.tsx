@@ -6,6 +6,7 @@ import { TASK_CARD_BORDER_COLORS, formatDate, getAdjustedDate } from '../../cons
 import { useCompletionSound } from '../../hooks/useCompletionSound';
 import { setTaskDragData } from '../../utils/drag';
 import { useLanguage } from '../../context/LanguageContext';
+import { useCalendarEnabled } from '../../hooks/useCalendarEnabled';
 
 interface SidebarTaskCardProps {
     task: Task;
@@ -42,6 +43,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
     const [customDate, setCustomDate] = useState(formatDate(getAdjustedDate()));
     const { play } = useCompletionSound();
     const { t, language } = useLanguage();
+    const { isCalendarEnabled } = useCalendarEnabled();
 
     const isCompleted = task.status === 'completed';
     const isMobileView = !!isMobile;

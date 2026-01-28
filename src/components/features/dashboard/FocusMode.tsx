@@ -6,6 +6,7 @@ import { BoardTaskCard } from '../../tasks/BoardTaskCard';
 import { formatDate, getAdjustedDate } from '../../../constants';
 import { useIsMobile } from '../../../hooks/useMediaQuery';
 import { useTimer } from '../../../context/TimerContext';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface FocusModeProps {
     tasks: Task[];
@@ -18,6 +19,7 @@ interface FocusModeProps {
 export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onToggleTaskComplete, onUpdateTask, showCompleted }) => {
     const todayStr = formatDate(getAdjustedDate());
     const isMobile = useIsMobile();
+    const { t } = useLanguage();
 
     // Consume Global Timer Context
     const {
@@ -90,8 +92,8 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 h-4 rounded-full relative transition-all duration-500 overflow-hidden
                                 ${seg.type === 'break' ? 'mx-1' : ''}
                                 ${isActive ? 'bg-slate-700/50 ring-2 ring-white/20 scale-y-125' : ''}
-                                ${isPast ? (seg.type === 'work' ? 'bg-emerald-500' : 'bg-blue-400') : ''}
-                                ${isFuture ? (seg.type === 'work' ? 'bg-emerald-900/20' : 'bg-blue-900/20') : ''}
+                                ${isPast ? (seg.type === 'work' ? 'bg-emerald-500 font-bold' : 'bg-blue-400 font-bold') : ''}
+                                ${isActive ? '' : (isFuture ? (seg.type === 'work' ? 'bg-emerald-900/40 border border-emerald-500/20' : 'bg-blue-900/40 border border-blue-500/20') : '')}
                             `}
                             title={`${seg.type.toUpperCase()}: ${seg.duration}m`}
                         >
@@ -136,7 +138,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         // Reusing previous Zen structure but adapting values
         const isBreak = currentPhaseInfo?.type === 'break';
         const colorClass = isBreak ? 'text-blue-400' : 'text-emerald-400';
-        const phaseLabel = isBreak ? 'Brain Break' : 'Deep Work';
+        const phaseLabel = isBreak ? (t.settings.focusMode?.brainBreak || 'Brain Break') : (t.settings.focusMode?.deepWork || 'Deep Work');
 
         return (
             <div className="fixed inset-0 z-50 bg-[#0f1219] flex flex-col min-h-[100dvh] p-6 md:p-10">
@@ -198,12 +200,12 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
         <div className="h-full overflow-y-auto px-4 sm:px-8 py-6 pb-32">
             <div className={`max-w-6xl mx-auto ${isMobile ? 'mt-6' : 'mt-8'} w-full px-2 sm:px-6`}>
                 <div className="mb-8 text-center flex flex-col items-center gap-1">
-                    <h2 className="text-3xl font-display font-bold text-white mb-1">Deep Focus</h2>
+                    <h2 className="text-3xl font-display font-bold text-white mb-1">{t.header.focus}</h2>
                     <p className="text-sm text-slate-500 font-medium">
-                        Today total: {totalTasks} tasks · {timeString} planned
+                        {t.settings.focusMode?.todayTotal || 'Today total'}: {totalTasks} {t.sidebar.tasks.toLowerCase()} · {timeString}
                     </p>
                     <p className="text-xs text-slate-500/80 max-w-lg mx-auto mt-2 leading-relaxed">
-                        Pomodoro-style work cycles: structured focus blocks and short recovery breaks.
+                        {t.settings.focusMode?.pomodoroStyle || 'Pomodoro-style work cycles: structured focus blocks and short recovery breaks.'}
                     </p>
                 </div>
 
@@ -228,13 +230,13 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                                             className={`text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2 ${currentPhaseInfo.type === 'break' ? 'text-blue-400' : 'text-emerald-400'}`}
                                                         >
                                                             {currentPhaseInfo.type === 'break' ? <Coffee size={14} /> : <Brain size={14} />}
-                                                            {currentPhaseInfo.type === 'break' ? 'Break Phase' : 'Focus Phase'}
+                                                            {currentPhaseInfo.type === 'break' ? (t.settings.focusMode?.breakPhase || 'Break Phase') : (t.settings.focusMode?.focusPhase || 'Focus Phase')}
                                                         </motion.span>
                                                     </AnimatePresence>
                                                 ) : (
                                                     <span className="text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2 text-emerald-400">
                                                         <Brain size={14} />
-                                                        Focus Phase
+                                                        {t.settings.focusMode?.focusPhase || 'Focus Phase'}
                                                     </span>
                                                 )}
                                                 <h3 className="text-2xl font-bold text-theme-primary leading-tight">{activeTask.title}</h3>
@@ -266,7 +268,7 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                                 {isTimerRunning ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
                                             </button>
 
-                                            <button onClick={handleCompleteActiveTask} className="p-3 text-emerald-500 hover:text-emerald-400 transition-colors" title="Mark Done">
+                                            <button onClick={handleCompleteActiveTask} className="p-3 text-emerald-500 hover:text-emerald-400 transition-colors" title={t.settings.focusMode?.markDone || "Mark Done"}>
                                                 <CheckCircle2 size={24} />
                                             </button>
                                             <button onClick={stopTask} className="p-3 text-theme-secondary hover:text-rose-400 transition-colors" title="Stop">
@@ -291,14 +293,14 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 >
                                     <Play size={32} fill="currentColor" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>Ready to focus?</h3>
-                                <p style={{ color: 'var(--text-muted)' }}>Pick a task below to start a deep work session</p>
+                                <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--text-secondary)' }}>{t.settings.focusMode?.readyToFocus || 'Ready to focus?'}</h3>
+                                <p style={{ color: 'var(--text-muted)' }}>{t.settings.focusMode?.pickTask || 'Pick a task below to start a deep work session'}</p>
                             </div>
                         )}
 
                         {/* Queue List */}
                         <div className="w-full flex flex-col gap-3 px-1">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2 px-2">Up Next</h3>
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2 px-2">{t.settings.focusMode?.upNext || 'Up Next'}</h3>
                             {focusTasks.filter(t => t.id !== activeTaskId).map((task) => (
                                 <div key={task.id} className="flex items-center gap-3 w-full">
                                     <div className="flex-1 min-w-0">
@@ -329,29 +331,29 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 <div className={`h-8 w-8 rounded-full flex items-center justify-center ${isTimerRunning ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-500/20 text-slate-400'}`}>
                                     <Activity size={16} />
                                 </div>
-                                <h3 className="font-bold text-theme-primary">Session Status</h3>
+                                <h3 className="font-bold text-theme-primary">{t.settings.focusMode?.sessionStatus || 'Session Status'}</h3>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center p-3 bg-theme-surface rounded-xl">
-                                    <span className="text-sm text-theme-secondary">Current State</span>
+                                    <span className="text-sm text-theme-secondary">{t.settings.focusMode?.currentState || 'Current State'}</span>
                                     <span className={`text-sm font-bold px-2 py-0.5 rounded-md ${isTimerRunning
                                         ? 'bg-emerald-500/10 text-emerald-400'
                                         : activeTaskId
                                             ? 'bg-amber-500/10 text-amber-400'
                                             : 'bg-slate-500/10 text-slate-400'
                                         }`}>
-                                        {isTimerRunning ? 'Running' : activeTaskId ? 'Paused' : 'Idle'}
+                                        {isTimerRunning ? (t.settings.focusMode?.running || 'Running') : activeTaskId ? (t.settings.focusMode?.paused || 'Paused') : (t.settings.focusMode?.idle || 'Idle')}
                                     </span>
                                 </div>
                                 {activeTaskId && (
                                     <div className="grid grid-cols-2 gap-2">
                                         <button onClick={toggleTimer} className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-theme-surface hover:bg-theme-surface-strong border border-theme transition-colors text-sm font-medium text-theme-primary">
                                             {isTimerRunning ? <Pause size={14} /> : <Play size={14} />}
-                                            {isTimerRunning ? 'Pause' : 'Resume'}
+                                            {isTimerRunning ? (t.settings.focusMode?.pause || 'Pause') : (t.settings.focusMode?.resume || 'Resume')}
                                         </button>
                                         <button onClick={stopTask} className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-theme-surface hover:bg-red-500/10 border border-theme hover:border-red-500/20 transition-colors text-sm font-medium text-theme-secondary hover:text-red-400">
                                             <X size={14} />
-                                            Stop
+                                            {t.settings.focusMode?.stop || 'Stop'}
                                         </button>
                                     </div>
                                 )}
@@ -365,32 +367,32 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                     <div className="h-8 w-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
                                         <FileText size={16} />
                                     </div>
-                                    <h3 className="font-bold text-theme-primary">Task Details</h3>
+                                    <h3 className="font-bold text-theme-primary">{t.settings.focusMode?.taskDetails || 'Task Details'}</h3>
                                 </div>
                                 <div className="space-y-3">
                                     <div className="p-3 bg-theme-surface rounded-xl border border-theme">
-                                        <div className="text-xs text-theme-muted uppercase tracking-wider font-bold mb-1">Title</div>
+                                        <div className="text-xs text-theme-muted uppercase tracking-wider font-bold mb-1">{t.settings.focusMode?.title || 'Title'}</div>
                                         <div className="text-sm text-theme-primary leading-relaxed">{activeTask.title}</div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div className="p-3 bg-theme-surface rounded-xl border border-theme">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Tag size={12} className="text-theme-muted" />
-                                                <span className="text-xs text-theme-muted uppercase tracking-wider font-bold">Type</span>
+                                                <span className="text-xs text-theme-muted uppercase tracking-wider font-bold">{t.settings.focusMode?.type || 'Type'}</span>
                                             </div>
                                             <div className="text-sm capitalize text-theme-secondary">{activeTask.type}</div>
                                         </div>
                                         <div className="p-3 bg-theme-surface rounded-xl border border-theme">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Clock size={12} className="text-theme-muted" />
-                                                <span className="text-xs text-theme-muted uppercase tracking-wider font-bold">Est.</span>
+                                                <span className="text-xs text-theme-muted uppercase tracking-wider font-bold">{t.settings.focusMode?.est || 'Est.'}</span>
                                             </div>
                                             <div className="text-sm text-theme-secondary">{activeTask.duration}m</div>
                                         </div>
                                     </div>
                                     {activeTask.description && (
                                         <div className="p-3 bg-theme-surface rounded-xl border border-theme">
-                                            <div className="text-xs text-theme-muted uppercase tracking-wider font-bold mb-1">Notes</div>
+                                            <div className="text-xs text-theme-muted uppercase tracking-wider font-bold mb-1">{t.settings.focusMode?.notes || 'Notes'}</div>
                                             <div className="text-xs text-theme-secondary line-clamp-4">{activeTask.description}</div>
                                         </div>
                                     )}
@@ -404,24 +406,22 @@ export const FocusMode: React.FC<FocusModeProps> = ({ tasks, onDragStart, onTogg
                                 <div className="h-8 w-8 rounded-full bg-violet-500/20 text-violet-400 flex items-center justify-center">
                                     <LayoutGrid size={16} />
                                 </div>
-                                <h3 className="font-bold text-theme-primary">Today's Load</h3>
+                                <h3 className="font-bold text-theme-primary">{t.settings.focusMode?.todaysLoad || "Today's Load"}</h3>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <div className="text-2xl font-display font-bold text-theme-primary">{totalTasks}</div>
-                                    <div className="text-xs text-theme-muted">Total Tasks</div>
+                                    <div className="text-xs text-theme-muted">{t.settings.focusMode?.totalTasks || 'Total Tasks'}</div>
                                 </div>
                                 <div>
                                     <div className="text-2xl font-display font-bold text-theme-primary">{hours}h {minutes}m</div>
-                                    <div className="text-xs text-theme-muted">Total Time</div>
+                                    <div className="text-xs text-theme-muted">{t.settings.focusMode?.totalTime || 'Total Time'}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     );
 };

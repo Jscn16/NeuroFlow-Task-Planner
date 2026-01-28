@@ -11,6 +11,8 @@ import { SettingsSecurity } from './settings/SettingsSecurity';
 import { SettingsHelp } from './settings/SettingsHelp';
 import { SettingsAdvanced } from './settings/SettingsAdvanced';
 import { SettingsSpaces } from './settings/SettingsSpaces';
+import { SettingsLanguage } from './settings/SettingsLanguage';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SettingsModalProps {
     onClose: () => void;
@@ -58,6 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     onDisableEncryption
 }) => {
     const [dayBoundary, setDayBoundaryState] = useState(getDayBoundaryHour);
+    const { t } = useLanguage();
 
     return (
         <AnimatePresence>
@@ -78,9 +81,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between p-5 pb-3" style={{ borderBottom: '1px solid var(--border-light)' }}>
+                    <div className="flex items-center justify-between p-5 pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
                         <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                            Settings
+                            {t.settings.title}
                         </h2>
                         <button
                             onClick={onClose}
@@ -93,7 +96,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     {/* Content */}
-                    <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] md:max-h-[calc(85vh-120px)]">
+                    <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] md:max-h-[calc(85vh-120px)] scrollbar-hide">
+
+                        <SettingsLanguage />
 
                         <SettingsAppearance
                             currentThemeId={currentThemeId}
@@ -139,7 +144,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
 
                     {/* Footer */}
-                    <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid var(--border-light)' }}>
+                    <div className="px-4 py-3 text-center" style={{ borderTop: '1px solid var(--border)' }}>
                         <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                             WeekFlux v1.3
                         </span>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, List, Clock } from 'lucide-react';
 import { TARGET_HOURS_PER_DAY, DAYS, formatDate } from '../../../constants';
+import { useLanguage } from '../../../context/LanguageContext';
 import { WeekStackedView } from './WeekStackedView';
 import { WeekMatrixView } from './WeekMatrixView';
 import DayTimelineView from './DayTimelineView';
@@ -50,6 +51,7 @@ const DayHeader: React.FC<DayHeaderProps> = React.memo(({
   isToday,
   isPastDay
 }) => {
+  const { t, language } = useLanguage();
   const isSubtle = isPastDay;
 
   return (
@@ -74,7 +76,7 @@ const DayHeader: React.FC<DayHeaderProps> = React.memo(({
             opacity: isToday ? 1 : 0.6
           }}
         >
-          {DAYS[dayIndex]}
+          {day.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { weekday: 'long' })}
         </span>
 
         {/* Date Number */}
@@ -102,7 +104,7 @@ const DayHeader: React.FC<DayHeaderProps> = React.memo(({
             }}
           >
             {stats.totalMinutes > 0
-              ? `${stats.plannedHours}h / ${TARGET_HOURS_PER_DAY}h`
+              ? `${stats.plannedHours}${language === 'de' ? ' ' : ''}${t.settings.hr} / ${TARGET_HOURS_PER_DAY}${language === 'de' ? ' ' : ''}${t.settings.hr}`
               : '—'
             }
           </div>
@@ -141,7 +143,7 @@ const DayHeader: React.FC<DayHeaderProps> = React.memo(({
                   className="text-[11px] font-extrabold"
                   style={{ color: stats.completionColor }}
                 >
-                  {stats.completionPercent}% done
+                  {stats.completionPercent}% {t.settings.done || 'done'}
                 </span>
               </div>
             </div>

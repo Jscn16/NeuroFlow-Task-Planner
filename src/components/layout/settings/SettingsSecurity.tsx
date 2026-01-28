@@ -1,6 +1,6 @@
-import React from 'react';
 import { Shield, ShieldCheck } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface SettingsSecurityProps {
     encryptionEnabled?: boolean;
@@ -13,15 +13,16 @@ export const SettingsSecurity: React.FC<SettingsSecurityProps> = ({
     onEnableEncryption,
     onDisableEncryption
 }) => {
+    const { t } = useLanguage();
     return (
-        <SettingsSection title="Security" icon={Shield} defaultOpen={false}>
+        <SettingsSection title={t.settings.security} icon={Shield} defaultOpen={false}>
             <div className="space-y-3">
                 {/* Encryption Toggle */}
                 <div
                     className="p-3 rounded-xl transition-all"
                     style={{
-                        backgroundColor: encryptionEnabled ? 'rgba(34,197,94,0.1)' : 'rgba(255,255,255,0.03)',
-                        border: `1px solid ${encryptionEnabled ? 'rgba(34,197,94,0.3)' : 'var(--border-light)'}`
+                        backgroundColor: encryptionEnabled ? 'rgba(34,197,94,0.1)' : 'var(--bg-primary)',
+                        border: `1px solid ${encryptionEnabled ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`
                     }}
                 >
                     <div className="flex items-center justify-between">
@@ -31,12 +32,12 @@ export const SettingsSecurity: React.FC<SettingsSecurityProps> = ({
                                 : <Shield size={16} style={{ color: 'var(--text-muted)' }} />
                             }
                             <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                                {encryptionEnabled ? 'Encryption enabled' : 'End-to-end encryption'}
+                                {encryptionEnabled ? t.settings.encryptionActive : t.settings.encryptionDisabled}
                             </span>
                         </div>
                         {encryptionEnabled ? (
                             <div className="px-2 py-1 rounded-md text-[10px] font-semibold bg-emerald-500/20 text-emerald-400">
-                                Active
+                                {t.settings.activeStatus}
                             </div>
                         ) : onEnableEncryption && (
                             <button
@@ -47,14 +48,14 @@ export const SettingsSecurity: React.FC<SettingsSecurityProps> = ({
                                     color: 'white'
                                 }}
                             >
-                                Enable
+                                {t.settings.enable}
                             </button>
                         )}
                     </div>
                     <p className="text-[11px] mt-2" style={{ color: 'var(--text-muted)' }}>
                         {encryptionEnabled
-                            ? 'Your data is encrypted with your passphrase. Only you can read it.'
-                            : 'Encrypt your data with a passphrase. No one (including us) can read your data.'
+                            ? t.settings.encryptionDescActive
+                            : t.settings.encryptionDescDisabled
                         }
                     </p>
                 </div>
@@ -66,11 +67,12 @@ export const SettingsSecurity: React.FC<SettingsSecurityProps> = ({
                                 onClick={onDisableEncryption}
                                 className="flex-1 p-2 rounded-lg text-xs font-semibold border transition-all hover:bg-red-500/10"
                                 style={{
-                                    borderColor: 'var(--border-light)',
+                                    borderColor: 'var(--border)',
+                                    backgroundColor: 'var(--bg-primary)',
                                     color: 'var(--error)'
                                 }}
                             >
-                                Disable Encryption
+                                {t.settings.disable}
                             </button>
                         )}
                         <div className="flex-1 text-[10px] p-2 rounded-lg" style={{
@@ -78,7 +80,7 @@ export const SettingsSecurity: React.FC<SettingsSecurityProps> = ({
                             backgroundColor: 'rgba(251,191,36,0.1)',
                             border: '1px solid rgba(251,191,36,0.2)'
                         }}>
-                            ⚠️ If you forget your passphrase, your data cannot be recovered.
+                            ⚠️ {t.settings.passphraseWarning}
                         </div>
                     </div>
                 )}

@@ -13,6 +13,7 @@ import { WeekView } from './components/features/board/WeekView';
 import { MobilePlanner } from './components/features/board/MobilePlanner';
 import { FocusMode } from './components/features/dashboard/FocusMode';
 import { TaskProvider, useTaskContext } from './context/TaskContext';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { useHabitManager } from './hooks/useHabitManager';
 import { useBrainDumpManager } from './hooks/useBrainDumpManager';
 import { usePersistence } from './hooks/usePersistence';

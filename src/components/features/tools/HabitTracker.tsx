@@ -4,6 +4,7 @@ import { CheckCircle2, X, Plus, CalendarClock, Clock, Calendar as CalendarIcon, 
 import { Habit, Task, TaskType } from '../../../types';
 import { DAYS, getAdjustedDate } from '../../../constants';
 import { generateId } from '../../../utils/id';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface HabitTrackerProps {
     habits: Habit[];
@@ -21,6 +22,7 @@ interface ScheduleModalProps {
 }
 
 const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, onGenericSchedule }) => {
+    const { t } = useLanguage();
     const [priority, setPriority] = useState<TaskType>('medium');
     const [duration, setDuration] = useState(30);
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -44,7 +46,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
                 <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#202024]">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                         <CalendarClock size={20} className="text-[var(--accent)]" />
-                        Schedule Habit
+                        {t.settings.habitTracker?.scheduleHabit || 'Schedule Habit'}
                     </h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
                         <X size={20} />
@@ -53,13 +55,13 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
 
                 <div className="p-6 space-y-6">
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Habit</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t.settings.habitTracker?.habit || 'Habit'}</label>
                         <div className="text-white font-medium text-lg">{habitName}</div>
                     </div>
 
                     {/* Priority */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Category</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">{t.sidebar?.priority || 'Priority'}</label>
                         <div className="grid grid-cols-3 gap-2">
                             {(['high', 'medium', 'low', 'leisure', 'chores', 'backlog'] as const).map((p) => (
                                 <button
@@ -70,7 +72,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
                                         : 'bg-transparent border-white/10 text-slate-400 hover:bg-white/5'
                                         }`}
                                 >
-                                    {p}
+                                    {t.sidebar[p] || p}
                                 </button>
                             ))}
                         </div>
@@ -78,7 +80,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
 
                     {/* Duration */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">Duration</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 block">{t.sidebar?.duration || 'Duration'}</label>
                         <div className="grid grid-cols-4 gap-2">
                             {[15, 30, 45, 60].map((m) => (
                                 <button
@@ -89,7 +91,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
                                         : 'bg-transparent border-white/10 text-slate-400 hover:bg-white/5'
                                         }`}
                                 >
-                                    {m}m
+                                    {m}{t.settings.min || 'm'}
                                 </button>
                             ))}
                         </div>
@@ -97,7 +99,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
 
                     {/* Date */}
                     <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Date</label>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">{t.sidebar?.date || 'Date'}</label>
                         <div className="relative">
                             <input
                                 type="date"
@@ -116,7 +118,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
                             className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 hover:text-[var(--accent)] transition-colors"
                         >
                             <Clock size={14} />
-                            Schedule Time (Optional)
+                            {t.settings.habitTracker?.scheduleTimeOptional || 'Schedule Time (Optional)'}
                             <span className={`transition-transform duration-200 ${showTime ? 'rotate-180' : ''}`}>▼</span>
                         </button>
 
@@ -146,7 +148,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
                         onClick={handleSubmit}
                         className="w-full py-3.5 rounded-xl bg-[var(--accent)] text-white font-bold text-base uppercase tracking-wide shadow-lg hover:brightness-110 transition-all active:scale-[0.98]"
                     >
-                        Add to Planner
+                        {t.settings.habitTracker?.addToPlanner || 'Add to Planner'}
                     </button>
                 </div>
             </motion.div>
@@ -155,6 +157,7 @@ const ScheduleHabitModal: React.FC<ScheduleModalProps> = ({ habitName, onClose, 
 };
 
 export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit, onDeleteHabit, onAddHabit, onAddTask, onScheduleTask }) => {
+    const { t } = useLanguage();
     const [newHabitName, setNewHabitName] = useState('');
     const [newHabitGoal, setNewHabitGoal] = useState(7);
     const [schedulingHabit, setSchedulingHabit] = useState<Habit | null>(null);
@@ -221,18 +224,21 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
             </AnimatePresence>
 
             <div className="mb-8 text-center px-4">
-                <h2 className="text-3xl font-display font-bold text-white mb-1">Habit Tracker</h2>
-                <p className="text-sm text-slate-500 font-medium">Track and reinforce your routines</p>
+                <h2 className="text-3xl font-display font-bold text-white mb-1">{t.settings.habitTracker?.title || 'Habit Tracker'}</h2>
+                <p className="text-sm text-slate-500 font-medium">{t.settings.habitTracker?.subtitle || 'Track and reinforce your routines'}</p>
             </div>
             <div className="border rounded-3xl p-8 overflow-x-auto hidden md:block" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
                 <table className="w-full">
                     <thead>
                         <tr>
-                            <th className="text-left py-4 px-4 uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>Habit</th>
-                            {DAYS.map(d => (
+                            <th className="text-left py-4 px-4 uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>{t.settings.habitTracker?.habit || 'Habit'}</th>
+                            {(language === 'de'
+                                ? ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
+                                : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                            ).map(d => (
                                 <th key={d} className="text-center py-4 px-2 uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>{d}</th>
                             ))}
-                            <th className="text-center py-4 px-4 uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>Progress</th>
+                            <th className="text-center py-4 px-4 uppercase text-xs tracking-wider" style={{ color: 'var(--text-muted)' }}>{t.settings.habitTracker?.progress || 'Progress'}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -250,7 +256,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                             onClick={() => setSchedulingHabit(habit)}
                                             className="p-1.5 rounded-lg transition-all hover:bg-white/5"
                                             style={{ color: 'var(--text-muted)' }}
-                                            title="Schedule this habit"
+                                            title={t.settings.habitTracker?.scheduleHabit || "Schedule this habit"}
                                         >
                                             <CalendarClock size={16} />
                                         </button>
@@ -261,14 +267,14 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                                 onClick={() => onDeleteHabit(habit.id)}
                                                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-rose-500/10 rounded transition-all ml-1"
                                                 style={{ color: 'var(--text-muted)' }}
-                                                title="Delete Habit"
+                                                title={t.sidebar.delete || "Delete Habit"}
                                                 onMouseEnter={(e) => e.currentTarget.style.color = '#fb7185'}
                                                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                                             >
                                                 <X size={12} />
                                             </button>
                                         )}
-                                        <span className="text-[10px] font-normal ml-2" style={{ color: 'var(--text-muted)' }}>{streak} / {goal} this week</span>
+                                        <span className="text-[10px] font-normal ml-2" style={{ color: 'var(--text-muted)' }}>{streak} / {goal} {t.settings.habitTracker?.streakWeek || 'this week'}</span>
                                     </td>
                                     {habit.checks.map((checked, i) => (
                                         <td key={i} className="py-4 px-2 text-center">
@@ -316,12 +322,12 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
 
                 <div className="mt-8 flex items-end gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/[0.05]">
                     <div className="flex-1 space-y-2">
-                        <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">New Habit Name</label>
+                        <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t.settings.habitTracker?.newHabitName || 'New Habit Name'}</label>
                         <input
                             type="text"
                             value={newHabitName}
                             onChange={(e) => setNewHabitName(e.target.value)}
-                            placeholder="e.g. Gym, Reading..."
+                            placeholder={t.settings.habitTracker?.example || "e.g. Gym, Reading..."}
                             className="w-full bg-white/[0.03] border rounded-xl px-4 py-2 text-sm outline-none transition-colors"
                             style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
                             onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
@@ -331,8 +337,8 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                     </div>
                     <div className="w-48 space-y-2">
                         <div className="flex justify-between">
-                            <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Weekly Goal</label>
-                            <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{newHabitGoal} days</span>
+                            <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t.settings.habitTracker?.weeklyGoal || 'Weekly Goal'}</label>
+                            <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{newHabitGoal} {t.settings.habitTracker?.days || 'days'}</span>
                         </div>
                         <input
                             type="range"
@@ -366,7 +372,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                         }}
                     >
                         <Plus size={16} />
-                        Add
+                        {t.settings.habitTracker?.add || 'Add'}
                     </button>
                 </div>
             </div>
@@ -392,9 +398,9 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                                         <CalendarClock size={14} />
                                     </button>
                                     <span className="font-semibold text-white text-sm truncate">{habit.name}</span>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400">Streak: {streak}</span>
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400">{t.settings.habitTracker?.streak || 'Streak'}: {streak}</span>
                                 </div>
-                                <span className="text-[11px] text-slate-500 uppercase tracking-wider">Today</span>
+                                <span className="text-[11px] text-slate-500 uppercase tracking-wider">{t.settings.habitTracker?.today || 'Today'}</span>
                             </div>
                             <motion.button
                                 onClick={() => toggleHabit(habit.id, todayIndex)}
@@ -422,12 +428,12 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
             {/* Mobile Add Habit */}
             <div className="md:hidden mt-6 space-y-3 px-2 pb-24">
                 <div className="space-y-2">
-                    <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">New Habit Name</label>
+                    <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t.settings.habitTracker?.newHabitName || 'New Habit Name'}</label>
                     <input
                         type="text"
                         value={newHabitName}
                         onChange={(e) => setNewHabitName(e.target.value)}
-                        placeholder="e.g. Gym, Reading..."
+                        placeholder={t.settings.habitTracker?.example || "e.g. Gym, Reading..."}
                         className="w-full bg-white/[0.03] border rounded-xl px-4 py-2 text-sm outline-none transition-colors"
                         style={{ borderColor: 'var(--border-medium)', color: 'var(--text-primary)' }}
                         onFocus={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
@@ -437,8 +443,8 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                 </div>
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                        <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">Weekly Goal</label>
-                        <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{newHabitGoal} days</span>
+                        <label className="text-xs text-slate-500 font-bold uppercase tracking-wider">{t.settings.habitTracker?.weeklyGoal || 'Weekly Goal'}</label>
+                        <span className="text-xs font-bold" style={{ color: 'var(--accent)' }}>{newHabitGoal} {t.settings.habitTracker?.days || 'days'}</span>
                     </div>
                     <input
                         type="range"
@@ -456,7 +462,7 @@ export const HabitTracker: React.FC<HabitTrackerProps> = ({ habits, toggleHabit,
                     className="w-full px-6 py-3 rounded-xl text-white font-bold text-sm uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg bg-[var(--accent)]"
                 >
                     <Plus size={16} />
-                    Add Habit
+                    {t.settings.habitTracker?.add || 'Add Habit'}
                 </button>
             </div>
         </div>

@@ -4,6 +4,7 @@ import { Check, AlertCircle, Calendar } from 'lucide-react';
 import { Task } from '../../types';
 import { TASK_CARD_BORDER_COLORS } from '../../constants';
 import { setTaskDragData } from '../../utils/drag';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface BoardTaskCardProps {
     task: Task;
@@ -29,6 +30,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
     viewMode = 'show',
     onSelectTask
 }) => {
+    const { t, language } = useLanguage();
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(task.title);
     const [editedDuration, setEditedDuration] = useState(task.duration.toString());
@@ -117,11 +119,11 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
     };
 
     const formatDuration = (mins: number) => {
-        if (mins < 60) return `${mins} min`;
+        if (mins < 60) return `${mins} ${t.settings.min}`;
         const hours = Math.floor(mins / 60);
         const remaining = mins % 60;
-        if (remaining === 0) return `${hours}h`;
-        return `${hours}h ${remaining}m`;
+        if (remaining === 0) return `${hours}${t.settings.hr}`;
+        return `${hours}${t.settings.hr} ${remaining}${t.settings.min}`;
     };
 
     // Edit mode rendering
@@ -160,7 +162,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                                     '--tw-ring-color': 'var(--accent)'
                                 } as React.CSSProperties}
                             />
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.settings.min}</span>
                         </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -168,14 +170,14 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                             <button
                                 onClick={handleAcceptChanges}
                                 className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
-                                title="Save changes"
+                                title={t.settings.saveChanges}
                             >
                                 <Check size={14} />
                             </button>
                             <button
                                 onClick={() => setIsEditing(false)}
                                 className="p-2 rounded-lg bg-zinc-500/20 text-zinc-400 hover:bg-zinc-500/30 transition-all"
-                                title="Cancel editing"
+                                title={t.settings.cancelEdit}
                             >
                                 {/* X icon manually SVG to avoid import if not needed, or import X */}
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 18 18" /></svg>
@@ -184,9 +186,9 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                         <button
                             onClick={handleDeleteTask}
                             className="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all text-[10px] font-bold uppercase"
-                            title="Delete task"
+                            title={t.settings.deleteTask}
                         >
-                            Delete
+                            {t.sidebar.delete}
                         </button>
                     </div>
                 </div>
@@ -248,7 +250,7 @@ export const BoardTaskCard = React.memo<BoardTaskCardProps>(({
                             }`}
                     >
                         <Calendar size={10} />
-                        <span>Due {new Date(task.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                        <span>{t.settings.due} {new Date(task.deadline).toLocaleDateString(language === 'de' ? 'de-DE' : 'en-GB', { day: 'numeric', month: 'short' })}</span>
                     </div>
                 )}
             </div>

@@ -9,11 +9,14 @@ import { logger } from '../../../utils/logger';
 
 import { SettingsSection } from './SettingsSection';
 
+import { useLanguage } from '../../../context/LanguageContext';
+
 interface SettingsSpacesProps {
     supabaseEnabled: boolean;
 }
 
 export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled }) => {
+    const { t } = useLanguage();
     const [enabled, setEnabled] = useState(getSpacesEnabled());
     const [isMigrating, setIsMigrating] = useState(false);
 
@@ -61,7 +64,7 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
 
     return (
         <SettingsSection
-            title="Work / Private Mode"
+            title={t.settings.spaces?.title || "Work / Private Mode"}
             icon={Briefcase}
             defaultOpen={false}
         >
@@ -81,9 +84,9 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
                             <Briefcase size={20} />
                         </div>
                         <div>
-                            <h4 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>Enable Work Space</h4>
+                            <h4 className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{t.settings.spaces?.enable || "Enable Work Space"}</h4>
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                                Separates tasks and entries into Work and Private spaces.
+                                {t.settings.spaces?.desc || "Separates tasks and entries into Work and Private spaces."}
                             </p>
                         </div>
                     </div>
@@ -102,14 +105,14 @@ export const SettingsSpaces: React.FC<SettingsSpacesProps> = ({ supabaseEnabled 
                     <div
                         className="mt-3 p-3 text-xs rounded-lg border"
                         style={{
-                            backgroundColor: 'var(--accent-muted)',
-                            borderColor: 'var(--accent-glow)',
+                            backgroundColor: 'var(--bg-primary)',
+                            borderColor: 'var(--accent)',
                             color: 'var(--accent)'
                         }}
                     >
                         <p>
-                            You are currently in <strong>{getSpace() === 'work' ? 'Work' : 'Private'}</strong> mode.
-                            Use the switcher in the header to toggle between spaces.
+                            {(t.settings.spaces?.info || 'You are currently in {mode} mode. Use the switcher in the header to toggle between spaces.')
+                                .replace('{mode}', getSpace() === 'work' ? (t.header.work || 'Work') : (t.header.private || 'Private'))}
                         </p>
                     </div>
                 )}

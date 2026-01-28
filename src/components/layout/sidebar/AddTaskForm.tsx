@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TaskType } from '../../../types';
 import { CATEGORIES, formatDate } from '../../../constants';
 import { useSpaceCategories } from '../../../hooks/useSpaceCategories';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface AddTaskFormProps {
     onAdd: (task: {
@@ -30,6 +31,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
     const [isScheduleOpen, setIsScheduleOpen] = useState(false);
     const [scheduledTime, setScheduledTime] = useState<string>('');
     const [date, setDate] = useState<string>('');
+    const { t } = useLanguage();
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -78,7 +80,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-                        placeholder="Add new task..."
+                        placeholder={t.sidebar.addNewTask}
                         className="w-full bg-transparent text-sm px-3 py-2.5 rounded-lg placeholder-zinc-500 focus:outline-none border focus:border-cyan-400/50 transition-colors"
                         style={{
                             color: 'var(--text)',
@@ -91,7 +93,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                 {/* 2. Priority */}
                 <div className="mb-3">
                     <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                        Priority
+                        {t.sidebar.priority}
                     </div>
                     <div className="grid grid-cols-3 gap-1.5">
                         {categories.map(cat => (
@@ -114,7 +116,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                 {/* 3. Duration */}
                 <div className="mb-3">
                     <div className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-muted)' }}>
-                        Duration
+                        {t.sidebar.duration}
                     </div>
                     <div className="grid grid-cols-4 gap-1">
                         {[15, 30, 45].map(d => (
@@ -182,7 +184,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                 >
                     <span className="flex items-center gap-1.5">
                         <Clock size={12} />
-                        {scheduledTime ? `Scheduled at ${scheduledTime}` : 'Schedule (Optional)'}
+                        {scheduledTime ? `${t.sidebar.schedule} ${scheduledTime}` : t.sidebar.schedule}
                     </span>
                     <ChevronDown
                         size={12}
@@ -202,7 +204,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                             <div className="space-y-3 pb-2">
                                 {/* Date */}
                                 <div>
-                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Date</div>
+                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.date}</div>
                                     <input
                                         type="date"
                                         value={date || (selectedDate ? formatDate(selectedDate) : formatDate(new Date()))}
@@ -218,7 +220,7 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
 
                                 {/* Time */}
                                 <div>
-                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>Time</div>
+                                    <div className="text-[9px] font-semibold uppercase tracking-wider mb-1" style={{ color: 'var(--text-muted)' }}>{t.sidebar.time}</div>
                                     <input
                                         type="time"
                                         value={scheduledTime}
@@ -269,12 +271,12 @@ export const AddTaskForm: React.FC<AddTaskFormProps> = ({
                     {scheduledTime ? (
                         <>
                             <Clock size={14} />
-                            Schedule Task
+                            {t.sidebar.schedule}
                         </>
                     ) : (
                         <>
                             <Plus size={14} />
-                            Add
+                            {t.sidebar.add}
                         </>
                     )}
                 </button>

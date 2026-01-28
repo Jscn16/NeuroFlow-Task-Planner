@@ -3,6 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { Flame, CheckCircle2, Target, Zap, Trophy, Clock, TrendingUp, Calendar, Award, Sparkles, Brain, Coffee, Rocket, HelpCircle } from 'lucide-react';
 import { Task } from '../../../types';
 import { formatDate, TARGET_HOURS_PER_DAY, getWeekDays } from '../../../constants';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface AnalyticsDashboardProps {
     tasks: Task[];
@@ -10,6 +11,7 @@ interface AnalyticsDashboardProps {
 }
 
 export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: allTasks, statsResetAt = 0 }) => {
+    const { t } = useLanguage();
     // Filter tasks based on statsResetAt baseline
     const tasks = (allTasks || []).filter(t => {
         // If not completed, keep it for "Planned" stats (capacity, progress)
@@ -47,12 +49,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
     const flowScore = allCompleted.length > 0 ? Math.round((highValueCompleted / allCompleted.length) * 100) : 0;
 
     const flowData = [
-        { name: 'Deep Work', value: flowScore, color: '#10b981' },
+        { name: t.settings.focusMode?.deepWork || 'Deep Work', value: flowScore, color: '#10b981' },
         { name: 'Shallow', value: 100 - flowScore, color: 'rgba(255,255,255,0.1)' },
     ];
 
     // Capacity Thermometer
-    // Include rescheduled tasks in the capacity calculation to show "what was planned"
     const totalPlannedMinutes = todayTasks.reduce((acc, t) => acc + t.duration, 0);
     const capacityLimit = TARGET_HOURS_PER_DAY * 60;
     const capacityPercent = Math.min(100, (totalPlannedMinutes / capacityLimit) * 100);
@@ -90,11 +91,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
 
     // Task type breakdown
     const typeBreakdown = [
-        { type: '🔥 High', count: allCompleted.filter(t => t.type === 'high').length, color: '#f43f5e' },
-        { type: '⚡ Medium', count: allCompleted.filter(t => t.type === 'medium').length, color: '#f97316' },
-        { type: '📋 Low', count: allCompleted.filter(t => t.type === 'low').length, color: '#facc15' },
-        { type: '🎮 Leisure', count: allCompleted.filter(t => t.type === 'leisure').length, color: '#22d3ee' },
-        { type: '🧹 Chores', count: allCompleted.filter(t => t.type === 'chores').length, color: '#a1a1aa' },
+        { type: t.sidebar.high || 'High', count: allCompleted.filter(t => t.type === 'high').length, color: '#f43f5e' },
+        { type: t.sidebar.medium || 'Medium', count: allCompleted.filter(t => t.type === 'medium').length, color: '#f97316' },
+        { type: t.sidebar.low || 'Low', count: allCompleted.filter(t => t.type === 'low').length, color: '#facc15' },
+        { type: t.sidebar.leisure || 'Leisure', count: allCompleted.filter(t => t.type === 'leisure').length, color: '#22d3ee' },
+        { type: t.sidebar.chores || 'Chores', count: allCompleted.filter(t => t.type === 'chores').length, color: '#a1a1aa' },
     ].filter(t => t.count > 0);
 
     // Level calculation (gamification)
@@ -108,11 +109,11 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
 
     // Motivational quotes based on stats
     const getMotivationalMessage = () => {
-        if (completionRate >= 100) return "🎉 Perfect day! You crushed it!";
-        if (completionRate >= 75) return "🔥 On fire! Almost there!";
-        if (completionRate >= 50) return "💪 Halfway done, keep pushing!";
-        if (streak > 5) return "🌟 Incredible streak! Don't break it!";
-        return "🚀 Let's make today count!";
+        if (completionRate >= 100) return t.settings.analytics?.motivational?.perfect || "🎉 Perfect day! You crushed it!";
+        if (completionRate >= 75) return t.settings.analytics?.motivational?.fire || "🔥 On fire! Almost there!";
+        if (completionRate >= 50) return t.settings.analytics?.motivational?.halfway || "💪 Halfway done, keep pushing!";
+        if (streak > 5) return t.settings.analytics?.motivational?.streak || "🌟 Incredible streak! Don't break it!";
+        return t.settings.analytics?.motivational?.default || "🚀 Let's make today count!";
     };
 
     return (
@@ -121,14 +122,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                 {/* Header with Motivational Message */}
                 <div className="mb-8 flex flex-col items-center text-center gap-4">
                     <div>
-                        <h2 className="text-3xl font-display font-bold text-white mb-1">Productivity Insights</h2>
+                        <h2 className="text-3xl font-display font-bold text-white mb-1">{t.settings.analytics?.title || 'Productivity Insights'}</h2>
                         <p className="text-lg" style={{ color: 'var(--accent)' }}>{getMotivationalMessage()}</p>
                     </div>
                     {/* Level Badge */}
                     <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 w-full max-w-md">
                         <Trophy size={28} className="text-amber-400" />
                         <div>
-                            <div className="text-xs text-amber-400/80 font-bold uppercase tracking-wider">Level</div>
+                            <div className="text-xs text-amber-400/80 font-bold uppercase tracking-wider">{t.settings.analytics?.level || 'Level'}</div>
                             <div className="text-2xl font-bold text-amber-400">{level}</div>
                         </div>
                         <div className="ml-auto w-32">
@@ -148,7 +149,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                     {/* Flow Score */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 flex flex-col items-center justify-center relative overflow-hidden group hover:bg-white/[0.04] transition-colors">
                         <div className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-                            Flow Score
+                            {t.settings.analytics?.flowScore || 'Flow Score'}
                             <div
                                 className="relative"
                                 onMouseEnter={() => setShowFlowScoreTooltip(true)}
@@ -157,8 +158,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                 <HelpCircle size={10} className="cursor-help text-slate-600 hover:text-slate-400 transition-colors" />
                                 {showFlowScoreTooltip && (
                                     <div className="absolute left-0 top-full mt-1 z-50 px-3 py-2 rounded-xl text-[9px] whitespace-nowrap shadow-2xl border bg-slate-900 border-white/[0.1] text-slate-300 w-48">
-                                        <div className="font-bold mb-1 text-white">Flow Score</div>
-                                        Share of high-value tasks (high/medium priority) vs all completed tasks.
+                                        <div className="font-bold mb-1 text-white">{t.settings.analytics?.flowScore || 'Flow Score'}</div>
+                                        {t.settings.analytics?.flowScoreTooltip || 'Share of high-value tasks (high/medium priority) vs all completed tasks.'}
                                         <div className="mt-1 text-emerald-400">{highValueCompleted} high / {allCompleted.length} total</div>
                                     </div>
                                 )}
@@ -184,12 +185,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                 <span className="text-[9px] text-slate-500">%</span>
                             </div>
                         </div>
-                        <p className="text-[10px] text-slate-400 mt-1 text-center">Deep vs Shallow Ratio</p>
+                        <p className="text-[10px] text-slate-400 mt-1 text-center">{t.settings.analytics?.deepVsShallow || 'Deep vs Shallow Ratio'}</p>
                     </div>
 
                     {/* Capacity Thermometer */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5 flex flex-col justify-between group hover:bg-white/[0.04] transition-colors">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">Daily Capacity</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-3">{t.settings.analytics?.dailyCapacity || 'Daily Capacity'}</div>
                         <div className="flex-1 flex flex-col justify-center gap-3">
                             <div className="flex justify-between items-end">
                                 <span className="text-2xl font-bold text-white">{(totalPlannedMinutes / 60).toFixed(1)}h</span>
@@ -202,7 +203,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                 />
                             </div>
                             <p className="text-[10px] text-slate-400">
-                                {capacityPercent > 100 ? '⚠️ Over capacity!' : capacityPercent > 80 ? '⚡ Near limit' : '✅ Healthy'}
+                                {capacityPercent > 100 ? (t.settings.analytics?.overCapacity || '⚠️ Over capacity!') : capacityPercent > 80 ? (t.settings.analytics?.nearLimit || '⚡ Near limit') : (t.settings.analytics?.healthy || '✅ Healthy')}
                             </p>
                         </div>
                     </div>
@@ -214,7 +215,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                             <Flame size={28} fill="currentColor" />
                         </div>
                         <div className="text-3xl font-bold text-white mb-0.5">{streak}</div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-orange-400">Day Streak</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-orange-400">{t.settings.analytics?.dayStreak || 'Day Streak'}</div>
                     </div>
 
                     {/* Completion Rate */}
@@ -229,7 +230,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                             <Zap size={22} style={{ color: 'var(--accent)' }} fill="currentColor" />
                         </div>
                         <div className="text-3xl font-bold text-white mb-0.5">{completionRate}%</div>
-                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>Today Done</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>{t.settings.analytics?.todayDone || 'Today Done'}</div>
                     </div>
                 </div>
 
@@ -240,10 +241,10 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                         <div className="flex items-center justify-between mb-4">
                             <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                 <TrendingUp size={14} style={{ color: 'var(--accent)' }} />
-                                This Week's Progress
+                                {t.settings.analytics?.weekProgress || "This Week's Progress"}
                             </div>
                             <div className="text-xs text-slate-400">
-                                {weeklyData.reduce((a, d) => a + d.tasks, 0)} tasks · {weeklyData.reduce((a, d) => a + d.hours, 0).toFixed(1)}h
+                                {weeklyData.reduce((a, d) => a + d.tasks, 0)} {t.sidebar.tasks.toLowerCase()} · {weeklyData.reduce((a, d) => a + d.hours, 0).toFixed(1)}h
                             </div>
                         </div>
                         <div className="h-40 w-full">
@@ -260,8 +261,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                                 fontSize: '12px'
                                             }}
                                             formatter={(value: number, name: string) => [
-                                                name === 'hours' ? `${value}h` : `${value} tasks`,
-                                                name === 'hours' ? 'Time' : 'Tasks'
+                                                name === 'hours' ? `${value}h` : `${value} ${t.sidebar.tasks.toLowerCase()}`,
+                                                name === 'hours' ? (t.sidebar.duration || 'Time') : (t.sidebar.tasks || 'Tasks')
                                             ]}
                                         />
                                         <Bar dataKey="hours" fill="var(--accent)" radius={[4, 4, 0, 0]} />
@@ -275,7 +276,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                     <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 rounded-2xl p-5">
                         <div className="text-[10px] font-bold uppercase tracking-widest text-purple-400 flex items-center gap-2 mb-4">
                             <Award size={14} />
-                            Personal Bests
+                            {t.settings.analytics?.personalBests || 'Personal Bests'}
                         </div>
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -283,7 +284,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                     <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
                                         <CheckCircle2 size={16} className="text-purple-400" />
                                     </div>
-                                    <span className="text-xs text-slate-300">Tasks in a day</span>
+                                    <span className="text-xs text-slate-300">{t.settings.analytics?.tasksInDay || 'Tasks in a day'}</span>
                                 </div>
                                 <span className="text-lg font-bold text-white">{maxTasksDay}</span>
                             </div>
@@ -292,7 +293,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                     <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center">
                                         <Clock size={16} className="text-pink-400" />
                                     </div>
-                                    <span className="text-xs text-slate-300">Hours in a day</span>
+                                    <span className="text-xs text-slate-300">{t.settings.analytics?.hoursInDay || 'Hours in a day'}</span>
                                 </div>
                                 <span className="text-lg font-bold text-white">{maxHoursDay}h</span>
                             </div>
@@ -301,7 +302,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                                     <div className="w-8 h-8 rounded-lg bg-violet-500/20 flex items-center justify-center">
                                         <Brain size={16} className="text-violet-400" />
                                     </div>
-                                    <span className="text-xs text-slate-300">Longest task</span>
+                                    <span className="text-xs text-slate-300">{t.settings.analytics?.longestTask || 'Longest task'}</span>
                                 </div>
                                 <span className="text-lg font-bold text-white">{longestTaskCompleted}m</span>
                             </div>
@@ -315,35 +316,35 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks: a
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 text-center hover:bg-white/[0.04] transition-colors">
                         <Rocket size={24} className="mx-auto mb-2 text-emerald-400" />
                         <div className="text-2xl font-bold text-white">{allCompleted.length}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tasks Crushed</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t.settings.analytics?.tasksCrushed || 'Tasks Crushed'}</div>
                     </div>
 
                     {/* Total Hours */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 text-center hover:bg-white/[0.04] transition-colors">
                         <Coffee size={24} className="mx-auto mb-2 text-amber-400" />
                         <div className="text-2xl font-bold text-white">{totalCompletedHours}h</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Deep Work</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t.settings.analytics?.deepWork || 'Deep Work'}</div>
                     </div>
 
                     {/* High Priority Done */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 text-center hover:bg-white/[0.04] transition-colors">
                         <Target size={24} className="mx-auto mb-2 text-rose-400" />
                         <div className="text-2xl font-bold text-white">{highValueCompleted}</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">High Priority</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t.settings.analytics?.highPriority || 'High Priority'}</div>
                     </div>
 
                     {/* Productivity Score */}
                     <div className="bg-white/[0.02] border border-white/[0.05] rounded-2xl p-4 text-center hover:bg-white/[0.04] transition-colors">
                         <Sparkles size={24} className="mx-auto mb-2" style={{ color: 'var(--accent)' }} />
                         <div className="text-2xl font-bold text-white">{Math.min(100, Math.round((flowScore + completionRate) / 2))}%</div>
-                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Productivity</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">{t.settings.analytics?.productivity || 'Productivity'}</div>
                     </div>
                 </div>
 
                 {/* Task Type Breakdown */}
                 {typeBreakdown.length > 0 && (
                     <div className="mt-6 bg-white/[0.02] border border-white/[0.05] rounded-2xl p-5">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4 text-center">Completed by Category</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-4 text-center">{t.settings.analytics?.completedByCategory || 'Completed by Category'}</div>
                         <div className="flex flex-wrap gap-3 justify-center">
                             {typeBreakdown.map(item => (
                                 <div

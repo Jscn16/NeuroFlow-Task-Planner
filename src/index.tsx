@@ -4,6 +4,7 @@ import './index.css';
 import './styles/fonts-brand.css';
 import App from './App';
 import { TimerProvider } from './context/TimerContext';
+import { LanguageProvider } from './context/LanguageContext';
 
 // Service worker: Disabled to prevent auto-reload loops during updates
 /*
@@ -28,7 +29,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <TimerProvider>
-      <App />
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
     </TimerProvider>
   </React.StrictMode>
 );

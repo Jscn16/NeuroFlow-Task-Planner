@@ -10,7 +10,10 @@ interface TaskDetailViewProps {
     onClose: () => void;
 }
 
+import { useLanguage } from '../../context/LanguageContext';
+
 export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onClose }) => {
+    const { t } = useLanguage();
     const { tasks, updateTask, addTask, deleteTask, toggleTaskComplete } = useTaskContext();
     const task = tasks.find(t => t.id === taskId);
 
@@ -123,7 +126,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onClose 
                                         'bg-blue-500/20 text-blue-400'
                                     }`}>
                                     <Flag size={12} fill="currentColor" />
-                                    <span className="capitalize">{task.type} Priority</span>
+                                    <span className="capitalize">{task.type === 'high' ? (t.header.priority || 'Priority') : task.type}</span>
                                 </div>
                             </div>
                         </div>
@@ -142,20 +145,20 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onClose 
                     {/* Notes Section */}
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Notes</h3>
+                            <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">{t.header.notes || 'Notes'}</h3>
                             {isSavingNotes && <span className="text-xs text-emerald-500 animate-pulse">Saving...</span>}
                         </div>
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Add details, notes, or links..."
+                            placeholder={t.settings.notesPlaceholder || "Add details, notes, or links..."}
                             className="w-full min-h-[120px] bg-white/5 border border-zinc-800/50 rounded-2xl p-4 text-sm text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-600 resize-y placeholder:text-zinc-500"
                         />
                     </div>
 
                     {/* Subtasks Section */}
                     <div className="space-y-3">
-                        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">Subtasks</h3>
+                        <h3 className="text-sm font-medium text-zinc-400 uppercase tracking-wider">{t.settings.subtasks || 'Subtasks'}</h3>
 
                         <div className="space-y-1">
                             {subtasks.map(subtask => (
@@ -190,7 +193,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onClose 
                                 type="text"
                                 value={newSubtaskTitle}
                                 onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                                placeholder="Add a subtask..."
+                                placeholder={t.settings.addSubtask || "Add a subtask..."}
                                 className="flex-1 bg-transparent border-none p-0 text-sm text-white focus:outline-none placeholder:text-zinc-500"
                             />
                         </form>

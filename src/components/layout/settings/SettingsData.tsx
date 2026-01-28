@@ -1,6 +1,6 @@
-import React from 'react';
 import { Cloud, CloudOff, Download, Upload, LogOut } from 'lucide-react';
 import { SettingsSection } from './SettingsSection';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface SettingsDataProps {
     supabaseEnabled: boolean;
@@ -19,8 +19,9 @@ export const SettingsData: React.FC<SettingsDataProps> = ({
     onLogout,
     onClose
 }) => {
+    const { t } = useLanguage();
     return (
-        <SettingsSection title="Data & Sync" icon={Cloud} defaultOpen={supabaseEnabled}>
+        <SettingsSection title={t.settings.dataSync} icon={Cloud} defaultOpen={false}>
             {/* Sync Toggle */}
             <button
                 onClick={() => onToggleSupabase(!supabaseEnabled)}
@@ -36,7 +37,7 @@ export const SettingsData: React.FC<SettingsDataProps> = ({
                         : <CloudOff size={16} style={{ color: 'var(--text-muted)' }} />
                     }
                     <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                        {supabaseEnabled ? 'Cloud sync enabled' : 'Local only'}
+                        {supabaseEnabled ? t.settings.cloudSyncEnabled : t.settings.localOnly}
                     </span>
                 </div>
                 <div
@@ -58,17 +59,23 @@ export const SettingsData: React.FC<SettingsDataProps> = ({
                 <button
                     onClick={onExport}
                     className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all hover:bg-white/[0.03]"
-                    style={{ borderColor: 'var(--border-light)' }}
+                    style={{
+                        borderColor: 'var(--border)',
+                        backgroundColor: 'var(--bg-primary)'
+                    }}
                 >
                     <Download size={16} style={{ color: 'var(--accent)' }} />
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Export</span>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{t.settings.export}</span>
                 </button>
                 <label
                     className="flex-1 flex items-center justify-center gap-2 p-3 rounded-xl border transition-all hover:bg-white/[0.03] cursor-pointer"
-                    style={{ borderColor: 'var(--border-light)' }}
+                    style={{
+                        borderColor: 'var(--border)',
+                        backgroundColor: 'var(--bg-primary)'
+                    }}
                 >
                     <Upload size={16} style={{ color: 'var(--accent)' }} />
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Import</span>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{t.settings.import}</span>
                     <input type="file" accept=".json" onChange={onImport} className="hidden" />
                 </label>
             </div>
@@ -76,7 +83,7 @@ export const SettingsData: React.FC<SettingsDataProps> = ({
             {supabaseEnabled && onLogout && (
                 <button
                     onClick={() => {
-                        if (window.confirm('Sign out of your account? Your data will stay synced.')) {
+                        if (window.confirm(t.settings.signOutConfirm)) {
                             onLogout();
                             onClose();
                         }
@@ -85,7 +92,7 @@ export const SettingsData: React.FC<SettingsDataProps> = ({
                     style={{ borderColor: 'var(--border-light)' }}
                 >
                     <LogOut size={16} className="text-rose-400" />
-                    <span className="text-sm text-rose-400">Sign Out</span>
+                    <span className="text-sm text-rose-400">{t.settings.signOut}</span>
                 </button>
             )}
         </SettingsSection>

@@ -596,8 +596,8 @@ textarea,
   color-scheme: dark;
 
   /* ─── SURFACES (2-3 Layer Stack) ─── */
-  --bg: #000000;
-  /* Pure Black */
+  --bg: #12141a;
+  /* User Preferred Blue-Grey */
   --surface: #1C1C1E;
   /* Dark Gray (Cards/Sidebar) */
   --surface2: #2C2C2E;

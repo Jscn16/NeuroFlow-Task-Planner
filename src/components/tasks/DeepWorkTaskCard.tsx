@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, Check } from 'lucide-react';
 import { Task } from '../../types';
 import { TYPE_COLORS, TYPE_INDICATOR_COLORS } from '../../constants';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface DeepWorkTaskCardProps {
     task: Task;
@@ -16,6 +17,7 @@ export const DeepWorkTaskCard = React.memo<DeepWorkTaskCardProps>(({
     onToggleComplete,
     onStartFocus
 }) => {
+    const { t } = useLanguage();
     const isCompleted = task.status === 'completed';
 
     const handleDoubleClick = (e: React.MouseEvent) => {
@@ -48,12 +50,12 @@ export const DeepWorkTaskCard = React.memo<DeepWorkTaskCardProps>(({
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-zinc-500">
                         <span className={`uppercase tracking-wider font-bold text-[11px] ${TYPE_COLORS[task.type]}`}>
-                            {task.type}
+                            {t.sidebar[task.type] || task.type}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
                             <Clock size={12} />
-                            {task.duration}m
+                            {task.duration}{t.settings.min}
                         </span>
                     </div>
                 </div>

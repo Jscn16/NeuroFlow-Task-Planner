@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Save, Plus, Trash2, MoreVertical, Edit2 } from 'lucide-react';
 import { BrainDumpList } from '../../../types';
 import { slideIn } from '../../../utils/animations';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface BrainDumpProps {
     lists: BrainDumpList[];
@@ -13,13 +14,14 @@ interface BrainDumpProps {
 }
 
 export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAddList, onDeleteList, onUpdateTitle }) => {
+    const { t } = useLanguage();
     const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
 
     return (
         <div className="h-full flex flex-col overflow-hidden relative pt-5 max-w-7xl mx-auto w-full">
             <div className="mb-6 flex-shrink-0 px-4 sm:px-6 text-center">
-                <h2 className="text-3xl font-display font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Notes</h2>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Capture your thoughts. Multiple lists supported.</p>
+                <h2 className="text-3xl font-display font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{t.settings.brainDump?.title || 'Notes'}</h2>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{t.settings.brainDump?.subtitle || 'Capture your thoughts. Multiple lists supported.'}</p>
             </div>
 
             <div className="flex-1 overflow-y-auto pb-4 px-4 sm:px-6">
@@ -69,7 +71,7 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
 
                                     <button
                                         onClick={() => {
-                                            if (confirm('Delete this list?')) onDeleteList(list.id);
+                                            if (confirm(t.settings.brainDump?.deleteListConfirm || 'Delete this list?')) onDeleteList(list.id);
                                         }}
                                         className="p-2 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                                         style={{ color: 'var(--text-muted)' }}
@@ -84,7 +86,7 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
                                 <textarea
                                     value={list.content}
                                     onChange={(e) => onUpdateList(list.id, e.target.value)}
-                                    placeholder="Type anything..."
+                                    placeholder={t.settings.brainDump?.typeAnything || "Type anything..."}
                                     className="flex-1 w-full backdrop-blur-md rounded-b-3xl p-6 text-base leading-relaxed resize-none focus:outline-none transition-colors font-sans border-0 text-theme-primary placeholder:text-zinc-600"
                                     style={{
                                         backgroundColor: 'var(--surface)'
@@ -108,7 +110,7 @@ export const BrainDump: React.FC<BrainDumpProps> = ({ lists, onUpdateList, onAdd
                         <div className="p-3 rounded-full transition-colors" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
                             <Plus size={24} />
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-wider">New List</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{t.settings.brainDump?.newList || 'New List'}</span>
                     </button>
                 </div>
             </div>

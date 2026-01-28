@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, ChevronLeft, ChevronRight, X, Sun, Sunrise, CalendarDays } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { Translations } from '../../locales/i18n';
 
 interface DeadlinePickerProps {
     value: string; // ISO date string YYYY-MM-DD or empty
@@ -14,7 +16,7 @@ const formatDateISO = (date: Date): string => {
 };
 
 // Helper to get relative date label
-const getRelativeLabel = (dateStr: string): string => {
+const getRelativeLabel = (dateStr: string, t: Translations, language: string): string => {
     if (!dateStr) return '';
 
     const today = new Date();
@@ -24,16 +26,18 @@ const getRelativeLabel = (dateStr: string): string => {
 
     const diffDays = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    if (diffDays === 7) return 'Next week';
-    if (diffDays < 0) return 'Overdue';
+    if (diffDays === 0) return t.deadlinePicker?.today || 'Today';
+    if (diffDays === 1) return t.deadlinePicker?.tomorrow || 'Tomorrow';
+    if (diffDays === 7) return t.deadlinePicker?.nextWeek || 'Next week';
+    if (diffDays < 0) return t.deadlinePicker?.overdue || 'Overdue';
     if (diffDays <= 7) {
-        const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+        const locale = language === 'de' ? 'de-DE' : 'en-US';
+        const weekday = date.toLocaleDateString(locale, { weekday: 'long' });
         return weekday;
     }
 
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const locale = language === 'de' ? 'de-DE' : 'en-GB';
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 };
 
 // Quick action type
@@ -48,8 +52,10 @@ interface QuickAction {
 export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
     value,
     onChange,
-    placeholder = 'Add deadline'
+    placeholder
 }) => {
+    const { t, language } = useLanguage();
+    const effectivePlaceholder = placeholder || t.deadlinePicker?.addDeadline || 'Add deadline';
     const [isOpen, setIsOpen] = useState(false);
     const [viewMonth, setViewMonth] = useState(() => {
         if (value) return new Date(value);
@@ -60,14 +66,14 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
     const quickActions: QuickAction[] = [
         {
             id: 'today',
-            label: 'Today',
+            label: t.deadlinePicker?.today || 'Today',
             icon: <Sun size={16} />,
             getDate: () => formatDateISO(new Date()),
             color: '#22c55e' // green
         },
         {
             id: 'tomorrow',
-            label: 'Tomorrow',
+            label: t.deadlinePicker?.tomorrow || 'Tomorrow',
             icon: <Sunrise size={16} />,
             getDate: () => {
                 const d = new Date();
@@ -78,7 +84,7 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
         },
         {
             id: 'nextweek',
-            label: 'Next week',
+            label: t.deadlinePicker?.nextWeek || 'Next week',
             icon: <CalendarDays size={16} />,
             getDate: () => {
                 const d = new Date();
@@ -156,7 +162,7 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
         });
     };
 
-    const displayLabel = value ? getRelativeLabel(value) : placeholder;
+    const displayLabel = value ? getRelativeLabel(value, t, language) : effectivePlaceholder;
     const hasValue = Boolean(value);
 
     return (
@@ -234,7 +240,7 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
                                     <ChevronLeft size={18} />
                                 </button>
                                 <span className="text-sm font-semibold text-zinc-200">
-                                    {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                    {viewMonth.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { month: 'long', year: 'numeric' })}
                                 </span>
                                 <button
                                     onClick={() => navigateMonth(1)}
@@ -246,7 +252,7 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
 
                             {/* Weekday headers */}
                             <div className="grid grid-cols-7 px-2">
-                                {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
+                                {(language === 'de' ? ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'] : ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']).map(day => (
                                     <div
                                         key={day}
                                         className="text-center text-[10px] font-semibold text-zinc-500 py-1"
@@ -290,7 +296,7 @@ export const DeadlinePicker: React.FC<DeadlinePickerProps> = ({
                                         onClick={handleClear}
                                         className="w-full py-2 text-xs font-semibold text-zinc-500 hover:text-zinc-300 hover:bg-white/5 rounded-lg transition-all"
                                     >
-                                        Remove deadline
+                                        {t.deadlinePicker?.removeDeadline || 'Remove deadline'}
                                     </button>
                                 </div>
                             )}

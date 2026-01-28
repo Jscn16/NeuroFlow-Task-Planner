@@ -5,6 +5,7 @@ import { GridRow, Task, TaskType } from '../../types';
 import { TASK_CARD_BORDER_COLORS, formatDate, getAdjustedDate } from '../../constants';
 import { useCompletionSound } from '../../hooks/useCompletionSound';
 import { setTaskDragData } from '../../utils/drag';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface SidebarTaskCardProps {
     task: Task;
@@ -40,6 +41,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
     const [showScheduleSheet, setShowScheduleSheet] = useState(false);
     const [customDate, setCustomDate] = useState(formatDate(getAdjustedDate()));
     const { play } = useCompletionSound();
+    const { t, language } = useLanguage();
 
     const isCompleted = task.status === 'completed';
     const isMobileView = !!isMobile;
@@ -177,11 +179,11 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
     }, [isMobileView, onLongPress, task, isEditing]);
 
     const formatDuration = (mins: number) => {
-        if (mins < 60) return `${mins} min`;
+        if (mins < 60) return `${mins} ${t.settings.min}`;
         const hours = Math.floor(mins / 60);
         const remaining = mins % 60;
-        if (remaining === 0) return `${hours}h`;
-        return `${hours}h ${remaining}m`;
+        if (remaining === 0) return `${hours}${t.settings.hr}`;
+        return `${hours}${t.settings.hr} ${remaining}${t.settings.min}`;
     };
 
     if (isEditing) {
@@ -219,7 +221,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                                     '--tw-ring-color': 'var(--accent)'
                                 } as React.CSSProperties}
                             />
-                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>min</span>
+                            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.settings.min}</span>
                         </div>
                     </div>
                     <div className="flex flex-col gap-1.5">
@@ -227,14 +229,14 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                             <button
                                 onClick={handleAcceptChanges}
                                 className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition-all"
-                                title="Save changes"
+                                title={t.settings.saveChanges}
                             >
                                 <Check size={14} />
                             </button>
                             <button
                                 onClick={() => setIsEditing(false)}
                                 className="p-2 rounded-lg bg-zinc-500/20 text-zinc-400 hover:bg-zinc-500/30 transition-all"
-                                title="Cancel editing"
+                                title={t.settings.cancelEdit}
                             >
                                 <X size={14} />
                             </button>
@@ -242,9 +244,9 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                         <button
                             onClick={handleDeleteTask}
                             className="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-all text-[10px] font-bold uppercase"
-                            title="Delete task"
+                            title={t.settings.deleteTask}
                         >
-                            Delete
+                            {t.sidebar.delete}
                         </button>
                     </div>
                 </div>
@@ -326,7 +328,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                                 transition={{ type: 'spring', stiffness: 320, damping: 30 }}
                             >
                                 <div className="flex items-center justify-between">
-                                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Schedule task</div>
+                                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t.sidebar.scheduleTask || 'Schedule task'}</div>
                                     <button
                                         className="p-2 rounded-lg transition-colors"
                                         style={{ color: 'var(--text-muted)' }}
@@ -345,7 +347,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                                         }}
                                         onClick={() => handleQuickSchedule(0)}
                                     >
-                                        Today
+                                        {t.deadlinePicker?.today || 'Today'}
                                     </button>
                                     <button
                                         className="w-full py-2.5 rounded-lg text-sm font-semibold transition-colors"
@@ -355,7 +357,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                                         }}
                                         onClick={() => handleQuickSchedule(1)}
                                     >
-                                        Tomorrow
+                                        {t.deadlinePicker?.tomorrow || 'Tomorrow'}
                                     </button>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -375,7 +377,7 @@ export const SidebarTaskCard = React.memo<SidebarTaskCardProps>(({
                                         onClick={handleCustomSchedule}
                                         disabled={!customDate}
                                     >
-                                        Schedule
+                                        {t.sidebar.scheduleBtn || 'Schedule'}
                                     </button>
                                 </div>
                             </motion.div>

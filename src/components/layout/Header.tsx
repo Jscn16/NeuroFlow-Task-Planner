@@ -5,6 +5,8 @@ import { formatDate, getWeekDays, isLateNight } from '../../constants';
 import { pulseScale } from '../../utils/animations';
 import { getSpacesEnabled } from '../../state/features';
 import { getSpace, setSpace } from '../../state/space';
+import { useLanguage } from '../../context/LanguageContext';
+
 interface HeaderProps {
     activeTab: string;
     setActiveTab: (tab: string) => void;
@@ -43,6 +45,7 @@ export const Header: React.FC<HeaderProps> = ({
     // For now, let's use a local effect to listen to the custom event we dispatch)
     const [spaceState, setSpaceState] = useState(currentSpace);
     const [spacesEnabledState, setSpacesEnabledState] = useState(spacesEnabled);
+    const { t, language } = useLanguage();
 
     useEffect(() => {
         const handleStorage = () => {
@@ -54,11 +57,11 @@ export const Header: React.FC<HeaderProps> = ({
     }, []);
 
     const tabs = [
-        { id: 'planner', label: 'Planner', icon: CalendarDays },
-        { id: 'focus', label: 'Deep Focus', icon: Target },
-        { id: 'braindump', label: 'Notes', icon: Notebook },
-        { id: 'habits', label: 'Habits', icon: ListChecks },
-        { id: 'analytics', label: 'Stats', icon: BarChart3 },
+        { id: 'planner', label: t.header.planner, icon: CalendarDays },
+        { id: 'focus', label: t.header.focus, icon: Target },
+        { id: 'braindump', label: t.header.notes, icon: Notebook },
+        { id: 'habits', label: t.header.habits, icon: ListChecks },
+        { id: 'analytics', label: t.header.stats, icon: BarChart3 },
     ];
 
     return (
@@ -71,21 +74,21 @@ export const Header: React.FC<HeaderProps> = ({
         >
             <div className="w-full px-6 flex items-center justify-between py-3">
                 {/* LEFT: Week Navigation & Date */}
-                <div className="flex items-center gap-6 pointer-events-auto min-w-0 shrink z-10">
+                <div className="flex items-center gap-3 pointer-events-auto min-w-0 shrink z-10 w-fit">
                     {!isSidebarOpen && (
                         <button
                             onClick={onToggleSidebar}
                             className="btn-icon"
-                            title="Open Sidebar"
+                            title={t.header.openSidebar}
                         >
                             <PanelLeft size={20} />
                         </button>
                     )}
 
                     {/* Date Range */}
-                    <div className="flex items-center gap-3">
-                        <p className="text-xl font-display font-bold" style={{ color: 'var(--text-primary)' }}>
-                            {currentWeekDays[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — {currentWeekDays[6].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, {currentWeekDays[0].getFullYear()}
+                    <div className="flex items-center gap-2">
+                        <p className="text-sm lg:text-base font-display font-bold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>
+                            {currentWeekDays[0].toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' })} — {currentWeekDays[6].toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', { month: 'short', day: 'numeric' })}, {currentWeekDays[0].getFullYear()}
                         </p>
                     </div>
 
@@ -99,30 +102,30 @@ export const Header: React.FC<HeaderProps> = ({
                     >
                         <button
                             onClick={() => onWeekChange('prev')}
-                            className="px-2 py-1.5 hover:bg-white/[0.05] rounded-lg transition-colors flex items-center justify-center"
+                            className="px-1.5 py-1 hover:bg-white/[0.05] rounded-lg transition-colors flex items-center justify-center"
                             style={{ color: 'var(--text-muted)' }}
                         >
-                            <ChevronLeft size={16} />
+                            <ChevronLeft size={14} />
                         </button>
                         <button
                             onClick={onJumpToCurrentWeek}
-                            className="px-3 py-1 text-xs font-bold uppercase tracking-wider hover:bg-white/[0.05] rounded-md transition-colors cursor-pointer"
+                            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider hover:bg-white/[0.05] rounded-lg transition-colors cursor-pointer whitespace-nowrap"
                             style={{ color: 'var(--text-secondary)' }}
                             title="Jump to current week"
-                        >Week</button>
+                        >{t.header.week}</button>
                         <button
                             onClick={() => onWeekChange('next')}
-                            className="px-2 py-1.5 hover:bg-white/[0.05] rounded-lg transition-colors flex items-center justify-center"
+                            className="px-1.5 py-1 hover:bg-white/[0.05] rounded-lg transition-colors flex items-center justify-center"
                             style={{ color: 'var(--text-muted)' }}
                         >
-                            <ChevronRight size={16} />
+                            <ChevronRight size={14} />
                         </button>
                     </div>
 
                     {/* Spaces Switcher */}
                     {spacesEnabledState && (
                         <div
-                            className="flex items-center p-1 rounded-xl border shadow-sm backdrop-blur-md"
+                            className="flex items-center p-1 rounded-xl border shadow-sm backdrop-blur-md shrink-0"
                             style={{
                                 backgroundColor: 'color-mix(in srgb, var(--bg-tertiary) 70%, transparent)',
                                 borderColor: 'var(--border-medium)'
@@ -130,28 +133,28 @@ export const Header: React.FC<HeaderProps> = ({
                         >
                             <button
                                 onClick={() => setSpace('private')}
-                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 ${spaceState === 'private'
+                                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all duration-200 whitespace-nowrap ${spaceState === 'private'
                                     ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm'
                                     : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                                     }`}
                             >
-                                Private
+                                {t.header.private}
                             </button>
                             <button
                                 onClick={() => setSpace('work')}
-                                className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-lg transition-all duration-200 ${spaceState === 'work'
+                                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all duration-200 whitespace-nowrap ${spaceState === 'work'
                                     ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm'
                                     : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                                     }`}
                             >
-                                Work
+                                {t.header.work}
                             </button>
                         </div>
                     )}
                 </div>
 
                 {/* CENTER: Navigation Tabs (Premium Dock) */}
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-10">
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto z-0">
                     <nav
                         className="flex items-center gap-1 p-1 rounded-full shadow-lg backdrop-blur-xl border transition-colors"
                         style={{
@@ -167,7 +170,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className="relative flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 outline-none"
+                                    className="relative flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 outline-none"
                                     style={{
                                         color: isActive ? 'var(--text)' : 'var(--text-muted)',
                                     }}
@@ -185,8 +188,8 @@ export const Header: React.FC<HeaderProps> = ({
                                         />
                                     )}
 
-                                    <Icon size={16} className={`relative z-10 transition-transform duration-300 ${isActive ? 'text-[var(--accent)]' : ''}`} />
-                                    <span className={`relative z-10 text-xs font-bold uppercase tracking-widest transition-colors duration-300`}>{tab.label}</span>
+                                    <Icon size={14} className={`relative z-10 transition-transform duration-300 ${isActive ? 'text-[var(--accent)]' : ''}`} />
+                                    <span className={`relative z-10 text-[10px] font-bold uppercase tracking-wider transition-colors duration-300`}>{tab.label}</span>
                                 </button>
                             )
                         })}
@@ -194,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* RIGHT: View Switcher (Priority/Calendar) */}
-                <div className="flex items-center gap-4 pointer-events-auto min-w-0 shrink justify-end z-20">
+                <div className="flex items-center gap-4 pointer-events-auto min-w-0 shrink justify-end z-20 flex-1 xl:flex-none">
                     {/* Late Night Badge */}
                     <AnimatePresence>
                         {isLateNightSession && (
@@ -203,10 +206,10 @@ export const Header: React.FC<HeaderProps> = ({
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95, y: -4 }}
                                 transition={{ duration: 0.18, ease: 'easeOut' }}
-                                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 whitespace-nowrap"
                             >
                                 <Moon size={12} />
-                                <span className="text-[10px] font-bold uppercase tracking-wider">Late Night</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider">{t.header.lateNight}</span>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -227,7 +230,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'list' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
                             >
                                 <ListChecks size={14} />
-                                <span>Priority</span>
+                                <span>{t.header.priority}</span>
                             </button>
                             <button
                                 onClick={() => {
@@ -236,7 +239,7 @@ export const Header: React.FC<HeaderProps> = ({
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-200 ${dayViewMode === 'timeline' ? 'bg-white/[0.08] text-[var(--text-primary)] shadow-sm' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
                             >
                                 <CalendarDays size={14} />
-                                <span>Calendar</span>
+                                <span>{t.header.calendar}</span>
                             </button>
                         </div>
                     )}

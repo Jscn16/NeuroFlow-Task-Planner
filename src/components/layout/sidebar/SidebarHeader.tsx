@@ -1,6 +1,7 @@
 import React from 'react';
 import { Settings, PanelLeftClose, X, Clock, List } from 'lucide-react';
 import { WeekFluxLogo } from '../../../brand/WeekFluxLogo';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface SidebarHeaderProps {
     onOpenSettings: () => void;
@@ -21,12 +22,13 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
     onDayViewModeChange,
     onLogoClick
 }) => {
+    const { t } = useLanguage();
     return (
         <div className="p-4 pb-3 flex items-center justify-between">
             <button
                 onClick={onLogoClick}
                 className="hover:opacity-80 transition-opacity cursor-pointer"
-                title="Go to Planner"
+                title={t.header.planner}
             >
                 <WeekFluxLogo size="lg" showIcon={true} />
             </button>
@@ -35,7 +37,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
                     <button
                         onClick={onClose}
                         className="btn-icon"
-                        title="Close Sidebar"
+                        title={t.sidebar.cancel}
                     >
                         <X size={18} />
                     </button>
@@ -43,7 +45,7 @@ export const SidebarHeader: React.FC<SidebarHeaderProps> = ({
                     <button
                         onClick={onToggle}
                         className="btn-icon"
-                        title="Collapse Sidebar"
+                        title={t.header.openSidebar}
                     >
                         <PanelLeftClose size={18} />
                     </button>

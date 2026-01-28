@@ -21,8 +21,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
 
     return (
         <div className="rounded-2xl overflow-hidden" style={{
-            backgroundColor: variant === 'danger' ? 'rgba(239,68,68,0.03)' : 'var(--bg-surface-subtle)',
-            border: `1px solid ${variant === 'danger' ? 'rgba(239,68,68,0.15)' : 'var(--border-light)'}`
+            backgroundColor: variant === 'danger' ? 'rgba(239,68,68,0.03)' : 'var(--bg-secondary)',
+            border: `1px solid ${variant === 'danger' ? 'rgba(239,68,68,0.15)' : 'var(--border)'}`
         }}>
             <button
                 onClick={() => setIsOpen(!isOpen)}

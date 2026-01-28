@@ -141,7 +141,7 @@ export const ROW_CONFIG: Record<GridRow, {
 };
 
 export const ROW_LABELS: GridRow[] = ['GOAL', 'FOCUS', 'WORK', 'LEISURE', 'CHORES'];
-export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+export const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export const INITIAL_TASKS: Task[] = [
   { id: '1', title: 'Q3 Strategy Review', duration: 60, type: 'high', status: 'unscheduled', dueDate: null, deadline: null, assignedRow: null, eisenhowerQuad: 'do', createdAt: Date.now() },
